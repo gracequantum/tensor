@@ -47,5 +47,22 @@ bool operator!=(const QN &, const QN &);
 QN operator+(const QN &, const QN &);
 
 QN operator-(const QN &, const QN &);
+
+
+class QNSector {
+public:
+  QNSector(void) { qn = QN(), dim = 0; }
+  QNSector(const QN &qn, const long &dim) : qn(qn), dim(dim) {}
+  size_t hash(void) const;
+  QN qn;
+  long dim;
+private:
+  std::hash<int> int_hasher_;
+};
+
+bool operator==(const QNSector &, const QNSector &);
+
+bool operator!=(const QNSector &, const QNSector &);
+
 } /* gqten */ 
 #endif /* ifndef GQTEN_GQTEN_H */

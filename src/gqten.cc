@@ -5,7 +5,6 @@
 * Description: GraceQ/tensor project. The main source code file.
 */
 #include "gqten/gqten.h"
-#include "hasher.h"
 
 #include <vector>
 
@@ -96,5 +95,20 @@ QN operator+(const QN &lhs, const QN &rhs) {
 
 QN operator-(const QN &lhs, const QN &rhs) {
   return lhs + (-rhs);
+}
+
+
+size_t QNSector::hash(void) const {
+  return qn.hash() ^ int_hasher_(dim);
+}
+
+
+bool operator==(const QNSector &lhs, const QNSector &rhs) {
+  return lhs.hash() == rhs.hash();
+}
+
+
+bool operator!=(const QNSector &lhs, const QNSector &rhs) {
+  return !(lhs == rhs);
 }
 } /* gqten */ 

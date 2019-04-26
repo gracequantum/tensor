@@ -18,5 +18,8 @@ macro(add_unittest
 endmacro()
 
 
-# Test Quantum number object.
+# Test quantum number object.
 add_unittest(test_qn test_qn.cc gqten "" "")
+
+# Test quantum number sector object.
+add_unittest(test_qnsector test_qnsector.cc gqten "" "")
