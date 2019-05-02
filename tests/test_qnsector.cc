@@ -2,7 +2,7 @@
 * Author: Rongyang Sun <sun-rongyang@outlook.com>
 * Creation Date: 2019-04-25 22:44
 * 
-* Description: GraceQ/tensor project. Unit tests fro QNSector class.
+* Description: GraceQ/tensor project. Unit tests for QNSector class.
 */
 #include "gtest/gtest.h"
 #include "gqten/gqten.h"
@@ -34,13 +34,13 @@ TEST_F(TestQNSector, DataMembers) {
 
 TEST_F(TestQNSector, Hashable) {
   std::hash<int> int_hasher;
-  EXPECT_EQ(qnsct_default.hash(), (gqten::QN().hash())^int_hasher(0));
+  EXPECT_EQ(qnsct_default.Hash(), (gqten::QN().Hash())^int_hasher(0));
   EXPECT_EQ(
-      qnsct1.hash(),
-      (gqten::QN({QNNameVal("Sz", 1)}).hash())^int_hasher(1));
+      qnsct1.Hash(),
+      (gqten::QN({QNNameVal("Sz", 1)}).Hash())^int_hasher(1));
   EXPECT_EQ(
-      qnsct2.hash(),
-      (gqten::QN({QNNameVal("Sz", -1)}).hash())^int_hasher(2));
+      qnsct2.Hash(),
+      (gqten::QN({QNNameVal("Sz", -1)}).Hash())^int_hasher(2));
 }
 
 

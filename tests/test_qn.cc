@@ -29,11 +29,11 @@ std::hash<std::string> StrHasher;
 
 
 TEST_F(TestQN, Hashable) {
-  EXPECT_EQ(qn_default.hash(), 0);
-  EXPECT_EQ(qn_u1_1.hash(), StrHasher("Sz0"));
-  EXPECT_EQ(qn_u1_2.hash(), StrHasher("Sz1"));
-  EXPECT_EQ(qn_u1_3.hash(), StrHasher("Sz-1"));
-  EXPECT_EQ(qn_u1_u1_1.hash(), StrHasher("Sz0")^StrHasher("N0"));
+  EXPECT_EQ(qn_default.Hash(), 0);
+  EXPECT_EQ(qn_u1_1.Hash(), StrHasher("Sz0"));
+  EXPECT_EQ(qn_u1_2.Hash(), StrHasher("Sz1"));
+  EXPECT_EQ(qn_u1_3.Hash(), StrHasher("Sz-1"));
+  EXPECT_EQ(qn_u1_u1_1.Hash(), StrHasher("Sz0")^StrHasher("N0"));
 }
 
 

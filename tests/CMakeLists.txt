@@ -23,3 +23,15 @@ add_unittest(test_qn test_qn.cc gqten "" "")
 
 # Test quantum number sector object.
 add_unittest(test_qnsector test_qnsector.cc gqten "" "")
+
+# Test quantum number sector set object.
+add_unittest(test_qnsectorset test_qnsectorset.cc gqten "" "")
+
+# Test index object.
+add_unittest(test_index test_index.cc gqten "" "")
+
+# Test dense block labeled by the quantum numbers, QNBlock.
+add_unittest(test_qnblock test_qnblock.cc gqten "" "")
+
+# Test tensor with U1 symmetry, GQTensor.
+add_unittest(test_gqtensor test_gqtensor.cc gqten "" "")
