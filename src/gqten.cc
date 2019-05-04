@@ -20,12 +20,12 @@ namespace gqten {
 
 
 // Quantum number.
-QN::QN(QNNameValIniter nm_vals) {
-  for (auto &nm_val : nm_vals) {
-    names_.push_back(nm_val.name);
-    values_.push_back(nm_val.val);
-  }
-}
+//QN::QN(QNNameValIniter nm_vals) {
+  //for (auto &nm_val : nm_vals) {
+    //names_.push_back(nm_val.name);
+    //values_.push_back(nm_val.val);
+  //}
+//}
 
 
 QN::QN(const std::vector<QNNameVal> &nm_vals) {
@@ -153,21 +153,21 @@ InterOffsetQnsct Index::CoorOffsetAndQnsct(long coor) const {
 
 
 // Dense block labeled by the quantum number.
-QNBlock::QNBlock(const std::initializer_list<QNSector> &init_qnscts) :
-    QNSectorSet(init_qnscts) {
-  ndim = qnscts.size(); 
-  for (auto &qnsct : qnscts) {
-    shape.push_back(qnsct.dim);
-  }
-  if (ndim != 0) {
-    size = 1;       // Initialize the block size.
-    for (long i = 0; i < ndim; ++i) {
-      size *= shape[i];
-    }
-    data_ = new double[size] ();    // Allocate memory and initialize to 0.
-    data_offsets_ = CalcDataOffsets(shape);
-  }
-}
+//QNBlock::QNBlock(const std::initializer_list<QNSector> &init_qnscts) :
+    //QNSectorSet(init_qnscts) {
+  //ndim = qnscts.size(); 
+  //for (auto &qnsct : qnscts) {
+    //shape.push_back(qnsct.dim);
+  //}
+  //if (ndim != 0) {
+    //size = 1;       // Initialize the block size.
+    //for (long i = 0; i < ndim; ++i) {
+      //size *= shape[i];
+    //}
+    //data_ = new double[size] ();    // Allocate memory and initialize to 0.
+    //data_offsets_ = CalcDataOffsets(shape);
+  //}
+//}
 
 
 QNBlock::QNBlock(const std::vector<QNSector> &init_qnscts) :
@@ -184,6 +184,32 @@ QNBlock::QNBlock(const std::vector<QNSector> &init_qnscts) :
     data_ = new double[size] ();    // Allocate memory and initialize to 0.
     data_offsets_ = CalcDataOffsets(shape);
   }
+}
+
+
+QNBlock::QNBlock(const QNBlock &qnblk) :
+    QNSectorSet(qnblk.qnscts), 
+    ndim(qnblk.ndim),
+    shape(qnblk.shape),
+    size(qnblk.size),
+    data_offsets_(qnblk.data_offsets_) {
+  data_ = new double [size] ();
+  std::memcpy(data_, qnblk.data_, size * sizeof(double));
+}
+
+
+QNBlock &QNBlock::operator=(const QNBlock &rhs) {
+  // Copy data.
+  auto new_data = new double [rhs.size];
+  std::memcpy(new_data, rhs.data_, rhs.size * sizeof(double));
+  delete [] data_;
+  data_ = new_data;
+  // Copy other members.
+  ndim = rhs.ndim;
+  shape = rhs.shape;
+  size = rhs.size;
+  data_offsets_ = rhs.data_offsets_;
+  return *this;
 }
 
 
@@ -205,32 +231,30 @@ QNBlock::operator()(const std::vector<long> &coors) const {
 }
 
 
-const double &
-QNBlock::operator()(const std::initializer_list<long> &coors) const {
-  return QNBlock::operator()(std::vector<long>(coors));
-}
+//const double &
+//QNBlock::operator()(const std::initializer_list<long> &coors) const {
+  //return QNBlock::operator()(std::vector<long>(coors));
+//}
 
 
 // Block element setter.
 double &
 QNBlock::operator()(const std::vector<long> &coors) {
   assert(coors.size() == ndim);
-  long offset = 0;
-  for (size_t i = 0; i < ndim; ++i) {
-    offset += coors[i] * data_offsets_[i];
-  }
+  auto offset = CalcOffset(coors, ndim, data_offsets_);
   return *(data_+offset);
 }
 
 
 // Block element getter.
-double &
-QNBlock::operator()(const std::initializer_list<long> &coors) {
-  return QNBlock::operator()(std::vector<long>(coors));
-}
+//double &
+//QNBlock::operator()(const std::initializer_list<long> &coors) {
+  //return QNBlock::operator()(std::vector<long>(coors));
+//}
 
 
-size_t QNBlock::PartHash(const std::initializer_list<long> &dims) const {
+//size_t QNBlock::PartHash(const std::initializer_list<long> &dims) const {
+size_t QNBlock::PartHash(const std::vector<long> &dims) const {
   std::vector<QNSector> selected_qnscts;
   for (auto &dim : dims) {
     selected_qnscts.push_back(qnscts[dim]);
@@ -239,6 +263,7 @@ size_t QNBlock::PartHash(const std::initializer_list<long> &dims) const {
 }
 
 
+// Inplace operation.
 void QNBlock::Random(void) {
   for (int i = 0; i < size; ++i) {
     data_[i] = double(rand()) / RAND_MAX;
@@ -246,7 +271,44 @@ void QNBlock::Random(void) {
 }
 
 
+void QNBlock::Transpose(const std::vector<long> &transed_axes) {
+  std::vector<QNSector> transed_qnscts(ndim);
+  std::vector<long> transed_shape(ndim);
+  for (long i = 0; i < ndim; ++i) {
+    transed_qnscts[i] = qnscts[transed_axes[i]];
+    transed_shape[i] = transed_qnscts[i].dim;
+  }
+  auto transed_data_offsets_ = CalcDataOffsets(shape);
+  TransposeBlkData(
+      data_, ndim, transed_axes,
+      shape, data_offsets_, transed_data_offsets_);
+  shape = transed_shape;
+  qnscts = transed_qnscts;
+  data_offsets_ = transed_data_offsets_;
+}
+
+
 // Tensor with U1 symmetry.
+GQTensor::GQTensor(const GQTensor &gqtensor) : indexes(gqtensor.indexes) {
+  for (auto &blk : gqtensor.blocks_) {
+    auto new_blk = new QNBlock(*blk);
+    blocks_.push_back(new_blk);
+  }
+}
+
+
+GQTensor &GQTensor::operator=(const GQTensor &rhs) {
+  auto new_blk_num = rhs.blocks_.size();
+  std::vector<QNBlock *> new_blks(new_blk_num);
+  for (size_t i = 0; i < new_blk_num; ++i) {
+    auto new_blk = new QNBlock(*rhs.blocks_[i]);
+    blocks_[i] = new_blk;
+  }
+  indexes = rhs.indexes;
+  return *this;
+}
+
+
 GQTensor::~GQTensor(void) {
   for (auto blk : blocks_) {
     delete blk;
@@ -255,7 +317,8 @@ GQTensor::~GQTensor(void) {
 
 
 // GQTensor element getter.
-double GQTensor::Elem(const std::initializer_list<long> &coors) const {
+//double GQTensor::Elem(const std::initializer_list<long> &coors) const {
+double GQTensor::Elem(const std::vector<long> &coors) const {
   auto blk_coors_and_blk_key = TargetBlkCoorsAndBlkKey(coors);
   for (auto blk : blocks_) {
     if (blk->qnscts == blk_coors_and_blk_key.blk_key) {
@@ -266,9 +329,15 @@ double GQTensor::Elem(const std::initializer_list<long> &coors) const {
 }
 
 
+//double GQTensor::Elem(const std::initializer_list<long> &coors) const {
+  //return 
+//}
+
+
 // GQTensor element setter.
 double &
-GQTensor::operator()(const std::initializer_list<long> &coors) {
+//GQTensor::operator()(const std::initializer_list<long> &coors) {
+GQTensor::operator()(const std::vector<long> &coors) {
   auto blk_coors_and_blk_key = TargetBlkCoorsAndBlkKey(coors);
   for (auto blk : blocks_) {
     if (blk->qnscts == blk_coors_and_blk_key.blk_key) {
@@ -281,6 +350,23 @@ GQTensor::operator()(const std::initializer_list<long> &coors) {
 }
 
 
+// Inplace operations.
+// Tensor transpose.
+//void GQTensor::Transpose(const std::initializer_list<long> &axes) {
+void GQTensor::Transpose(const std::vector<long> &axes) {
+  assert(axes.size() == indexes.size());
+  // Transpose indexes.
+  std::vector<long> transed_axes = axes;
+  std::vector<Index> transed_indexes(indexes.size());
+  for (size_t i = 0; i < transed_axes.size(); ++i) {
+    transed_indexes[i] = indexes[transed_axes[i]];
+  }
+  indexes = transed_indexes;
+  // Transpose blocks.
+  for (auto &blk : blocks_) {
+    blk->Transpose(transed_axes);
+  }
+}
 // Random set tensor elements with given quantum number divergence.
 void GQTensor::Random(const QN &div) {
   for (auto &blk_key : BlkKeysIter()) {
@@ -311,17 +397,7 @@ std::vector<QNSectorSet> GQTensor::BlkKeysIter(void) const {
   for (auto &index : indexes) {
     v.push_back(index.qnscts);
   }
-  std::vector<std::vector<QNSector>> s = {{}}; 
-  for (const auto &u : v) {
-    std::vector<std::vector<QNSector>> r;
-    for (const auto &x : s) {
-      for (const auto y : u) {
-        r.push_back(x);
-        r.back().push_back(y);
-      }
-    }
-    s = std::move(r);
-  }
+  auto s = CalcCartProd(v);
   std::vector<QNSectorSet> blk_keys;
   for (auto &qnscts : s) {
     blk_keys.push_back(QNSectorSet(qnscts));
@@ -399,4 +475,31 @@ long MulToEnd(const std::vector<long> &v, int i) {
   } 
   return mul;
 }
+
+
+void TransposeBlkData(
+    double * &data, const long &ndim, const std::vector<long> &axes_map,
+    const std::vector<long> &old_shape,
+    const std::vector<long> &old_data_offsets,
+    const std::vector<long> &new_data_offsets) {
+  double *new_data = new double [ndim] ();
+  for (auto &old_coors : GenAllCoors(old_shape)) {
+    new_data[CalcOffset(TransCoors(old_coors, axes_map), ndim, new_data_offsets)] =
+        data[CalcOffset(old_coors, ndim, old_data_offsets)];
+  }
+  data = new_data;
+}
+
+
+std::vector<std::vector<long>> GenAllCoors(const std::vector<long> &shape) {
+  std::vector<std::vector<long>> each_coors(shape.size());
+  for (size_t i = 0; i < shape.size(); ++i) {
+    for (long j = 0; j < shape[i]; ++j) {
+      each_coors[i].push_back(j);
+    }
+  }
+  return CalcCartProd(each_coors);
+}
+
+
 } /* gqten */ 

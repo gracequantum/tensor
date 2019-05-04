@@ -29,14 +29,28 @@ struct TestGQTensor : public testing::Test {
                       QNSector(QN({QNNameVal("Sz",  0)}), d),
                       QNSector(QN({QNNameVal("Sz",  1)}), d)},
                       OUT);
+  GQTensor vec_rand_up = GQTensor({tpb});
+
+  void SetUp(void) {
+    vec_rand_up.Random(QN({QNNameVal("Sz", 1)}));
+  }
 };
 
 
 TEST_F(TestGQTensor, Initialization) {
+  // Test default constructor.
   GQTensor gqten_default = GQTensor(); 
   EXPECT_EQ(gqten_default.indexes, std::vector<Index>());
+  // Test regular constructor.
   EXPECT_EQ(vec.indexes, std::vector<Index>{tpb});
   EXPECT_EQ(site.indexes, (std::vector<Index>{bpb, tpb}));
+  // Test copy constructor.
+  GQTensor vec_rand_up2(vec_rand_up);
+  EXPECT_EQ(vec_rand_up2.indexes, std::vector<Index>{tpb});
+  EXPECT_NE(vec_rand_up2.BlksConstRef()[0], vec_rand_up.BlksConstRef()[0]);
+  EXPECT_EQ(
+      vec_rand_up2.BlksConstRef()[0]->DataConstRef()[0],
+       vec_rand_up.BlksConstRef()[0]->DataConstRef()[0]);
 }
 
 
@@ -93,3 +107,13 @@ TEST_F(TestGQTensor, Random) {
         double(rand())/RAND_MAX);
   }
 }
+
+
+//void RunTestTransposeCase(
+    //const GQTensor &t, const std::initializer_list<long> &axes) {
+  //auto transed_t = t;
+  //transed_t.Transpose(axes);
+  //for (auto &coors : t.CoorsIter()) {
+    //EXPECT_EQ(transed_t.Elem(TransCoors(coors, axes)), t.Elem(coors));
+  //}
+//}

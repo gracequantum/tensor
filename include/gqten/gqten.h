@@ -9,7 +9,7 @@
 
 
 #include <string>
-#include <initializer_list>
+//#include <initializer_list>
 #include <vector>
 
 
@@ -24,12 +24,13 @@ struct QNNameVal {
   int val;
 };
 
-using QNNameValIniter = std::initializer_list<QNNameVal>;
+//using QNNameValIniter = std::initializer_list<QNNameVal>;
+using QNNameValIniter = std::vector<QNNameVal>;
 
 class QN {
 public:
   QN() = default;
-  QN(QNNameValIniter); 
+  //QN(QNNameValIniter); 
   QN(const std::vector<QNNameVal> &);
   QN(const QN &);
   std::size_t Hash(void) const;
@@ -71,7 +72,7 @@ bool operator!=(const QNSector &, const QNSector &);
 class QNSectorSet {
 public:
   QNSectorSet() = default;
-  QNSectorSet(const std::initializer_list<QNSector> & init_qnscts) : qnscts(init_qnscts) {}
+  //QNSectorSet(const std::initializer_list<QNSector> & init_qnscts) : qnscts(init_qnscts) {}
   QNSectorSet(const std::vector<QNSector> & qnscts) : qnscts(qnscts) {}
   std::vector<QNSector> qnscts;
   virtual size_t Hash(void) const;
@@ -98,14 +99,17 @@ class Index : public QNSectorSet {
 public:
   Index() = default;
   Index(
-      const std::initializer_list<QNSector> &init_qnscts,
+      //const std::initializer_list<QNSector> &init_qnscts,
+      const std::vector<QNSector> &init_qnscts,
       const std::string &dir,
       const std::string &tag) : QNSectorSet(init_qnscts), dir(dir), tag(tag) {}
   Index(
-      const std::initializer_list<QNSector> &init_qnscts) :
+      //const std::initializer_list<QNSector> &init_qnscts) :
+      const std::vector<QNSector> &init_qnscts) :
           Index(init_qnscts, NDIR, "") {}
   Index(
-      const std::initializer_list<QNSector> &init_qnscts,
+      //const std::initializer_list<QNSector> &init_qnscts,
+      const std::vector<QNSector> &init_qnscts,
       const std::string &dir) : Index(init_qnscts, dir, "") {}
   size_t Hash(void) const override;
   InterOffsetQnsct CoorOffsetAndQnsct(long) const;
@@ -120,19 +124,30 @@ private:
 // Dense block labeled by the quantum number.
 class QNBlock : public QNSectorSet {
 public:
-  QNBlock() = default;
-  QNBlock(const std::initializer_list<QNSector> &);
+  QNBlock(void) {}
+  //QNBlock(const std::initializer_list<QNSector> &);
   QNBlock(const std::vector<QNSector> &);
+
+  QNBlock(const QNBlock &);
+  QNBlock &operator=(const QNBlock &);
+
   ~QNBlock(void);
   
-  const double &operator()(const std::initializer_list<long> &) const;
+  //const double &operator()(const std::initializer_list<long> &) const;
   const double &operator()(const std::vector<long> &) const;
-  double &operator()(const std::initializer_list<long> &);
+  //double &operator()(const std::initializer_list<long> &);
   double &operator()(const std::vector<long> &);
-  size_t PartHash(const std::initializer_list<long> &) const;
-  void Random(void);
+
+  //size_t PartHash(const std::initializer_list<long> &) const;
+  size_t PartHash(const std::vector<long> &) const;
+
+  // Data access.
   const double *DataConstRef(void) const { return data_; }
   double *DataRef(void) const { return data_; }
+
+  // Inplace operations.
+  void Random(void);
+  void Transpose(const std::vector<long> &);
 
   long ndim = 0;
   std::vector<long> shape;
@@ -155,21 +170,36 @@ struct BlkCoorsAndBlkKey {
 
 class GQTensor {
 public:
-  GQTensor() = default;
-  GQTensor(const std::initializer_list<Index> &idxes) : indexes(idxes) {}
+  GQTensor(void) {}
+  //GQTensor(const std::initializer_list<Index> &idxes) : indexes(idxes) {}
+  GQTensor(const std::vector<Index> &idxes) : indexes(idxes) {}
+
+  GQTensor(const GQTensor &);
+  GQTensor &operator=(const GQTensor &);
+
   ~GQTensor(void);
 
-  double Elem(const std::initializer_list<long> &) const;
-  double &operator()(const std::initializer_list<long> &);
+  // Element getter and setter.
+  double Elem(const std::vector<long> &) const;
+  //double &operator()(const std::initializer_list<long> &);
+  double &operator()(const std::vector<long> &);
+
+  // Inplace operations.
   void Random(const QN &);
+  //void Transpose(const std::initializer_list<long> &);
+  void Transpose(const std::vector<long> &);
+
+  // Access to the blocks.
   const std::vector<QNBlock *> &BlksConstRef(void) const { return blocks_; }
   std::vector<QNBlock *> BlksRef(void) const { return blocks_; }
 
+  // Public data members.
   std::vector<Index> indexes;
   double scalar = 0.0;
 
 private:
   std::vector<QNBlock *> blocks_;
+
   BlkCoorsAndBlkKey TargetBlkCoorsAndBlkKey(const std::vector<long> &) const;
   std::vector<QNSectorSet> BlkKeysIter(void) const;
 };
@@ -185,5 +215,53 @@ QN CalcDiv(const QNSectorSet &, const std::vector<Index> &);
 std::vector<long> CalcDataOffsets(const std::vector<long> &);
 
 long MulToEnd(const std::vector<long> &, int);
+
+void TransposeBlkData(
+    double * &, const long &, const std::vector<long> &,
+    const std::vector<long> &, const std::vector<long> &,
+    const std::vector<long> &);
+
+std::vector<std::vector<long>> GenAllCoors(const std::vector<long> &);
+
+
+// Some function templates.
+template<typename T>
+T CalcCartProd(T v) {
+  T s = {{}};
+  for (const auto &u : v) {
+    T r;
+    for (const auto &x : s) {
+      for (const auto y : u) {
+        r.push_back(x);
+        r.back().push_back(y);
+      }
+    }
+    s = std::move(r);
+  }
+  return s;
+}
+
+
+// Inline functions.
+inline long CalcOffset(
+    const std::vector<long> &coors,
+    const long ndim,
+    const std::vector<long> &data_offsets) {
+  long offset = 0;
+  for (long i = 0; i < ndim; ++i) {
+    offset += coors[i] * data_offsets[i];
+  }
+  return offset;
+}
+
+
+inline std::vector<long> TransCoors(
+    const std::vector<long> &old_coors, const std::vector<long> &axes_map) {
+  std::vector<long> new_coors(old_coors.size());
+  for (size_t i = 0; i < axes_map.size(); ++i) {
+    new_coors[i] = old_coors[axes_map[i]];
+  }
+  return new_coors;
+}
 } /* gqten */ 
 #endif /* ifndef GQTEN_GQTEN_H */
