@@ -41,7 +41,7 @@ std::size_t QN::Hash(void) const {
   } else {
     std::size_t hash_val = 0;
     std::hash<std::string> hasher;
-    for (int i = 0; i < names_.size(); i++) {
+    for (size_t i = 0; i < names_.size(); i++) {
       hash_val ^= hasher(names_[i] + std::to_string(values_[i]));
     }
     return hash_val;
@@ -263,12 +263,15 @@ GQTensor::GQTensor(const GQTensor &gqtensor) :
 
 
 GQTensor &GQTensor::operator=(const GQTensor &rhs) {
+  for (auto blk : blocks_) { delete blk; }
   auto new_blk_num = rhs.blocks_.size();
   std::vector<QNBlock *> new_blks(new_blk_num);
   for (size_t i = 0; i < new_blk_num; ++i) {
     auto new_blk = new QNBlock(*rhs.blocks_[i]);
-    blocks_[i] = new_blk;
+    new_blks[i] = new_blk;
   }
+  blocks_ = new_blks;
+  scalar  = rhs.scalar;
   indexes = rhs.indexes;
   shape = rhs.shape;
   return *this;
@@ -276,9 +279,7 @@ GQTensor &GQTensor::operator=(const GQTensor &rhs) {
 
 
 GQTensor::~GQTensor(void) {
-  for (auto blk : blocks_) {
-    delete blk;
-  }
+  for (auto blk : blocks_) { delete blk; }
 }
 
 

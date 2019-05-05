@@ -68,8 +68,11 @@ class QNSectorSet {
 public:
   QNSectorSet() = default;
   QNSectorSet(const std::vector<QNSector> & qnscts) : qnscts(qnscts) {}
-  std::vector<QNSector> qnscts;
+  virtual ~QNSectorSet() = default;
+
   virtual size_t Hash(void) const;
+
+  std::vector<QNSector> qnscts;
 };
 
 bool operator==(const QNSectorSet &, const QNSectorSet &);
@@ -135,7 +138,7 @@ public:
   QNBlock(const QNBlock &);
   QNBlock &operator=(const QNBlock &);
 
-  ~QNBlock(void);
+  ~QNBlock(void) override;
   
   const double &operator()(const std::vector<long> &) const;
   double &operator()(const std::vector<long> &);
@@ -226,8 +229,10 @@ private:
 
 
 // GQTensor objects operations.
+// For Index.
 Index InverseIndex(const Index &);
 
+// For GQTensor.
 GQTensor Dag(const GQTensor &);
 
 GQTensor operator*(const GQTensor &, const double &);
