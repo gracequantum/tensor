@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <string>
+#include <cmath>
 
 #ifdef Release
   #define NDEBUG
@@ -17,15 +18,6 @@
 
 
 namespace gqten {
-
-
-// Quantum number.
-//QN::QN(QNNameValIniter nm_vals) {
-  //for (auto &nm_val : nm_vals) {
-    //names_.push_back(nm_val.name);
-    //values_.push_back(nm_val.val);
-  //}
-//}
 
 
 QN::QN(const std::vector<QNNameVal> &nm_vals) {
@@ -153,23 +145,6 @@ InterOffsetQnsct Index::CoorOffsetAndQnsct(long coor) const {
 
 
 // Dense block labeled by the quantum number.
-//QNBlock::QNBlock(const std::initializer_list<QNSector> &init_qnscts) :
-    //QNSectorSet(init_qnscts) {
-  //ndim = qnscts.size(); 
-  //for (auto &qnsct : qnscts) {
-    //shape.push_back(qnsct.dim);
-  //}
-  //if (ndim != 0) {
-    //size = 1;       // Initialize the block size.
-    //for (long i = 0; i < ndim; ++i) {
-      //size *= shape[i];
-    //}
-    //data_ = new double[size] ();    // Allocate memory and initialize to 0.
-    //data_offsets_ = CalcDataOffsets(shape);
-  //}
-//}
-
-
 QNBlock::QNBlock(const std::vector<QNSector> &init_qnscts) :
     QNSectorSet(init_qnscts) {
   ndim = qnscts.size(); 
@@ -231,12 +206,6 @@ QNBlock::operator()(const std::vector<long> &coors) const {
 }
 
 
-//const double &
-//QNBlock::operator()(const std::initializer_list<long> &coors) const {
-  //return QNBlock::operator()(std::vector<long>(coors));
-//}
-
-
 // Block element setter.
 double &
 QNBlock::operator()(const std::vector<long> &coors) {
@@ -246,14 +215,6 @@ QNBlock::operator()(const std::vector<long> &coors) {
 }
 
 
-// Block element getter.
-//double &
-//QNBlock::operator()(const std::initializer_list<long> &coors) {
-  //return QNBlock::operator()(std::vector<long>(coors));
-//}
-
-
-//size_t QNBlock::PartHash(const std::initializer_list<long> &dims) const {
 size_t QNBlock::PartHash(const std::vector<long> &dims) const {
   std::vector<QNSector> selected_qnscts;
   for (auto &dim : dims) {
@@ -278,10 +239,12 @@ void QNBlock::Transpose(const std::vector<long> &transed_axes) {
     transed_qnscts[i] = qnscts[transed_axes[i]];
     transed_shape[i] = transed_qnscts[i].dim;
   }
-  auto transed_data_offsets_ = CalcDataOffsets(shape);
+  auto transed_data_offsets_ = CalcDataOffsets(transed_shape);
   TransposeBlkData(
-      data_, ndim, transed_axes,
-      shape, data_offsets_, transed_data_offsets_);
+      data_, size, ndim,
+      transed_axes,
+      shape, data_offsets_,
+      transed_data_offsets_);
   shape = transed_shape;
   qnscts = transed_qnscts;
   data_offsets_ = transed_data_offsets_;
@@ -289,7 +252,9 @@ void QNBlock::Transpose(const std::vector<long> &transed_axes) {
 
 
 // Tensor with U1 symmetry.
-GQTensor::GQTensor(const GQTensor &gqtensor) : indexes(gqtensor.indexes) {
+GQTensor::GQTensor(const GQTensor &gqtensor) :
+    indexes(gqtensor.indexes),
+    shape(gqtensor.shape) {
   for (auto &blk : gqtensor.blocks_) {
     auto new_blk = new QNBlock(*blk);
     blocks_.push_back(new_blk);
@@ -305,6 +270,7 @@ GQTensor &GQTensor::operator=(const GQTensor &rhs) {
     blocks_[i] = new_blk;
   }
   indexes = rhs.indexes;
+  shape = rhs.shape;
   return *this;
 }
 
@@ -317,7 +283,6 @@ GQTensor::~GQTensor(void) {
 
 
 // GQTensor element getter.
-//double GQTensor::Elem(const std::initializer_list<long> &coors) const {
 double GQTensor::Elem(const std::vector<long> &coors) const {
   auto blk_coors_and_blk_key = TargetBlkCoorsAndBlkKey(coors);
   for (auto blk : blocks_) {
@@ -329,14 +294,8 @@ double GQTensor::Elem(const std::vector<long> &coors) const {
 }
 
 
-//double GQTensor::Elem(const std::initializer_list<long> &coors) const {
-  //return 
-//}
-
-
 // GQTensor element setter.
 double &
-//GQTensor::operator()(const std::initializer_list<long> &coors) {
 GQTensor::operator()(const std::vector<long> &coors) {
   auto blk_coors_and_blk_key = TargetBlkCoorsAndBlkKey(coors);
   for (auto blk : blocks_) {
@@ -352,7 +311,6 @@ GQTensor::operator()(const std::vector<long> &coors) {
 
 // Inplace operations.
 // Tensor transpose.
-//void GQTensor::Transpose(const std::initializer_list<long> &axes) {
 void GQTensor::Transpose(const std::vector<long> &axes) {
   assert(axes.size() == indexes.size());
   // Transpose indexes.
@@ -367,6 +325,8 @@ void GQTensor::Transpose(const std::vector<long> &axes) {
     blk->Transpose(transed_axes);
   }
 }
+
+
 // Random set tensor elements with given quantum number divergence.
 void GQTensor::Random(const QN &div) {
   for (auto &blk_key : BlkKeysIter()) {
@@ -379,6 +339,79 @@ void GQTensor::Random(const QN &div) {
 }
 
 
+// Normalize the GQTensor.
+void GQTensor::Normalize(void) {
+  auto norm = Norm();
+  for (auto &blk : blocks_) {
+    auto data = blk->DataRef();
+    for (long i = 0; i < blk->size; ++i) {
+      data[i] = data[i] / norm;
+    }
+  }
+}
+
+
+// Operators Overload.
+GQTensor GQTensor::operator-(void) const {
+  auto minus_t = GQTensor(*this);
+  for (auto &blk : minus_t.BlksRef()) {
+    auto data = blk->DataRef();
+    for (long i = 0; i < blk->size; ++i) {
+      data[i] = -data[i];
+    }
+  }
+  return minus_t;
+}
+
+
+GQTensor GQTensor::operator+(const GQTensor &rhs) {
+  auto added_t = GQTensor(indexes);
+  for (auto &lhs_blk : blocks_) {
+    auto has_blk = false;
+    auto added_blk = new QNBlock(lhs_blk->qnscts);
+    for (auto &rhs_blk : rhs.blocks_) {
+      if (rhs_blk->qnscts == lhs_blk->qnscts) {
+        auto added_data = new double [lhs_blk->size];
+        auto lhs_blk_data = lhs_blk->DataConstRef();
+        auto rhs_blk_data = rhs_blk->DataConstRef();
+        for (long i = 0; i < lhs_blk->size; ++i) {
+          added_data[i] = lhs_blk_data[i] + rhs_blk_data[i];
+        }
+        added_blk->DataRef() = added_data;
+        has_blk = true;
+        break;
+      }
+    }
+    if (!has_blk) {
+      std::memcpy(added_blk->DataRef(), lhs_blk->DataRef(), lhs_blk->size);
+    }
+    added_t.BlksRef().push_back(added_blk);
+  }
+  for (auto &rhs_blk : rhs.blocks_) {
+    auto has_blk = false;
+    for (auto &lhs_blk : blocks_) {
+      if (lhs_blk->qnscts == rhs_blk->qnscts) {
+        has_blk = true;
+        break;
+      }
+    }
+    if (!has_blk) {
+      auto added_blk = new QNBlock(*rhs_blk);
+      added_t.BlksRef().push_back(added_blk);
+    }
+  }
+  return added_t;
+}
+
+
+// Iterators.
+// Generate all coordinates.
+std::vector<std::vector<long>> GQTensor::CoorsIter(void) const {
+  return GenAllCoors(shape);
+}
+
+
+// Private members.
 BlkCoorsAndBlkKey
 GQTensor::TargetBlkCoorsAndBlkKey(const std::vector<long> &coors) const {
   std::vector<long> blk_coors(coors.size());
@@ -406,15 +439,30 @@ std::vector<QNSectorSet> GQTensor::BlkKeysIter(void) const {
 }
 
 
+double GQTensor::Norm(void) {
+  double norm2 = 0.0; 
+  for (auto &b : blocks_) {
+    for (long i = 0; i < b->size; ++i) {
+      norm2 += std::pow(b->DataRef()[i], 2.0);
+    }
+  }
+  return std::sqrt(norm2);
+}
+
+
 // GQTensor objects operations.
 Index InverseIndex(const Index &idx) {
   Index inversed_idx = idx;
-  if (idx.dir == IN) {
-    inversed_idx.dir = OUT;
-  } else if (idx.dir == OUT) {
-    inversed_idx.dir = IN;
-  }
+  inversed_idx.Dag();
   return inversed_idx;
+}
+
+
+GQTensor Dag(const GQTensor &t) {
+  GQTensor dag_t(t);
+  dag_t.Dag();
+  /* TODO: use move to improve the performance. */
+  return dag_t;
 }
 
 
@@ -478,15 +526,17 @@ long MulToEnd(const std::vector<long> &v, int i) {
 
 
 void TransposeBlkData(
-    double * &data, const long &ndim, const std::vector<long> &axes_map,
+    double * &data, const long &size, const long &ndim,
+    const std::vector<long> &axes_map,
     const std::vector<long> &old_shape,
     const std::vector<long> &old_data_offsets,
     const std::vector<long> &new_data_offsets) {
-  double *new_data = new double [ndim] ();
+  double *new_data = new double [size] ();
   for (auto &old_coors : GenAllCoors(old_shape)) {
     new_data[CalcOffset(TransCoors(old_coors, axes_map), ndim, new_data_offsets)] =
         data[CalcOffset(old_coors, ndim, old_data_offsets)];
   }
+  delete [] data;
   data = new_data;
 }
 

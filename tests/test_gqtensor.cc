@@ -7,6 +7,8 @@
 #include "gtest/gtest.h"
 #include "gqten/gqten.h"
 
+#include <cmath>
+
 
 using namespace gqten;
 
@@ -109,11 +111,75 @@ TEST_F(TestGQTensor, Random) {
 }
 
 
-//void RunTestTransposeCase(
-    //const GQTensor &t, const std::initializer_list<long> &axes) {
-  //auto transed_t = t;
-  //transed_t.Transpose(axes);
-  //for (auto &coors : t.CoorsIter()) {
-    //EXPECT_EQ(transed_t.Elem(TransCoors(coors, axes)), t.Elem(coors));
-  //}
-//}
+void RunTestTransposeCase(
+    const GQTensor &t, const std::vector<long> &axes) {
+  auto transed_t = t;
+  transed_t.Transpose(axes);
+  for (auto &coors : t.CoorsIter()) {
+    EXPECT_EQ(transed_t.Elem(TransCoors(coors, axes)), t.Elem(coors));
+  }
+}
+
+
+TEST_F(TestGQTensor, TestTranspose) {
+  // 2D case.
+  auto ten = GQTensor({idx_in, idx_out});
+  srand(0);
+  ten.Random(QN({QNNameVal("Sz", 0)}));
+  RunTestTransposeCase(ten, {0, 1});
+  RunTestTransposeCase(ten, {1, 0});
+  srand(0);
+  ten.Random(QN({QNNameVal("Sz", 1)}));
+  RunTestTransposeCase(ten, {1, 0});
+  // 3D case.
+  ten = GQTensor({idx_in, idx_out, idx_out});
+  srand(0);
+  ten.Random(QN({QNNameVal("Sz", 0)}));
+  RunTestTransposeCase(ten, {1, 0, 2});
+}
+
+
+void RunTestNormalizeCase(GQTensor &t, const QN &div) {
+  srand(0);
+  t.Random(div);
+  t.Normalize();
+  auto norm = 0.0;
+  for (auto &blk : t.BlksConstRef()) {
+    for (long i = 0; i < blk->size; ++i) {
+      norm += std::pow(blk->DataConstRef()[i], 2.0);
+    }
+  }
+  EXPECT_DOUBLE_EQ(norm, 1.0);
+}
+
+
+TEST_F(TestGQTensor, TestNormalize) {
+  // 2D case.
+  auto ten = GQTensor({idx_in, idx_out});
+  RunTestNormalizeCase(ten, QN({QNNameVal("Sz", 0)}));
+  RunTestNormalizeCase(ten, QN({QNNameVal("Sz", 1)}));
+  // 3D case.
+  ten = GQTensor({idx_in, idx_out, idx_out});
+  RunTestNormalizeCase(ten, QN({QNNameVal("Sz", 0)}));
+  RunTestNormalizeCase(ten, QN({QNNameVal("Sz", 1)}));
+}
+
+
+TEST_F(TestGQTensor, TestDag) {
+  // 2D case
+  auto ten = GQTensor({idx_in, idx_out});
+  auto ten_dag = Dag(ten);
+  EXPECT_EQ(ten_dag.indexes[0], idx_out);
+  EXPECT_EQ(ten_dag.indexes[1], idx_in);
+}
+
+
+TEST_F(TestGQTensor, TestSubtraction) {
+  auto ten = GQTensor({idx_in, idx_out});
+  ten.Random(QN({QNNameVal("Sz", 0)}));
+  auto zero_t = ten - ten;
+  for (auto &coors : zero_t.CoorsIter()) {
+    std::cout << zero_t.Elem(coors) << std::endl;
+    EXPECT_DOUBLE_EQ(zero_t.Elem(coors), 0.0);
+  }
+}
