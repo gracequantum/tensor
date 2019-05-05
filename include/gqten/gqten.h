@@ -115,6 +115,9 @@ public:
     }
   }
 
+  // Operators overloading.
+  bool operator==(const Index &rhs) { return  Hash() ==  rhs.Hash(); }
+
   std::string dir = NDIR;
   std::string tag = "";
 
@@ -198,6 +201,8 @@ public:
   GQTensor operator-(void) const;
   GQTensor operator+(const GQTensor &);
   GQTensor operator-(const GQTensor &rhs) { return *this + (-rhs);}
+  bool operator==(const GQTensor &);
+  bool operator!=(const GQTensor &rhs) { return !(*this == rhs); }
 
   // Access to the blocks.
   const std::vector<QNBlock *> &BlksConstRef(void) const { return blocks_; }
@@ -224,6 +229,10 @@ private:
 Index InverseIndex(const Index &);
 
 GQTensor Dag(const GQTensor &);
+
+GQTensor operator*(const GQTensor &, const double &);
+
+GQTensor operator*(const double &, const GQTensor &);
 
 
 // Helper functions.
@@ -280,6 +289,21 @@ inline std::vector<long> TransCoors(
     new_coors[i] = old_coors[axes_map[i]];
   }
   return new_coors;
+}
+
+
+inline bool ArrayEq(
+    const double *aptr1, const size_t size1,
+    const double *aptr2, const size_t size2) {
+  if (size1 !=  size2) {
+    return false;
+  }
+  for (size_t i = 0; i < size1; ++i) {
+    if (aptr1[i] != aptr2[i]) {
+      return false;
+    }
+  }
+  return true;
 }
 } /* gqten */ 
 #endif /* ifndef GQTEN_GQTEN_H */

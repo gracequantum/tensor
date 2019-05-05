@@ -179,7 +179,30 @@ TEST_F(TestGQTensor, TestSubtraction) {
   ten.Random(QN({QNNameVal("Sz", 0)}));
   auto zero_t = ten - ten;
   for (auto &coors : zero_t.CoorsIter()) {
-    std::cout << zero_t.Elem(coors) << std::endl;
     EXPECT_DOUBLE_EQ(zero_t.Elem(coors), 0.0);
   }
+}
+
+
+TEST_F(TestGQTensor, TestMultiplication) {
+  auto ten = GQTensor({idx_in,  idx_out});
+  ten.Random(QN({QNNameVal("Sz", 0)}));
+  auto multed_ten = 2.33  * ten;
+  for (size_t i = 0; i < ten.BlksConstRef().size(); ++i) {
+    for (long j = 0; j < ten.BlksConstRef()[i]->size; j++) {
+        EXPECT_DOUBLE_EQ(
+          multed_ten.BlksConstRef()[i]->DataConstRef()[j],
+          2.33 * ten.BlksConstRef()[i]->DataConstRef()[j]);
+    }
+  }
+}
+
+
+TEST_F(TestGQTensor, TestEq) {
+  auto ten1 = GQTensor({idx_in,  idx_out});
+  ten1.Random(QN({QNNameVal("Sz", 0)}));
+  EXPECT_TRUE(ten1 == ten1);
+  auto ten2 = GQTensor({idx_in, idx_out});
+  ten2.Random(QN({QNNameVal("Sz", 1)}));
+  EXPECT_TRUE(ten1 != ten2);
 }

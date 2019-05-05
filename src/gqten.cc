@@ -404,6 +404,35 @@ GQTensor GQTensor::operator+(const GQTensor &rhs) {
 }
 
 
+bool GQTensor::operator==(const GQTensor &rhs) {
+  if (indexes != rhs.indexes) {
+    return false;
+  }
+  if (blocks_.size() != rhs.blocks_.size()) {
+    return false;
+  }
+  for (auto &lhs_blk : blocks_) {
+    auto has_eq_blk = false;
+    for (auto &rhs_blk : rhs.blocks_) {
+      if (rhs_blk->qnscts == lhs_blk->qnscts) {
+        if (!ArrayEq(
+                 rhs_blk->DataConstRef(), rhs_blk->size,
+                 lhs_blk->DataConstRef(), lhs_blk->size)) {
+          return false;
+        } else {
+          has_eq_blk = true;
+          break;
+        }
+      }
+    }
+    if (!has_eq_blk) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
 // Iterators.
 // Generate all coordinates.
 std::vector<std::vector<long>> GQTensor::CoorsIter(void) const {
@@ -464,6 +493,21 @@ GQTensor Dag(const GQTensor &t) {
   /* TODO: use move to improve the performance. */
   return dag_t;
 }
+
+
+GQTensor operator*(const GQTensor &t, const double &s) {
+  auto muled_t = GQTensor(t);
+  for (auto &blk : muled_t.BlksRef()) {
+    auto data = blk->DataRef();
+    for (long i = 0; i < blk->size; ++i) {
+      data[i]  = data[i] * s;
+    }
+  }
+  return muled_t;
+}
+
+
+GQTensor operator*(const double &s, const GQTensor &t) { return t * s; }
 
 
 // Helper functions.

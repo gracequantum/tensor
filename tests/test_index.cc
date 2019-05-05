@@ -41,8 +41,10 @@ TEST_F(TestIndex, Tag) {
 
 TEST_F(TestIndex, Hashable) {
   EXPECT_EQ(idx_default.Hash(), idx_default.Hash());
+  EXPECT_TRUE(idx_default == idx_default);
   idx_default.tag = "default";
   EXPECT_NE(idx_default.Hash(), gqten::Index().Hash());
+  EXPECT_FALSE(idx_default == gqten::Index());
 }
 
 
