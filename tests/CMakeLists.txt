@@ -35,3 +35,9 @@ add_unittest(test_qnblock test_qnblock.cc gqten "" "")
 
 # Test tensor with U1 symmetry, GQTensor.
 add_unittest(test_gqtensor test_gqtensor.cc gqten "" "")
+
+# Test tensor numerical functions.
+add_unittest(
+    test_numer_func test_numer_func.cc
+    gqten "-lpthread -framework Accelerate"
+    "")

@@ -8,7 +8,11 @@
 
 
 add_library(gqten
+  ten_numer_func.cc
   gqten.cc)
 
-target_include_directories(gqten PUBLIC
-    "${PROJECT_SOURCE_DIR}/include")
+target_include_directories(gqten
+  PUBLIC "${PROJECT_SOURCE_DIR}/include")
+
+target_link_libraries(gqten
+    "-lpthread -framework Accelerate")

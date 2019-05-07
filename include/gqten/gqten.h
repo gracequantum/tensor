@@ -239,6 +239,10 @@ GQTensor operator*(const GQTensor &, const double &);
 
 GQTensor operator*(const double &, const GQTensor &);
 
+GQTensor Contract(
+    const GQTensor &, const GQTensor &,
+    const std::vector<std::vector<long>> &);
+
 
 // Helper functions.
 QN CalcDiv(const QNSectorSet &, const std::vector<Index> &);

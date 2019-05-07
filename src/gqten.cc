@@ -254,6 +254,7 @@ void QNBlock::Transpose(const std::vector<long> &transed_axes) {
 // Tensor with U1 symmetry.
 GQTensor::GQTensor(const GQTensor &gqtensor) :
     indexes(gqtensor.indexes),
+    scalar(gqtensor.scalar),
     shape(gqtensor.shape) {
   for (auto &blk : gqtensor.blocks_) {
     auto new_blk = new QNBlock(*blk);
