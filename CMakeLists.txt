@@ -15,6 +15,10 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
 endif()
 
+if(${CMAKE_BUILD_TYPE} MATCHES Debug)
+  set(CMAKE_VERBOSE_MAKEFILE ON)
+endif()
+
 
 set(CMAKE_CXX_STANDARD 11)
 
