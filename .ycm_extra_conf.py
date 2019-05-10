@@ -33,6 +33,7 @@ flags = [
     '-I/usr/lib',
     '-I/usr/include',
     '-Iinclude',
+    '-I${MKLROOT}/include',
 ]
 
 # Add system includes

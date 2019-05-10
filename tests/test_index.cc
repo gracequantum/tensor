@@ -32,6 +32,13 @@ TEST_F(TestIndex, IndexDirection) {
 }
 
 
+TEST_F(TestIndex, Dimension) {
+  EXPECT_EQ(idx_default.CalcDim(), 0);
+  EXPECT_EQ(idx_1sct.CalcDim(), 1);
+  EXPECT_EQ(idx_2sct_out.CalcDim(), 3);
+}
+
+
 TEST_F(TestIndex, Tag) {
   EXPECT_EQ(idx_default.tag, "");
   idx_default.tag = "default";

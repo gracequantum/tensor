@@ -54,6 +54,7 @@ public:
   size_t Hash(void) const;
   QN qn = QN();
   long dim = 0;
+
 private:
   std::hash<int> int_hasher_;
 };
@@ -120,6 +121,14 @@ public:
 
   // Operators overloading.
   bool operator==(const Index &rhs) { return  Hash() ==  rhs.Hash(); }
+
+  long CalcDim(void) {
+    long dim = 0;
+    for (auto &qnsct : qnscts) {
+      dim += qnsct.dim;
+    }
+    return dim;
+  }
 
   std::string dir = NDIR;
   std::string tag = "";
@@ -239,13 +248,35 @@ GQTensor operator*(const GQTensor &, const double &);
 
 GQTensor operator*(const double &, const GQTensor &);
 
+// Tensors contraction.
 GQTensor Contract(
     const GQTensor &, const GQTensor &,
     const std::vector<std::vector<long>> &);
 
+// Tensor SVD.
+struct SvdRes {
+  SvdRes(
+      GQTensor *u, GQTensor *s, GQTensor *v,
+      const double trunc_err, const long D) :
+      u(u), s(s), v(v), trunc_err(trunc_err), D(D) {}
+  GQTensor *u;
+  GQTensor *s;
+  GQTensor *v;
+  const double trunc_err;
+  const long D;
+};
+
+SvdRes Svd(
+    const GQTensor &,
+    const long &, const long &,
+    const QN &, const QN &,
+    const double &, const long &, const long &);
+
 
 // Helper functions.
 QN CalcDiv(const QNSectorSet &, const std::vector<Index> &);
+
+QN CalcDiv(const std::vector<QNSector> &, const std::vector<Index> &);
 
 std::vector<long> CalcDataOffsets(const std::vector<long> &);
 

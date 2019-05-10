@@ -330,7 +330,10 @@ void GQTensor::Transpose(const std::vector<long> &axes) {
 
 
 // Random set tensor elements with given quantum number divergence.
+// Any original blocks will be destroyed.
 void GQTensor::Random(const QN &div) {
+  for (auto &blk : blocks_) { delete blk; }
+  blocks_ = std::vector<QNBlock *>();
   for (auto &blk_key : BlkKeysIter()) {
     if (CalcDiv(blk_key.qnscts, indexes) == div) {
       QNBlock *block = new QNBlock(blk_key.qnscts);
@@ -513,13 +516,13 @@ GQTensor operator*(const double &s, const GQTensor &t) { return t * s; }
 
 
 // Helper functions.
-QN CalcDiv(const QNSectorSet &blk_key, const std::vector<Index> &indexes) {
+QN CalcDiv(const std::vector<QNSector> &qnscts, const std::vector<Index> &indexes) {
   QN div;
   auto ndim = indexes.size();
-  assert(blk_key.qnscts.size() == ndim);
+  assert(qnscts.size() == ndim);
   for (size_t i = 0; i < ndim; ++i) {
     if (indexes[i].dir == IN) {
-      auto qnflow = -blk_key.qnscts[i].qn;
+      auto qnflow = -qnscts[i].qn;
       if (ndim == 1) {
         return qnflow;
       } else {
@@ -530,7 +533,7 @@ QN CalcDiv(const QNSectorSet &blk_key, const std::vector<Index> &indexes) {
         }
       }
     } else if (indexes[i].dir == OUT) {
-      auto qnflow = blk_key.qnscts[i].qn;
+      auto qnflow = qnscts[i].qn;
       if (ndim == 1) {
         return qnflow;
       } else {
@@ -545,6 +548,10 @@ QN CalcDiv(const QNSectorSet &blk_key, const std::vector<Index> &indexes) {
   return div;
 }
 
+
+QN CalcDiv(const QNSectorSet &blk_key, const std::vector<Index> &indexes) {
+  return CalcDiv(blk_key.qnscts, indexes);
+}
 
 std::vector<long> CalcDataOffsets(const std::vector<long> &shape) {
   auto ndim = shape.size();

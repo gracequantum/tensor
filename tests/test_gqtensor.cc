@@ -13,6 +13,9 @@
 using namespace gqten;
 
 
+const double kEpsilon = 1.0E-12;
+
+
 struct TestGQTensor : public testing::Test {
   QNSector szup = QNSector(QN({QNNameVal("Sz", 1)}), 1);
   QNSector szdn = QNSector(QN({QNNameVal("Sz", -1)}), 1);
@@ -149,7 +152,7 @@ void RunTestNormalizeCase(GQTensor &t, const QN &div) {
       norm += std::pow(blk->DataConstRef()[i], 2.0);
     }
   }
-  EXPECT_DOUBLE_EQ(norm, 1.0);
+  EXPECT_NEAR(norm, 1.0, kEpsilon);
 }
 
 

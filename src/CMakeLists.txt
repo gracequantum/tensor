@@ -12,7 +12,8 @@ add_library(gqten
   gqten.cc)
 
 target_include_directories(gqten
-  PUBLIC "${PROJECT_SOURCE_DIR}/include")
+  PUBLIC "${PROJECT_SOURCE_DIR}/include"
+  PUBLIC "${MATH_LIB_COMPILE_FLAGS}")
 
 target_link_libraries(gqten
-    "-lpthread -framework Accelerate")
+  "${MATH_LIB_LINK_FLAGS}")
