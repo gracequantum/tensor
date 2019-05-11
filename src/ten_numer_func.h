@@ -18,8 +18,12 @@
 namespace gqten {
 
 
+const std::vector<QNSector> kNullQNSectors;
+const std::vector<Index> kNullIndexes;
+
+
 // Tensor contraction.
-GQTensor InitCtrctedTen(
+GQTensor *InitCtrctedTen(
     const GQTensor &, const GQTensor &,
     const std::vector<long> &, const std::vector<long> &);
 
@@ -199,12 +203,16 @@ inline const double *MatGetConstRow(
   return mat + row_idx*cols;
 }
 
-void ArrayAppend(double * &, const long &, const double &);
-
 double *GenDiagMat(const double *, const long &);
 
 double *MatGetRows(
     const double *, const long &, const long &, const long &, const long &);
+
+void ArrayAppend(double * &, const long &, const double &);
+
+void ArrayElemAttach(double *, const long &, const double *);
+
+double VecSumOver(const std::vector<double> &);
 
 
 // Helpers.

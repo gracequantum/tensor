@@ -22,55 +22,53 @@
 namespace gqten {
 
 
-// Tensors contraction.
-GQTensor Contract(
+// Tensor contraction.
+GQTensor *Contract(
     const GQTensor &t1, const GQTensor &t2,
     const std::vector<std::vector<long>> &axes_set) {
   auto t1_ctrct_idxs = axes_set[0];
   auto t2_ctrct_idxs = axes_set[1];
   std::vector<QNBlock *> ctrcted_blocks;
-  std::vector<double>  ctrcted_scalars;
+  std::vector<double> ctrcted_scalars;
   for (auto &b1 : t1.BlksConstRef()) {
     for (auto &b2 : t2.BlksConstRef()) {
       if (b1->PartHash(t1_ctrct_idxs) == b2->PartHash(t2_ctrct_idxs)) {
-        auto new_b = ContractBlock(b1, b2, t1_ctrct_idxs, t2_ctrct_idxs);
-        if (new_b->qnscts == QNSectorSet()) {
-          ctrcted_scalars.push_back(new_b->DataConstRef()[0]);
-          /* TODO: Possible memory leak for new_b ??? */
+        auto pnew_b = ContractBlock(b1, b2, t1_ctrct_idxs, t2_ctrct_idxs);
+        if (pnew_b->qnscts == kNullQNSectors) {
+          ctrcted_scalars.push_back(pnew_b->DataConstRef()[0]);
+          delete pnew_b;
         } else {
           auto has_blk = false;
-          for (auto &ctrcted_blk : ctrcted_blocks) {
-            if (new_b->qnscts == ctrcted_blk->qnscts) {
-              assert(new_b->size == ctrcted_blk->size);
-              auto ctrcted_blk_data = ctrcted_blk->DataRef();
-              auto new_b_data = new_b->DataConstRef();
-              for (long i = 0; i < ctrcted_blk->size; ++i) {
-                ctrcted_blk_data[i] += new_b_data[i];
-              }
+          for (auto &pctrcted_blk : ctrcted_blocks) {
+            if (pnew_b->qnscts == pctrcted_blk->qnscts) {
+              auto data_size = pnew_b->size;
+              assert(data_size == pctrcted_blk->size);
+              ArrayElemAttach(
+                  pctrcted_blk->DataRef(), data_size,
+                  pnew_b->DataConstRef());
+              delete pnew_b;
               has_blk = true;
               break;
             }
           }
           if (!has_blk) {
-            ctrcted_blocks.push_back(new_b);
+            ctrcted_blocks.push_back(pnew_b);
           }
         }
       }
-    }
+    } 
   }
-  auto ctrcted_ten  = InitCtrctedTen(t1, t2, t1_ctrct_idxs, t2_ctrct_idxs);
-  if (ctrcted_ten.indexes == std::vector<Index>()) {
-    for (auto &s : ctrcted_scalars) {
-      ctrcted_ten.scalar += s;
-    }
+  auto pctrcted_ten = InitCtrctedTen(t1, t2, t1_ctrct_idxs, t2_ctrct_idxs);
+  if (pctrcted_ten->indexes == kNullIndexes) {
+    pctrcted_ten->scalar = VecSumOver(ctrcted_scalars);
   } else {
-    ctrcted_ten.BlksRef() = ctrcted_blocks;
+    pctrcted_ten->BlksRef() = ctrcted_blocks;
   }
-  return ctrcted_ten;
+  return pctrcted_ten;
 }
 
 
-GQTensor InitCtrctedTen(
+GQTensor *InitCtrctedTen(
     const GQTensor &t1, const GQTensor &t2,
     const std::vector<long> &t1_ctrct_idxs,
     const std::vector<long> &t2_ctrct_idxs) {
@@ -87,7 +85,8 @@ GQTensor InitCtrctedTen(
       saved_idxs.push_back(t2.indexes[i]);
     }
   }
-  return GQTensor(saved_idxs);
+  auto pnew_ten = new GQTensor(saved_idxs);
+  return pnew_ten;
 }
 
 
@@ -541,20 +540,6 @@ void MatAppendRow(
 }
 
 
-void ArrayAppend(double * &v, const long &size, const double &elem) {
-  if (size == 0) {
-    v = new double [1];
-    v[0] = elem;
-  } else {
-    auto new_v = new double [size + 1];
-    std::memcpy(new_v, v, size*sizeof(double));
-    delete [] v;
-    new_v[size] = elem;
-    v = new_v;
-  }
-}
-
-
 double *GenDiagMat(const double *diag_v, const long &diag_v_dim) {
   auto full_mat = new double [diag_v_dim*diag_v_dim] ();
   for (long i = 0; i < diag_v_dim; ++i) {
@@ -571,5 +556,32 @@ double *MatGetRows(
   auto new_mat = new double [new_size]; 
   std::memcpy(new_mat, mat+(from*cols), new_size*sizeof(double));
   return new_mat;
+}
+
+
+void ArrayAppend(double * &v, const long &size, const double &elem) {
+  if (size == 0) {
+    v = new double [1];
+    v[0] = elem;
+  } else {
+    auto new_v = new double [size + 1];
+    std::memcpy(new_v, v, size*sizeof(double));
+    delete [] v;
+    new_v[size] = elem;
+    v = new_v;
+  }
+}
+
+
+void  ArrayElemAttach(
+    double * to_v, const long &size, const double * from_v) {
+  for (long i = 0; i < size; i++) { to_v[i] += from_v[i]; }
+}
+
+
+double VecSumOver(const std::vector<double> &v) {
+  double sum = 0.0;
+  for (auto &elem : v) { sum += elem; }
+  return sum;
 }
 } /* gqten */ 

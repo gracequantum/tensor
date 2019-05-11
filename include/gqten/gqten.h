@@ -249,7 +249,7 @@ GQTensor operator*(const GQTensor &, const double &);
 GQTensor operator*(const double &, const GQTensor &);
 
 // Tensors contraction.
-GQTensor Contract(
+GQTensor *Contract(
     const GQTensor &, const GQTensor &,
     const std::vector<std::vector<long>> &);
 

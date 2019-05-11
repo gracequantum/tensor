@@ -44,7 +44,7 @@ TEST_F(TestContraction, 1DCase) {
   auto res = Contract(ten, ten, {{0}, {0}});
   double res0 = 0;
   for (long i = 0; i < idx_size; ++i) { res0 += std::pow(dense_ten[i], 2.0); }
-  EXPECT_NEAR(res.scalar, res0, kEpsilon);
+  EXPECT_NEAR(res->scalar, res0, kEpsilon);
 }
 
 
@@ -70,7 +70,7 @@ TEST_F(TestContraction, 2DCase) {
       res0, idx_size);
   for (long i = 0; i < idx_size; ++i) {
     for (long j = 0; j < idx_size; ++j) {
-      EXPECT_NEAR(res.Elem({i, j}), res0[i*idx_size + j], kEpsilon);
+      EXPECT_NEAR(res->Elem({i, j}), res0[i*idx_size + j], kEpsilon);
     }
   }
 }
@@ -104,7 +104,7 @@ TEST_F(TestContraction, 3DCase) {
       for (long k = 0; k < idx_size; ++k) {
         for (long l = 0; l < idx_size; ++l) {
           EXPECT_NEAR(
-              res.Elem({i, j, k, l}),
+              res->Elem({i, j, k, l}),
               res0[(i*idx_size + j)*(idx_size*idx_size) + (k*idx_size + l)],
               kEpsilon);
         }
@@ -123,7 +123,7 @@ TEST_F(TestContraction, 3DCase) {
       res0, idx_size);
   for (long i = 0; i < idx_size; ++i) {
     for (long j = 0; j < idx_size; ++j) {
-      EXPECT_NEAR(res.Elem({i, j}), res0[i*idx_size + j], kEpsilon);
+      EXPECT_NEAR(res->Elem({i, j}), res0[i*idx_size + j], kEpsilon);
     }
   }
   res = Contract(ten, ten, {{0, 1, 2}, {0, 1, 2}});
@@ -136,7 +136,7 @@ TEST_F(TestContraction, 3DCase) {
       dense_ten, 1,
       0.0,
       res0, 1);
-  EXPECT_NEAR(res.scalar, *res0, kEpsilon);
+  EXPECT_NEAR(res->scalar, *res0, kEpsilon);
 }
 
 
@@ -252,9 +252,9 @@ void RunTestSvdCase(
 
   if (svd_res.trunc_err < 1.0E-10) {
     auto t_restored = Contract(*svd_res.u, *svd_res.s, {{ldims}, {0}});
-    t_restored = Contract(t_restored, *svd_res.v, {{ldims}, {0}});
+    t_restored = Contract(*t_restored, *svd_res.v, {{ldims}, {0}});
     for (auto &coors : GenAllCoors(t.shape)) {
-      EXPECT_NEAR(t_restored.Elem(coors), t.Elem(coors), kEpsilon);
+      EXPECT_NEAR(t_restored->Elem(coors), t.Elem(coors), kEpsilon);
     }
   }
 
