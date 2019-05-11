@@ -99,7 +99,9 @@ public:
   Index(
       const std::vector<QNSector> &qnscts,
       const std::string &dir,
-      const std::string &tag) : QNSectorSet(qnscts), dir(dir), tag(tag) {}
+      const std::string &tag) : QNSectorSet(qnscts), dir(dir), tag(tag) {
+    dim = CalcDim(); 
+  }
   Index(
       const std::vector<QNSector> &qnscts) :
           Index(qnscts, NDIR, "") {}
@@ -130,6 +132,7 @@ public:
     return dim;
   }
 
+  long dim = 0;
   std::string dir = NDIR;
   std::string tag = "";
 

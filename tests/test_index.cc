@@ -33,6 +33,9 @@ TEST_F(TestIndex, IndexDirection) {
 
 
 TEST_F(TestIndex, Dimension) {
+  EXPECT_EQ(idx_default.dim, 0);
+  EXPECT_EQ(idx_1sct.dim, 1);
+  EXPECT_EQ(idx_2sct_out.dim, 3);
   EXPECT_EQ(idx_default.CalcDim(), 0);
   EXPECT_EQ(idx_1sct.CalcDim(), 1);
   EXPECT_EQ(idx_2sct_out.CalcDim(), 3);
