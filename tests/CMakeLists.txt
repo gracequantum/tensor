@@ -10,8 +10,10 @@ macro(add_unittest
       ${TEST_SRC})
   target_include_directories(${TEST_NAME} PUBLIC
       "${PROJECT_SOURCE_DIR}/include"
+      "/usr/local/include"
       ${CFLAGS})
   target_link_libraries(${TEST_NAME}
+      "-L/usr/local/lib"
       gtest gtest_main
       "${LINK_LIBS}" "${LINK_LIB_FLAGS}")
   add_test(NAME ${TEST_NAME} COMMAND "${TEST_NAME}" "${INPUT_ARGS}")
