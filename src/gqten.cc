@@ -357,6 +357,72 @@ void GQTensor::Normalize(void) {
 
 
 // Operators Overload.
+GQTensor GQTensor::operator+(const GQTensor &rhs) {
+  auto added_t = GQTensor(indexes);
+  for (auto &rhs_blk : rhs.BlksConstRef()) {
+    auto  has_blk = false;
+    for (auto &lhs_blk : blocks_) {
+      if (lhs_blk->qnscts == rhs_blk->qnscts) {
+        assert(lhs_blk->size == rhs_blk->size);
+        auto added_blk = new QNBlock(lhs_blk->qnscts);
+        auto added_data = new double [lhs_blk->size];
+        auto lhs_blk_data = lhs_blk->DataConstRef();
+        auto rhs_blk_data = rhs_blk->DataConstRef();
+        for (long i = 0; i < lhs_blk->size; ++i) {
+          added_data[i] = lhs_blk_data[i] + rhs_blk_data[i];
+        }
+        added_blk->DataRef() = added_data;
+        added_t.BlksRef().push_back(added_blk);
+        has_blk = true;
+        break;
+      }
+    }
+    if (!has_blk) {
+      auto added_blk = new QNBlock(*rhs_blk);
+      added_t.BlksRef().push_back(added_blk);
+    }
+  }
+  for (auto &lhs_blk : blocks_) {
+    auto has_blk = false;
+    for (auto &existed_blk : added_t.BlksConstRef()) {
+      if (existed_blk->qnscts == lhs_blk->qnscts) {
+        has_blk = true;
+        break;
+      }
+    }
+    if (!has_blk) {
+      auto added_blk = new QNBlock(*lhs_blk);
+      added_t.BlksRef().push_back(added_blk);
+    }
+  }
+  return added_t;
+}
+
+
+GQTensor &GQTensor::operator+=(const GQTensor &rhs) {
+  for (auto &prhs_blk : rhs.BlksConstRef()) {
+    auto has_blk = false;
+    for (auto &plhs_blk : blocks_) {
+      if (plhs_blk->qnscts == prhs_blk->qnscts) {
+        auto lhs_blk_data = plhs_blk->DataRef();
+        auto rhs_blk_data = prhs_blk->DataConstRef();
+        assert(plhs_blk->size == prhs_blk->size);
+        for (long i = 0; i < prhs_blk->size; i++) {
+          lhs_blk_data[i] += rhs_blk_data[i];
+        }
+        has_blk = true;
+        break;
+      }
+    }
+    if (!has_blk) {
+      auto pnew_blk = new QNBlock(*prhs_blk);
+      blocks_.push_back(pnew_blk);
+    }
+  }
+  return *this;
+}
+
+
 GQTensor GQTensor::operator-(void) const {
   auto minus_t = GQTensor(*this);
   for (auto &blk : minus_t.BlksRef()) {
@@ -369,43 +435,33 @@ GQTensor GQTensor::operator-(void) const {
 }
 
 
-GQTensor GQTensor::operator+(const GQTensor &rhs) {
-  auto added_t = GQTensor(indexes);
-  for (auto &lhs_blk : blocks_) {
-    auto has_blk = false;
-    auto added_blk = new QNBlock(lhs_blk->qnscts);
-    for (auto &rhs_blk : rhs.blocks_) {
-      if (rhs_blk->qnscts == lhs_blk->qnscts) {
-        auto added_data = new double [lhs_blk->size];
-        auto lhs_blk_data = lhs_blk->DataConstRef();
-        auto rhs_blk_data = rhs_blk->DataConstRef();
-        for (long i = 0; i < lhs_blk->size; ++i) {
-          added_data[i] = lhs_blk_data[i] + rhs_blk_data[i];
-        }
-        added_blk->DataRef() = added_data;
-        has_blk = true;
-        break;
-      }
-    }
-    if (!has_blk) {
-      std::memcpy(added_blk->DataRef(), lhs_blk->DataRef(), lhs_blk->size);
-    }
-    added_t.BlksRef().push_back(added_blk);
-  }
-  for (auto &rhs_blk : rhs.blocks_) {
-    auto has_blk = false;
+GQTensor *GQTensor::operator-(const GQTensor *rhs) {
+  for (auto &rhs_blk : rhs->blocks_) {
+    auto has_blk =  false;
     for (auto &lhs_blk : blocks_) {
       if (lhs_blk->qnscts == rhs_blk->qnscts) {
+        assert(lhs_blk->size == rhs_blk->size);
+        auto lhs_blk_data = lhs_blk->DataRef();
+        auto rhs_blk_data = rhs_blk->DataConstRef();
+        for (long i = 0; i < lhs_blk->size; i++) {
+           lhs_blk_data[i] -= rhs_blk_data[i];
+        }
         has_blk = true;
         break;
       }
     }
     if (!has_blk) {
-      auto added_blk = new QNBlock(*rhs_blk);
-      added_t.BlksRef().push_back(added_blk);
+      auto pnew_blk = new QNBlock(rhs_blk->qnscts);
+      auto pnew_data = new double [rhs_blk->size];
+      auto rhs_blk_data = rhs_blk->DataConstRef();
+      for (long i = 0; i < rhs_blk->size; i++) {
+        pnew_data[i] = -rhs_blk_data[i];
+      }
+      pnew_blk->DataRef() = pnew_data;
+      blocks_.push_back(pnew_blk);
     }
   }
-  return added_t;
+  return this;
 }
 
 

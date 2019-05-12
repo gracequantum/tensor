@@ -213,9 +213,11 @@ public:
   void Dag(void) { for (auto &index : indexes) { index.Dag(); } }
 
   // Operators overload.
-  GQTensor operator-(void) const;
   GQTensor operator+(const GQTensor &);
+  GQTensor &operator+=(const GQTensor &);
+  GQTensor operator-(void) const;
   GQTensor operator-(const GQTensor &rhs) { return *this + (-rhs);}
+  GQTensor *operator-(const GQTensor *);
   bool operator==(const GQTensor &);
   bool operator!=(const GQTensor &rhs) { return !(*this == rhs); }
 
