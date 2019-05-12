@@ -206,6 +206,9 @@ public:
   double Elem(const std::vector<long> &) const;
   double &operator()(const std::vector<long> &);
 
+  // Calculate properties.
+  double Norm(void);
+
   // Inplace operations.
   void Random(const QN &);
   void Transpose(const std::vector<long> &);
@@ -237,7 +240,6 @@ private:
 
   BlkCoorsAndBlkKey TargetBlkCoorsAndBlkKey(const std::vector<long> &) const;
   std::vector<QNSectorSet> BlkKeysIter(void) const;
-  double Norm(void);
 };
 
 
