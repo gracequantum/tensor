@@ -435,8 +435,8 @@ GQTensor GQTensor::operator-(void) const {
 }
 
 
-GQTensor *GQTensor::operator-(const GQTensor *rhs) {
-  for (auto &rhs_blk : rhs->blocks_) {
+GQTensor *GQTensor::operator-=(const GQTensor &rhs) {
+  for (auto &rhs_blk : rhs.blocks_) {
     auto has_blk =  false;
     for (auto &lhs_blk : blocks_) {
       if (lhs_blk->qnscts == rhs_blk->qnscts) {

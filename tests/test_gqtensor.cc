@@ -195,15 +195,13 @@ TEST_F(TestGQTensor, TestSummation) {
 TEST_F(TestGQTensor, TestSubtraction) {
   auto ten = GQTensor({idx_in, idx_out});
   ten.Random(QN({QNNameVal("Sz", 0)}));
-  auto zero_t = ten - ten;
-  for (auto &coors : zero_t.CoorsIter()) {
-    EXPECT_DOUBLE_EQ(zero_t.Elem(coors), 0.0);
+  auto zero_t = ten -= ten;
+  for (auto &coors : ten.CoorsIter()) {
+    EXPECT_DOUBLE_EQ(ten.Elem(coors), 0.0);
   }
 
-  auto zero_t2 = ten - &ten;
-  for (auto &coors : zero_t2->CoorsIter()) {
-    EXPECT_DOUBLE_EQ(zero_t2->Elem(coors), 0.0);
-    EXPECT_DOUBLE_EQ(ten.Elem(coors), 0.0);
+  for (auto &coors : zero_t->CoorsIter()) {
+    EXPECT_DOUBLE_EQ(zero_t->Elem(coors), 0.0);
   }
 }
 
