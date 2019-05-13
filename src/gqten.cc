@@ -468,7 +468,7 @@ GQTensor *GQTensor::operator-=(const GQTensor &rhs) {
 }
 
 
-bool GQTensor::operator==(const GQTensor &rhs) {
+bool GQTensor::operator==(const GQTensor &rhs) const {
   if (indexes != rhs.indexes) {
     return false;
   }

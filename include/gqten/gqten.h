@@ -122,7 +122,7 @@ public:
   }
 
   // Operators overloading.
-  bool operator==(const Index &rhs) { return  Hash() ==  rhs.Hash(); }
+  bool operator==(const Index &rhs) const { return  Hash() ==  rhs.Hash(); }
 
   long CalcDim(void) {
     long dim = 0;
@@ -220,8 +220,8 @@ public:
   GQTensor &operator+=(const GQTensor &);
   GQTensor operator-(void) const;
   GQTensor *operator-=(const GQTensor &);
-  bool operator==(const GQTensor &);
-  bool operator!=(const GQTensor &rhs) { return !(*this == rhs); }
+  bool operator==(const GQTensor &) const;
+  bool operator!=(const GQTensor &rhs) const { return !(*this == rhs); }
 
   // Access to the blocks.
   const std::vector<QNBlock *> &BlksConstRef(void) const { return blocks_; }
