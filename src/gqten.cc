@@ -318,10 +318,13 @@ void GQTensor::Transpose(const std::vector<long> &axes) {
   // Transpose indexes.
   std::vector<long> transed_axes = axes;
   std::vector<Index> transed_indexes(indexes.size());
+  std::vector<long> transed_shape(shape.size());
   for (size_t i = 0; i < transed_axes.size(); ++i) {
     transed_indexes[i] = indexes[transed_axes[i]];
+    transed_shape[i] = shape[transed_axes[i]];
   }
   indexes = transed_indexes;
+  shape = transed_shape;
   // Transpose blocks.
   for (auto &blk : blocks_) {
     blk->Transpose(transed_axes);

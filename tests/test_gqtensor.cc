@@ -118,6 +118,10 @@ void RunTestTransposeCase(
     const GQTensor &t, const std::vector<long> &axes) {
   auto transed_t = t;
   transed_t.Transpose(axes);
+  for (size_t i = 0; i < axes.size(); ++i) {
+    EXPECT_EQ(transed_t.indexes[i], t.indexes[axes[i]]);
+    EXPECT_EQ(transed_t.shape[i], t.shape[axes[i]]);
+  }
   for (auto &coors : t.CoorsIter()) {
     EXPECT_EQ(transed_t.Elem(TransCoors(coors, axes)), t.Elem(coors));
   }
@@ -134,11 +138,22 @@ TEST_F(TestGQTensor, TestTranspose) {
   srand(0);
   ten.Random(QN({QNNameVal("Sz", 1)}));
   RunTestTransposeCase(ten, {1, 0});
+  // Diff indexes size.
+  auto ten2 = GQTensor({bpb, idx_out});
+  srand(0);
+  ten2.Random(QN({QNNameVal("Sz", 0)}));
+  RunTestTransposeCase(ten2, {0, 1});
+  RunTestTransposeCase(ten2, {1, 0});
   // 3D case.
   ten = GQTensor({idx_in, idx_out, idx_out});
   srand(0);
   ten.Random(QN({QNNameVal("Sz", 0)}));
   RunTestTransposeCase(ten, {1, 0, 2});
+  // Diff indexes size.
+  ten2 = GQTensor({bpb, idx_out, tpb});
+  srand(0);
+  ten2.Random(QN({QNNameVal("Sz", 0)}));
+  RunTestTransposeCase(ten2, {1, 0, 2});
 }
 
 
