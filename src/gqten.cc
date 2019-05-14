@@ -7,6 +7,7 @@
 #include "gqten/gqten.h"
 #include "vec_hash.h"
 
+#include <iostream>
 #include <vector>
 #include <string>
 #include <cmath>
@@ -559,6 +560,21 @@ GQTensor Dag(const GQTensor &t) {
 }
 
 
+QN Div(const GQTensor &t) {
+  auto blks = t.BlksConstRef();
+  auto blk_num = blks.size();
+  QN div = CalcDiv(blks[0]->qnscts, t.indexes);
+  for (size_t i = 1; i < blk_num; ++i) {
+    auto blki_div = CalcDiv(blks[i]->qnscts, t.indexes);
+    if (blki_div != div) {
+      std::cout << "Tensor does not have a special divergence." << std::endl;
+      return QN();
+    }
+  }
+  return div;
+}
+
+
 GQTensor operator*(const GQTensor &t, const double &s) {
   auto muled_t = GQTensor(t);
   for (auto &blk : muled_t.BlksRef()) {
@@ -611,6 +627,7 @@ QN CalcDiv(const std::vector<QNSector> &qnscts, const std::vector<Index> &indexe
 QN CalcDiv(const QNSectorSet &blk_key, const std::vector<Index> &indexes) {
   return CalcDiv(blk_key.qnscts, indexes);
 }
+
 
 std::vector<long> CalcDataOffsets(const std::vector<long> &shape) {
   auto ndim = shape.size();

@@ -250,6 +250,8 @@ Index InverseIndex(const Index &);
 // For GQTensor.
 GQTensor Dag(const GQTensor &);
 
+QN Div(const GQTensor &);
+
 GQTensor operator*(const GQTensor &, const double &);
 
 GQTensor operator*(const double &, const GQTensor &);

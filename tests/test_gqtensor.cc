@@ -192,6 +192,17 @@ TEST_F(TestGQTensor, TestDag) {
 }
 
 
+TEST_F(TestGQTensor, TestDiv) {
+  auto ten = GQTensor({idx_in, idx_out});
+  auto div = QN({QNNameVal("Sz", 0)});
+  ten.Random(div);
+  EXPECT_EQ(Div(ten), div);
+  div = QN({QNNameVal("Sz", 1)});
+  ten.Random(div);
+  EXPECT_EQ(Div(ten), div);
+}
+
+
 TEST_F(TestGQTensor, TestSummation) {
   auto ten1 = GQTensor({idx_in, idx_out});
   srand(0);
