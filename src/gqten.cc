@@ -33,10 +33,18 @@ QN::QN(const std::vector<QNNameVal> &nm_vals) {
 }
 
 
-QN::QN(const QN &qn) {
-  names_ = qn.names_;
-  values_ = qn.values_;
-  hash_ = qn.hash_;
+QN::QN(const QN &rhs) {
+  names_ = rhs.names_;
+  values_ = rhs.values_;
+  hash_ = rhs.hash_;
+}
+
+
+QN &QN::operator=(const QN &rhs) {
+  names_ = rhs.names_;
+  values_ = rhs.values_;
+  hash_ = rhs.hash_;
+  return *this;
 }
 
 
@@ -91,7 +99,7 @@ bool operator!=(const QN &lhs, const QN &rhs) {
 
 
 QN operator+(const QN &lhs, const QN &rhs) {
-  QN sum = lhs;
+  QN sum(lhs);
   sum += rhs;
   return sum;
 }

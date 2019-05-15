@@ -29,6 +29,7 @@ public:
   QN(void);
   QN(const std::vector<QNNameVal> &);
   QN(const QN &);
+  QN &operator=(const QN &);
 
   std::size_t Hash(void) const;
   QN operator-(void) const;
