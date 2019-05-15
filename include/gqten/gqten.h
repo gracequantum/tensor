@@ -55,14 +55,13 @@ QN operator-(const QN &, const QN &);
 // Quantum number sector.
 class QNSector {
 public:
-  QNSector() = default;
   QNSector(const QN &qn, const long &dim) : qn(qn), dim(dim) {}
-  size_t Hash(void) const;
-  QN qn = QN();
-  long dim = 0;
+  QNSector(void) : QNSector(QN(), 0) {}
 
-private:
-  std::hash<int> int_hasher_;
+  size_t Hash(void) const;
+
+  QN qn;
+  long dim;
 };
 
 bool operator==(const QNSector &, const QNSector &);

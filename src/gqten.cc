@@ -112,7 +112,7 @@ QN operator-(const QN &lhs, const QN &rhs) {
 
 // Quantum number sector.
 size_t QNSector::Hash(void) const {
-  return qn.Hash() ^ int_hasher_(dim);
+  return qn.Hash() ^ dim;
 }
 
 
