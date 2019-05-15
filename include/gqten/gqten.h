@@ -198,16 +198,8 @@ struct BlkCoorsAndBlkKey {
 
 class GQTensor {
 public:
-  GQTensor(void) {}
-  GQTensor(const std::vector<Index> &idxes) : indexes(idxes) {
-    for (auto &index : indexes) {
-      auto size = 0;
-      for (auto &qnsct : index.qnscts) {
-        size += qnsct.dim;
-      }
-      shape.push_back(size);
-    }
-  }
+  GQTensor(void) = default;
+  GQTensor(const std::vector<Index> &);
 
   GQTensor(const GQTensor &);
   GQTensor &operator=(const GQTensor &);

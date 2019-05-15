@@ -270,6 +270,17 @@ void QNBlock::Transpose(const std::vector<long> &transed_axes) {
 
 
 // Tensor with U1 symmetry.
+GQTensor::GQTensor(const std::vector<Index> &idxes) : indexes(idxes) {
+  for (auto &index : indexes) {
+    auto size = 0;
+    for (auto &qnsct : index.qnscts) {
+      size += qnsct.dim;
+    }
+    shape.push_back(size);
+  }
+}
+
+
 GQTensor::GQTensor(const GQTensor &gqtensor) :
     indexes(gqtensor.indexes),
     scalar(gqtensor.scalar),
