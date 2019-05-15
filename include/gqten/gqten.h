@@ -18,23 +18,28 @@ namespace gqten {
 // Quantum number.
 struct QNNameVal {
   QNNameVal() = default;
-  QNNameVal(const std::string &nm, const int &val): name(nm), val(val) {}
+  QNNameVal(const std::string &nm, const long val): name(nm), val(val) {}
+
   std::string name;
-  int val;
+  long val;
 };
 
 class QN {
 public:
-  QN() = default;
+  QN(void);
   QN(const std::vector<QNNameVal> &);
   QN(const QN &);
+
   std::size_t Hash(void) const;
   QN operator-(void) const;
   QN &operator+=(const QN &);
 
 private:
   std::vector<std::string> names_; 
-  std::vector<int> values_;
+  std::vector<long> values_;
+  std::size_t hash_;
+  
+  std::size_t CalcHash(void) const;
 };
 
 bool operator==(const QN &, const QN &);

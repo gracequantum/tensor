@@ -21,22 +21,29 @@
 namespace gqten {
 
 
+QN::QN(void) { hash_ = CalcHash(); }
+
+
 QN::QN(const std::vector<QNNameVal> &nm_vals) {
   for (auto &nm_val : nm_vals) {
     names_.push_back(nm_val.name);
     values_.push_back(nm_val.val);
   }
-
+  hash_ = CalcHash();
 }
 
 
 QN::QN(const QN &qn) {
   names_ = qn.names_;
   values_ = qn.values_;
+  hash_ = qn.hash_;
 }
 
 
-std::size_t QN::Hash(void) const {
+std::size_t QN::Hash(void) const { return hash_; }
+
+
+std::size_t QN::CalcHash(void) const {
   if (names_.size() == 0) {
     return 0; 
   } else {
@@ -68,6 +75,7 @@ QN &QN::operator+=(const QN &rhs) {
     assert(this->names_[i] == rhs.names_[i]);
     this->values_[i] += rhs.values_[i];
   }
+  hash_ = CalcHash();
   return *this;
 }
 
