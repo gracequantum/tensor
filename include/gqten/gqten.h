@@ -55,13 +55,19 @@ QN operator-(const QN &, const QN &);
 // Quantum number sector.
 class QNSector {
 public:
-  QNSector(const QN &qn, const long &dim) : qn(qn), dim(dim) {}
+  QNSector(const QN &qn, const long &dim) : qn(qn), dim(dim) {
+    hash_ = CalcHash();
+  }
   QNSector(void) : QNSector(QN(), 0) {}
 
-  size_t Hash(void) const;
+  size_t Hash(void) const { return hash_; }
 
   QN qn;
   long dim;
+
+private:
+  size_t CalcHash(void) const { return qn.Hash() ^ dim; }
+  size_t hash_;
 };
 
 bool operator==(const QNSector &, const QNSector &);
@@ -72,13 +78,19 @@ bool operator!=(const QNSector &, const QNSector &);
 // Quantum number sector set.
 class QNSectorSet {
 public:
-  QNSectorSet() = default;
-  QNSectorSet(const std::vector<QNSector> & qnscts) : qnscts(qnscts) {}
+  QNSectorSet(void) { hash_ = CalcHash(); }
+  QNSectorSet(const std::vector<QNSector> & qnscts) : qnscts(qnscts) {
+    hash_ = CalcHash(); 
+  }
   virtual ~QNSectorSet() = default;
 
   virtual size_t Hash(void) const;
 
   std::vector<QNSector> qnscts;
+
+private:
+  size_t CalcHash(void) const;
+  size_t hash_;
 };
 
 bool operator==(const QNSectorSet &, const QNSectorSet &);

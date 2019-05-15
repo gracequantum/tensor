@@ -111,11 +111,6 @@ QN operator-(const QN &lhs, const QN &rhs) {
 
 
 // Quantum number sector.
-size_t QNSector::Hash(void) const {
-  return qn.Hash() ^ dim;
-}
-
-
 bool operator==(const QNSector &lhs, const QNSector &rhs) {
   return lhs.Hash() == rhs.Hash();
 }
@@ -127,7 +122,10 @@ bool operator!=(const QNSector &lhs, const QNSector &rhs) {
 
 
 // Quantum number sector set.
-size_t QNSectorSet::Hash(void) const {
+size_t QNSectorSet::Hash(void) const { return hash_; }
+
+
+size_t QNSectorSet::CalcHash(void) const {
   return VecHasher(qnscts);
 }
 
