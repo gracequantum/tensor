@@ -595,7 +595,7 @@ QN Div(const GQTensor &t) {
   for (size_t i = 1; i < blk_num; ++i) {
     auto blki_div = CalcDiv(blks[i]->qnscts, t.indexes);
     if (blki_div != div) {
-      std::cout << "Tensor does not have a special divergence." << std::endl;
+      std::cout << "Tensor does not have a special divergence. Return QN()." << std::endl;
       return QN();
     }
   }
