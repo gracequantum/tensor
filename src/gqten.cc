@@ -588,9 +588,6 @@ GQTensor Dag(const GQTensor &t) {
 }
 
 
-inline const GQTensor &MockDag(const GQTensor &t) { return t; }
-
-
 QN Div(const GQTensor &t) {
   auto blks = t.BlksConstRef();
   auto blk_num = blks.size();

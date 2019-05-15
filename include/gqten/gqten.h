@@ -254,7 +254,8 @@ Index InverseIndex(const Index &);
 // For GQTensor.
 GQTensor Dag(const GQTensor &);
 
-const GQTensor &MockDag(const GQTensor &);
+// Just mock the dag. Not construct a new object.
+inline const GQTensor &MockDag(const GQTensor &t) { return t; }
 
 QN Div(const GQTensor &);
 
