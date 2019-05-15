@@ -59,6 +59,8 @@ public:
     hash_ = CalcHash();
   }
   QNSector(void) : QNSector(QN(), 0) {}
+  QNSector(const QNSector &qns) : qn(qns.qn), dim(qns.dim), hash_(qns.hash_) {}
+  QNSector &operator=(const QNSector &rhs);
 
   size_t Hash(void) const { return hash_; }
 
@@ -78,19 +80,14 @@ bool operator!=(const QNSector &, const QNSector &);
 // Quantum number sector set.
 class QNSectorSet {
 public:
-  QNSectorSet(void) { hash_ = CalcHash(); }
-  QNSectorSet(const std::vector<QNSector> & qnscts) : qnscts(qnscts) {
-    hash_ = CalcHash(); 
-  }
+  QNSectorSet(void) {}
+  QNSectorSet(const std::vector<QNSector> & qnscts) : qnscts(qnscts) {}
+  QNSectorSet(const QNSectorSet &qnss) : qnscts(qnss.qnscts) {}
   virtual ~QNSectorSet() = default;
 
   virtual size_t Hash(void) const;
 
   std::vector<QNSector> qnscts;
-
-private:
-  size_t CalcHash(void) const;
-  size_t hash_;
 };
 
 bool operator==(const QNSectorSet &, const QNSectorSet &);
@@ -112,7 +109,7 @@ struct InterOffsetQnsct {
 
 class Index : public QNSectorSet {
 public:
-  Index() = default;
+  Index(void) : QNSectorSet(), dim(0), dir(NDIR), tag("") {}
   Index(
       const std::vector<QNSector> &qnscts,
       const std::string &dir,
@@ -149,19 +146,16 @@ public:
     return dim;
   }
 
-  long dim = 0;
-  std::string dir = NDIR;
-  std::string tag = "";
-
-private:
-  std::hash<std::string> str_hasher_;
+  long dim;
+  std::string dir;
+  std::string tag;
 };
 
 
 // Dense block labeled by the quantum number.
 class QNBlock : public QNSectorSet {
 public:
-  QNBlock(void) {}
+  QNBlock(void) = default;
   QNBlock(const std::vector<QNSector> &);
 
   QNBlock(const QNBlock &);
@@ -169,6 +163,7 @@ public:
 
   ~QNBlock(void) override;
   
+  // Element getter and setter.
   const double &operator()(const std::vector<long> &) const;
   double &operator()(const std::vector<long> &);
 

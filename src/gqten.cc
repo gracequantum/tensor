@@ -111,6 +111,14 @@ QN operator-(const QN &lhs, const QN &rhs) {
 
 
 // Quantum number sector.
+QNSector &QNSector::operator=(const QNSector &rhs) {
+  qn = rhs.qn;
+  dim = rhs.dim;
+  hash_ = rhs.hash_;
+  return *this;
+}
+
+
 bool operator==(const QNSector &lhs, const QNSector &rhs) {
   return lhs.Hash() == rhs.Hash();
 }
@@ -122,12 +130,7 @@ bool operator!=(const QNSector &lhs, const QNSector &rhs) {
 
 
 // Quantum number sector set.
-size_t QNSectorSet::Hash(void) const { return hash_; }
-
-
-size_t QNSectorSet::CalcHash(void) const {
-  return VecHasher(qnscts);
-}
+inline size_t QNSectorSet::Hash(void) const { return VecHasher(qnscts); }
 
 
 bool operator==(const QNSectorSet &lhs, const QNSectorSet &rhs) {
@@ -141,6 +144,9 @@ bool operator!=(const QNSectorSet &lhs, const QNSectorSet &rhs) {
 
 
 // Index.
+std::hash<std::string> str_hasher_;
+
+
 size_t Index::Hash(void) const {
   return QNSectorSet::Hash() ^ str_hasher_(tag);
 }
@@ -178,7 +184,7 @@ QNBlock::QNBlock(const std::vector<QNSector> &init_qnscts) :
 
 
 QNBlock::QNBlock(const QNBlock &qnblk) :
-    QNSectorSet(qnblk.qnscts), 
+    QNSectorSet(qnblk),   // Use copy constructor of the base class.
     ndim(qnblk.ndim),
     shape(qnblk.shape),
     size(qnblk.size),
@@ -213,10 +219,7 @@ QNBlock::~QNBlock(void) {
 const double &
 QNBlock::operator()(const std::vector<long> &coors) const {
   assert(coors.size() == ndim);
-  long offset = 0;
-  for (size_t i = 0; i < ndim; ++i) {
-    offset += coors[i] * data_offsets_[i];
-  }
+  auto offset = CalcOffset(coors, ndim, data_offsets_);
   return *(data_+offset);
 }
 
