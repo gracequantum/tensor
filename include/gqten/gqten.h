@@ -16,6 +16,9 @@
 namespace gqten {
 
 
+// GQTensor storage file suffix.
+const std::string kGQTenFileSuffix = "gqten";
+
 // Quantum number.
 struct QNNameVal {
   QNNameVal() = default;
