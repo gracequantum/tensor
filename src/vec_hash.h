@@ -14,6 +14,7 @@
 #define _HASH_XXROTATE(x) ((x << 31) | (x >> 33))
 
 #include <vector>
+#include <string>
 
 
 namespace gqten {
@@ -32,5 +33,20 @@ size_t VecHasher(const std::vector<T> &vec) {
   hash_val += len ^ _HASH_XXPRIME_5;
   return hash_val;
 }
+
+
+// Helper classes.
+class HashableString {
+public:
+  HashableString(void) : str_("") {}
+  HashableString(const std::string &nstr) : str_(nstr) {} 
+  HashableString(const long num) : str_(std::to_string(num)) {}
+
+  std::size_t Hash(void) const { return strhasher_(str_); }
+
+private:
+  std::string str_;
+  static std::hash<std::string> strhasher_;
+};
 } /* gqten */ 
 #endif /* ifndef GQTEN_VEC_HASH_H */

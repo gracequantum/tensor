@@ -55,12 +55,9 @@ std::size_t QN::CalcHash(void) const {
   if (names_.size() == 0) {
     return 0; 
   } else {
-    std::size_t hash_val = 0;
-    std::hash<std::string> hasher;
-    for (size_t i = 0; i < names_.size(); i++) {
-      hash_val ^= hasher(names_[i] + std::to_string(values_[i]));
-    }
-    return hash_val;
+    std::vector<HashableString> val_strs;
+    for (auto &val : values_) { val_strs.push_back(HashableString(val)); }
+    return VecHasher(val_strs);
   }
 }
 

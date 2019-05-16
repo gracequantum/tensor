@@ -10,6 +10,7 @@ macro(add_unittest
       ${TEST_SRC})
   target_include_directories(${TEST_NAME} PUBLIC
       "${PROJECT_SOURCE_DIR}/include"
+      "${PROJECT_SOURCE_DIR}/src"
       "/usr/local/include"
       ${CFLAGS})
   target_link_libraries(${TEST_NAME}

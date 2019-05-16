@@ -6,6 +6,7 @@
 */
 #include "gtest/gtest.h"
 #include "gqten/gqten.h"
+#include "vec_hash.h"
 
 #include <string>
 #include <fstream>
@@ -21,22 +22,19 @@ struct TestQN : public testing::Test {
   QN qn_u1_1 = QN({QNNameVal("Sz", 0)});
   QN qn_u1_2 = QN({QNNameVal("Sz", 1)});
   QN qn_u1_3 = QN({QNNameVal("Sz", -1)});
-  QN qn_u1_u1_1 = QN(
-                             {QNNameVal("Sz", 0), QNNameVal("N", 0)});
-  QN qn_u1_u1_2 = QN(
-                             {QNNameVal("Sz", 1), QNNameVal("N", 1)});
+  QN qn_u1_u1_1 = QN({QNNameVal("Sz", 0), QNNameVal("N", 0)});
+  QN qn_u1_u1_2 = QN({QNNameVal("Sz", 1), QNNameVal("N", 1)});
 };
-
-
-std::hash<std::string> StrHasher;
 
 
 TEST_F(TestQN, Hashable) {
   EXPECT_EQ(qn_default.Hash(), 0);
-  EXPECT_EQ(qn_u1_1.Hash(), StrHasher("Sz0"));
-  EXPECT_EQ(qn_u1_2.Hash(), StrHasher("Sz1"));
-  EXPECT_EQ(qn_u1_3.Hash(), StrHasher("Sz-1"));
-  EXPECT_EQ(qn_u1_u1_1.Hash(), StrHasher("Sz0")^StrHasher("N0"));
+  std::vector<HashableString> hashable_strs = {HashableString(0)};
+  EXPECT_EQ(qn_u1_1.Hash(), VecHasher(hashable_strs));
+  hashable_strs = {HashableString(-1)};
+  EXPECT_EQ(qn_u1_3.Hash(), VecHasher(hashable_strs));
+  hashable_strs = {HashableString(0), HashableString(0)};
+  EXPECT_EQ(qn_u1_u1_1.Hash(), VecHasher(hashable_strs));
 }
 
 
