@@ -46,7 +46,7 @@ public:
 
 private:
   std::string str_;
-  static std::hash<std::string> strhasher_;
+  std::hash<std::string> strhasher_;
 };
 } /* gqten */ 
 #endif /* ifndef GQTEN_VEC_HASH_H */
