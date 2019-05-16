@@ -7,6 +7,8 @@
 #include "gtest/gtest.h"
 #include "gqten/gqten.h"
 
+#include <cstdio>
+
 
 using namespace gqten;
 
@@ -68,4 +70,35 @@ TEST_F(TestQNBlock, TestPartialHash) {
       qnblock_sz0sct_2d.PartHash({0, 1}),
       QNSectorSet({qnblock_sz0sct_2d.qnscts[0],
                    qnblock_sz0sct_2d.qnscts[0]}).Hash());
+}
+
+
+void RunTestQNBlockFileIOCase(const QNBlock &qnblk) {
+  std::string file = "test.qnblk";
+  std::ofstream out(file, std::ofstream::binary);
+  bfwrite(out, qnblk);
+  out.close();
+  std::ifstream in(file, std::ifstream::binary);
+  QNBlock qnblk_cpy;
+  bfread(in, qnblk_cpy);
+  in.close();
+
+  EXPECT_EQ(qnblk_cpy.ndim, qnblk.ndim);
+  EXPECT_EQ(qnblk_cpy.size, qnblk.size);
+  EXPECT_EQ(qnblk_cpy.shape, qnblk.shape);
+  EXPECT_EQ(qnblk_cpy.qnscts, qnblk.qnscts);
+  for (long i = 0; i < qnblk_cpy.size; i++) {
+    EXPECT_DOUBLE_EQ(qnblk_cpy.DataConstRef()[i], qnblk.DataConstRef()[i]);
+  }
+}
+
+
+TEST_F(TestQNBlock, FileIO) {
+  RunTestQNBlockFileIOCase(qnblock_default);
+  qnblock_sz0sct_1d.Random();
+  RunTestQNBlockFileIOCase(qnblock_sz0sct_1d);
+  qnblock_sz0sct_2d.Random();
+  RunTestQNBlockFileIOCase(qnblock_sz0sct_2d);
+  qnblock_sz1sct2_2d.Random();
+  RunTestQNBlockFileIOCase(qnblock_sz1sct2_2d);
 }

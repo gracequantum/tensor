@@ -33,10 +33,10 @@ QN::QN(const std::vector<QNNameVal> &nm_vals) {
 }
 
 
-QN::QN(const QN &rhs) {
-  names_ = rhs.names_;
-  values_ = rhs.values_;
-  hash_ = rhs.hash_;
+QN::QN(const QN &qn) {
+  names_ = qn.names_;
+  values_ = qn.values_;
+  hash_ = qn.hash_;
 }
 
 
@@ -110,6 +110,28 @@ QN operator-(const QN &lhs, const QN &rhs) {
 }
 
 
+std::ifstream &bfread(std::ifstream &ifs, QN &qn) {
+  long nv_num;
+  ifs >> nv_num;
+  qn.names_ = std::vector<std::string>(nv_num);
+  for (auto &name : qn.names_) { ifs >> name; }
+  qn.values_ = std::vector<long>(nv_num);
+  for (auto &value : qn.values_) { ifs >> value; }
+  ifs >> qn.hash_;
+  return ifs;
+}
+
+
+std::ofstream &bfwrite(std::ofstream &ofs, const QN &qn) {
+  long nv_num = qn.names_.size();
+  ofs << nv_num << std::endl;
+  for (auto &name : qn.names_) { ofs << name << std::endl; }
+  for (auto &value : qn.values_) { ofs << value << std::endl; }
+  ofs << qn.hash_ << std::endl;
+  return ofs;
+}
+
+
 // Quantum number sector.
 QNSector &QNSector::operator=(const QNSector &rhs) {
   qn = rhs.qn;
@@ -126,6 +148,20 @@ bool operator==(const QNSector &lhs, const QNSector &rhs) {
 
 bool operator!=(const QNSector &lhs, const QNSector &rhs) {
   return !(lhs == rhs);
+}
+
+
+std::ifstream &bfread(std::ifstream &ifs, QNSector &qnsct) {
+  bfread(ifs, qnsct.qn) >> qnsct.dim >> qnsct.hash_;
+  return ifs;
+}
+
+
+std::ofstream &bfwrite(std::ofstream &ofs, const QNSector &qnsct) {
+  bfwrite(ofs, qnsct.qn);
+  ofs << qnsct.dim << std::endl;
+  ofs << qnsct.hash_ << std::endl;
+  return ofs;
 }
 
 
@@ -162,6 +198,36 @@ InterOffsetQnsct Index::CoorOffsetAndQnsct(long coor) const {
       inter_offset = temp_inter_offset;
     }
   }
+}
+
+
+std::ifstream &bfread(std::ifstream &ifs, Index &idx) {
+  long qnscts_num;
+  ifs >> qnscts_num;
+  idx.qnscts = std::vector<QNSector>(qnscts_num);
+  for (auto &qnsct : idx.qnscts) { bfread(ifs, qnsct); }
+  ifs >> idx.dim >> idx.dir;
+  // Deal with empty tag, where will be '\n\n'.
+  char next1_ch, next2_ch;
+  ifs.get(next1_ch);
+  ifs.get(next2_ch);
+  if (next2_ch != '\n') {
+    ifs.putback(next2_ch);
+    ifs.putback(next1_ch);
+    ifs >> idx.tag;
+  }
+  return ifs; 
+}
+
+
+std::ofstream &bfwrite(std::ofstream &ofs, const Index &idx) {
+  long qnscts_num = idx.qnscts.size();
+  ofs << qnscts_num << std::endl;
+  for (auto &qnsct : idx.qnscts) { bfwrite(ofs, qnsct); }
+  ofs << idx.dim << std::endl;
+  ofs << idx.dir << std::endl;
+  ofs << idx.tag << std::endl;
+  return ofs;
 }
 
 
@@ -266,6 +332,51 @@ void QNBlock::Transpose(const std::vector<long> &transed_axes) {
   shape = transed_shape;
   qnscts = transed_qnscts;
   data_offsets_ = transed_data_offsets_;
+}
+
+
+std::ifstream &bfread(std::ifstream &ifs, QNBlock &qnblk) {
+  ifs >> qnblk.ndim;
+
+  ifs >> qnblk.size;
+
+  qnblk.shape = std::vector<long>(qnblk.ndim);
+  for (auto &order : qnblk.shape) { ifs >> order; }
+
+  qnblk.qnscts = std::vector<QNSector>(qnblk.ndim);
+  for (auto &qnsct : qnblk.qnscts) { bfread(ifs, qnsct); }
+
+  qnblk.data_offsets_ = std::vector<long>(qnblk.ndim);
+  for (auto &offset : qnblk.data_offsets_) { ifs >> offset; }
+
+  ifs.seekg(1, std::ios::cur);    // Skip the line break.
+
+  if (qnblk.size != 0) {
+    qnblk.data_ = new double[qnblk.size];
+    ifs.read((char *) qnblk.data_, qnblk.size*sizeof(double));
+  }
+
+  return ifs;
+}
+
+
+std::ofstream &bfwrite(std::ofstream &ofs, const QNBlock &qnblk) {
+  ofs << qnblk.ndim << std::endl;
+
+  ofs << qnblk.size << std::endl;
+
+  for (auto &order : qnblk.shape) { ofs << order << std::endl; }
+
+  for (auto &qnsct : qnblk.qnscts) { bfwrite(ofs, qnsct); }
+
+  for (auto &offset : qnblk.data_offsets_) { ofs << offset << std::endl; }
+
+  if (qnblk.size != 0) {
+    ofs.write((char *) qnblk.data_, qnblk.size*sizeof(double));
+  }
+  ofs << std::endl;
+
+  return ofs;
 }
 
 
@@ -616,6 +727,41 @@ GQTensor operator*(const GQTensor &t, const double &s) {
 
 
 GQTensor operator*(const double &s, const GQTensor &t) { return t * s; }
+
+
+std::ifstream &bfread(std::ifstream &ifs, GQTensor &t) {
+  long ndim;
+  ifs >> ndim;
+  t.indexes = std::vector<Index>(ndim);
+  for (auto &idx : t.indexes) { bfread(ifs, idx); }
+  t.shape = std::vector<long>(ndim);
+  for (auto &order : t.shape) { ifs >> order; }
+  ifs >> t.scalar;
+
+  long blk_num;
+  ifs >> blk_num;
+  for (auto &blk : t.blocks_) { delete blk; }
+  t.blocks_ = std::vector<QNBlock *>(blk_num);
+  for (auto &blk : t.blocks_) {
+    blk = new QNBlock();
+    bfread(ifs, *blk);
+  }
+  return ifs;
+}
+
+
+std::ofstream &bfwrite(std::ofstream &ofs, const GQTensor &t) {
+  long ndim = t.indexes.size();
+  ofs << ndim << std::endl;
+  for (auto &idx : t.indexes) { bfwrite(ofs, idx); }
+  for (auto &order : t.shape) { ofs << order << std::endl; }
+  ofs << t.scalar << std::endl;
+
+  long blk_num = t.blocks_.size();
+  ofs << blk_num << std::endl;
+  for (auto &blk : t.blocks_) { bfwrite(ofs, *blk); }
+  return ofs;
+}
 
 
 // Helper functions.

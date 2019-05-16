@@ -8,6 +8,7 @@
 #include "gqten/gqten.h"
 
 #include <cmath>
+#include <cstdio>
 
 
 using namespace gqten;
@@ -253,4 +254,34 @@ TEST_F(TestGQTensor, TestEq) {
   auto ten2 = GQTensor({idx_in, idx_out});
   ten2.Random(QN({QNNameVal("Sz", 1)}));
   EXPECT_TRUE(ten1 != ten2);
+}
+
+
+void RunTestGQTensorFileIOCase(const GQTensor &t) {
+  std::string file = "test.gqten";
+  std::ofstream out(file, std::ofstream::binary);
+  bfwrite(out, t);
+  out.close();
+  std::ifstream in(file, std::ifstream::binary);
+  GQTensor t_cpy;
+  bfread(in, t_cpy);
+  in.close();
+  EXPECT_EQ(t_cpy, t);
+}
+
+
+TEST_F(TestGQTensor, FileIO) {
+  RunTestGQTensorFileIOCase(GQTensor());
+  RunTestGQTensorFileIOCase(vec_rand_up);
+
+  //// Large case.
+  auto lidx_in = Index(
+                   {QNSector(QN({QNNameVal("Sz", -1)}), 10),
+                    QNSector(QN({QNNameVal("Sz",  0)}), 10),
+                    QNSector(QN({QNNameVal("Sz",  1)}), 10)}, IN);
+  auto lidx_out = InverseIndex(lidx_in);
+  auto lt2 = GQTensor({lidx_in, lidx_out});
+  srand(0);
+  lt2.Random(QN({QNNameVal("Sz", 1)}));
+  RunTestGQTensorFileIOCase(lt2);
 }

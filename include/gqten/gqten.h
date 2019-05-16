@@ -10,6 +10,7 @@
 
 #include <string>
 #include <vector>
+#include <fstream>
 
 
 namespace gqten {
@@ -25,6 +26,9 @@ struct QNNameVal {
 };
 
 class QN {
+friend std::ifstream &bfread(std::ifstream &, QN &);
+friend std::ofstream &bfwrite(std::ofstream &, const QN &);
+
 public:
   QN(void);
   QN(const std::vector<QNNameVal> &);
@@ -39,7 +43,7 @@ private:
   std::vector<std::string> names_; 
   std::vector<long> values_;
   std::size_t hash_;
-  
+
   std::size_t CalcHash(void) const;
 };
 
@@ -51,9 +55,16 @@ QN operator+(const QN &, const QN &);
 
 QN operator-(const QN &, const QN &);
 
+std::ifstream &bfread(std::ifstream &, QN &);
+
+std::ofstream &bfwrite(std::ofstream &, const QN &);
+
 
 // Quantum number sector.
 class QNSector {
+friend std::ifstream &bfread(std::ifstream &, QNSector &);
+friend std::ofstream &bfwrite(std::ofstream &, const QNSector &);
+
 public:
   QNSector(const QN &qn, const long &dim) : qn(qn), dim(dim) {
     hash_ = CalcHash();
@@ -75,6 +86,10 @@ private:
 bool operator==(const QNSector &, const QNSector &);
 
 bool operator!=(const QNSector &, const QNSector &);
+
+std::ifstream &bfread(std::ifstream &, QNSector &);
+
+std::ofstream &bfwrite(std::ofstream &, const QNSector &);
 
 
 // Quantum number sector set.
@@ -108,6 +123,9 @@ struct InterOffsetQnsct {
 };
 
 class Index : public QNSectorSet {
+friend std::ifstream &bfread(std::ifstream &, Index &);
+friend std::ofstream &bfwrite(std::ofstream &, const Index &);
+
 public:
   Index(void) : QNSectorSet(), dim(0), dir(NDIR), tag("") {}
   Index(
@@ -151,9 +169,16 @@ public:
   std::string tag;
 };
 
+std::ifstream &bfread(std::ifstream &, Index &);
+
+std::ofstream &bfwrite(std::ofstream &, const Index &);
+
 
 // Dense block labeled by the quantum number.
 class QNBlock : public QNSectorSet {
+friend std::ifstream &bfread(std::ifstream &, QNBlock &);
+friend std::ofstream &bfwrite(std::ofstream &, const QNBlock &);
+
 public:
   QNBlock(void) = default;
   QNBlock(const std::vector<QNSector> &);
@@ -186,6 +211,10 @@ private:
   std::vector<long> data_offsets_;
 };
 
+std::ifstream &bfread(std::ifstream &, QNBlock &);
+
+std::ofstream &bfwrite(std::ofstream &, const QNBlock &);
+
 
 // Tensor with U1 symmetry.
 struct BlkCoorsAndBlkKey {
@@ -197,6 +226,9 @@ struct BlkCoorsAndBlkKey {
 };
 
 class GQTensor {
+friend std::ifstream &bfread(std::ifstream &, GQTensor &);
+friend std::ofstream &bfwrite(std::ofstream &, const GQTensor &);
+
 public:
   GQTensor(void) = default;
   GQTensor(const std::vector<Index> &);
@@ -262,6 +294,12 @@ QN Div(const GQTensor &);
 GQTensor operator*(const GQTensor &, const double &);
 
 GQTensor operator*(const double &, const GQTensor &);
+
+// GQTensor I/O
+std::ifstream &bfread(std::ifstream &, GQTensor &);
+
+std::ofstream &bfwrite(std::ofstream &, const GQTensor &);
+
 
 // Tensors contraction.
 GQTensor *Contract(

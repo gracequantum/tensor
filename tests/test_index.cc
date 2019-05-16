@@ -7,6 +7,8 @@
 #include "gtest/gtest.h"
 #include "gqten/gqten.h"
 
+#include <cstdio>
+
 
 using namespace gqten;
 
@@ -71,4 +73,28 @@ TEST_F(TestIndex, InterOffsetAndQnsct) {
   res = idx_2sct_out.CoorOffsetAndQnsct(2);
   EXPECT_EQ(res.inter_offset, 1);
   EXPECT_EQ(res.qnsct, QNSector(QN({QNNameVal("Sz", 1)}), 2));
+}
+
+
+void RunTestIndexFileIOCase(const Index &idx) {
+  std::string file = "test.idx";
+  std::ofstream out(file, std::ofstream::binary);
+  bfwrite(out, idx);
+  out.close();
+  std::ifstream in(file, std::ifstream::binary);
+  Index idx_cpy;
+  bfread(in, idx_cpy);
+  in.close();
+  std::remove(file.c_str());
+  EXPECT_EQ(idx_cpy, idx);
+}
+
+TEST_F(TestIndex, FileIO) {
+  RunTestIndexFileIOCase(idx_default);
+  RunTestIndexFileIOCase(idx_1sct);
+  auto idx_1sct_with_tag = idx_1sct;
+  idx_1sct_with_tag.tag = "test";
+  RunTestIndexFileIOCase(idx_1sct_with_tag);
+  RunTestIndexFileIOCase(idx_1sct_in);
+  RunTestIndexFileIOCase(idx_2sct_out);
 }
