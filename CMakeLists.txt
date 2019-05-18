@@ -27,6 +27,8 @@ add_definitions("-g")
 set(MATH_LIB_COMPILE_FLAGS -m64 -I$ENV{MKLROOT}/include)
 set(MATH_LIB_LINK_FLAGS "-L$ENV{MKLROOT}/lib -Wl,-rpath,$ENV{MKLROOT}/lib -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm -ldl")
 
+add_subdirectory(external)
+
 add_subdirectory(src lib)
 
 

@@ -1,0 +1,3 @@
+[submodule "external/hptt"]
+	path = external/hptt
+	url = https://github.com/springer13/hptt.git
