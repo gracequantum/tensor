@@ -10,6 +10,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <cstring>
 #include <cmath>
 
 #ifdef Release

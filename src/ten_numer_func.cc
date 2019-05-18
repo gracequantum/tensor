@@ -11,6 +11,7 @@
 #include <vector>
 #include <algorithm>
 #include <numeric>
+#include <cstring>
 
 #include "mkl.h"
 
