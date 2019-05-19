@@ -255,7 +255,7 @@ QNBlock::QNBlock(const QNBlock &qnblk) :
     shape(qnblk.shape),
     size(qnblk.size),
     data_offsets_(qnblk.data_offsets_) {
-  data_ = new double [size] ();
+  data_ = new double[size] ();
   std::memcpy(data_, qnblk.data_, size * sizeof(double));
 }
 
@@ -329,7 +329,7 @@ void QNBlock::Transpose(const std::vector<long> &transed_axes) {
                       data_,
                       ndim, size, shape,
                       transed_axes);
-  delete data_;
+  delete[] data_;
   data_ = new_data;
   shape = transed_shape;
   qnscts = transed_qnscts;
