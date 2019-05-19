@@ -338,10 +338,11 @@ std::vector<long> CalcDataOffsets(const std::vector<long> &);
 
 long MulToEnd(const std::vector<long> &, int);
 
-void TransposeBlkData(
-    double * &, const long &, const long &,
+double *TransposeData(
+    const double *,
+    const long &,
+    const long &,
     const std::vector<long> &,
-    const std::vector<long> &, const std::vector<long> &,
     const std::vector<long> &);
 
 std::vector<std::vector<long>> GenAllCoors(const std::vector<long> &);

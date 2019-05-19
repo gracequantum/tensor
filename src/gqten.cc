@@ -18,6 +18,8 @@
 #endif
 #include <assert.h>
 
+#include "hptt.h"
+
 
 namespace gqten {
 
@@ -323,15 +325,38 @@ void QNBlock::Transpose(const std::vector<long> &transed_axes) {
     transed_shape[i] = transed_qnscts[i].dim;
   }
   auto transed_data_offsets_ = CalcDataOffsets(transed_shape);
-  TransposeBlkData(
-      data_, size, ndim,
-      transed_axes,
-      shape, data_offsets_,
-      transed_data_offsets_);
+  auto new_data = TransposeData(
+                      data_,
+                      ndim, size, shape,
+                      transed_axes);
+  delete data_;
+  data_ = new_data;
   shape = transed_shape;
   qnscts = transed_qnscts;
   data_offsets_ = transed_data_offsets_;
 }
+
+
+double *TransposeData(
+    const double *old_data,
+    const long &old_ndim,
+    const long &old_size,
+    const std::vector<long> &old_shape,
+    const std::vector<long> &transed_axes) {
+  int dim = old_ndim;
+  int perm[dim];  for (int i = 0; i < dim; ++i) { perm[i] = transed_axes[i]; }
+  int sizeA[dim]; for (int i = 0; i < dim; ++i) { sizeA[i] = old_shape[i]; }
+  int outerSizeB[dim];
+  for (int i = 0; i < dim; ++i) { outerSizeB[i] = old_shape[perm[i]]; }
+  auto transed_data = new double[old_size];
+  dTensorTranspose(perm, dim,
+      1.0, old_data, sizeA, sizeA,
+      0.0, transed_data, outerSizeB,
+      1, 1);
+  return transed_data;
+}
+
+
 
 
 std::ifstream &bfread(std::ifstream &ifs, QNBlock &qnblk) {
@@ -637,7 +662,7 @@ bool GQTensor::operator==(const GQTensor &rhs) const {
 
 
 // Iterators.
-// Generate all coordinates.
+// Generate all coordinates. Cost so much. Be careful to use.
 std::vector<std::vector<long>> GQTensor::CoorsIter(void) const {
   return GenAllCoors(shape);
 }
@@ -824,22 +849,6 @@ long MulToEnd(const std::vector<long> &v, int i) {
     mul *= *it; 
   } 
   return mul;
-}
-
-
-void TransposeBlkData(
-    double * &data, const long &size, const long &ndim,
-    const std::vector<long> &axes_map,
-    const std::vector<long> &old_shape,
-    const std::vector<long> &old_data_offsets,
-    const std::vector<long> &new_data_offsets) {
-  double *new_data = new double [size] ();
-  for (auto &old_coors : GenAllCoors(old_shape)) {
-    new_data[CalcOffset(TransCoors(old_coors, axes_map), ndim, new_data_offsets)] =
-        data[CalcOffset(old_coors, ndim, old_data_offsets)];
-  }
-  delete [] data;
-  data = new_data;
 }
 
 

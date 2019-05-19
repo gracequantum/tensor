@@ -14,7 +14,6 @@
 #include <cstring>
 
 #include "mkl.h"
-#include "hptt.h"
 
 #ifdef Release
   #define NDEBUG
@@ -30,36 +29,84 @@ GQTensor *Contract(
     const std::vector<std::vector<long>> &axes_set) {
   auto t1_ctrct_idxs = axes_set[0];
   auto t2_ctrct_idxs = axes_set[1];
-  std::vector<QNBlock *> ctrcted_blocks;
-  std::vector<double> ctrcted_scalars;
-  for (auto &b1 : t1.BlksConstRef()) {
-    for (auto &b2 : t2.BlksConstRef()) {
-      if (b1->PartHash(t1_ctrct_idxs) == b2->PartHash(t2_ctrct_idxs)) {
-        auto pnew_b = ContractBlock(b1, b2, t1_ctrct_idxs, t2_ctrct_idxs);
-        if (pnew_b->qnscts == kNullQNSectors) {
-          ctrcted_scalars.push_back(pnew_b->DataConstRef()[0]);
-          delete pnew_b;
-        } else {
-          auto has_blk = false;
-          for (auto &pctrcted_blk : ctrcted_blocks) {
-            if (pnew_b->qnscts == pctrcted_blk->qnscts) {
-              auto data_size = pnew_b->size;
-              assert(data_size == pctrcted_blk->size);
-              ArrayElemAttach(
-                  pctrcted_blk->DataRef(), data_size,
-                  pnew_b->DataConstRef());
-              delete pnew_b;
-              has_blk = true;
-              break;
-            }
+
+  // Block contraction data prepare.
+  std::vector<long> t1_transed_axes, t2_transed_axes;
+  bool t1_need_trans = CtrctTransCheck(t1_ctrct_idxs, t1, '1', t1_transed_axes);
+  bool t2_need_trans = CtrctTransCheck(t2_ctrct_idxs, t2, '2', t2_transed_axes);
+  auto t1_blks_part_hash_table = GenPartHashTable(t1, t1_ctrct_idxs);
+  auto t2_blks_part_hash_table = GenPartHashTable(t2, t2_ctrct_idxs);
+  auto t1_blks_num = t1.BlksConstRef().size();
+  auto t2_blks_num = t2.BlksConstRef().size();
+  std::vector<QNBlock *> t1_to_ctrct_blks(t1_blks_num);
+  std::vector<QNBlock *> t2_to_ctrct_blks(t2_blks_num);
+  std::vector<std::pair<std::size_t, std::size_t>> ctrct_blk_pair_idxs;
+  for (std::size_t i = 0; i < t1_blks_num; ++i) {
+    for (std::size_t j = 0; j < t2_blks_num; ++j) {
+      if (t1_blks_part_hash_table[i] == t2_blks_part_hash_table[j]) {
+        ctrct_blk_pair_idxs.push_back(std::make_pair(i, j));
+        if (t1_to_ctrct_blks[i] == nullptr) {
+          if (t1_need_trans) {
+            auto blk_transed_to_ctrct = new QNBlock(*t1.BlksConstRef()[i]);
+            blk_transed_to_ctrct->Transpose(t1_transed_axes);
+            t1_to_ctrct_blks[i] = blk_transed_to_ctrct;
+          } else {
+            t1_to_ctrct_blks[i] = t1.BlksConstRef()[i]; 
           }
-          if (!has_blk) {
-            ctrcted_blocks.push_back(pnew_b);
+        }
+        if (t2_to_ctrct_blks[j] == nullptr) {
+          if (t2_need_trans) {
+            auto blk_transed_to_ctrct = new QNBlock(*t2.BlksConstRef()[j]);
+            blk_transed_to_ctrct->Transpose(t2_transed_axes);
+            t2_to_ctrct_blks[j] = blk_transed_to_ctrct;
+          } else {
+            t2_to_ctrct_blks[j] = t2.BlksConstRef()[j];
           }
         }
       }
-    } 
+    }
   }
+
+  // Contract blocks.
+  std::vector<QNBlock *> ctrcted_blocks;
+  std::vector<double> ctrcted_scalars;
+  auto t1_ctrct_ndim = t1_ctrct_idxs.size();
+  auto t2_ctrct_ndim = t2_ctrct_idxs.size();
+  for (auto &ctrct_blk_pair : ctrct_blk_pair_idxs) {
+    auto pnew_b = ContractBlockNoTrans(
+                      *t1_to_ctrct_blks[ctrct_blk_pair.first],
+                      *t2_to_ctrct_blks[ctrct_blk_pair.second],
+                      t1_ctrct_ndim, t2_ctrct_ndim);
+    if (pnew_b->qnscts == kNullQNSectors) {
+      ctrcted_scalars.push_back(pnew_b->DataConstRef()[0]);
+      delete pnew_b;
+    } else {
+      auto has_blk = false;
+      for (auto &pctrcted_blk : ctrcted_blocks) {
+        if (pnew_b->qnscts == pctrcted_blk->qnscts) {
+          auto data_size = pnew_b->size;
+          assert(data_size == pctrcted_blk->size);
+          ArrayElemAttach(
+              pctrcted_blk->DataRef(), data_size,
+              pnew_b->DataConstRef());
+          delete pnew_b;
+          has_blk = true;
+          break;
+        }
+      }
+      if (!has_blk) {
+        ctrcted_blocks.push_back(pnew_b);
+      }
+    }
+  }
+  if (t1_need_trans) {
+    for (auto &to_ctrct_blk : t1_to_ctrct_blks) { delete to_ctrct_blk; }
+  }
+  if (t2_need_trans) {
+    for (auto &to_ctrct_blk : t2_to_ctrct_blks) { delete to_ctrct_blk; }
+  }
+
+  // Wrap results.
   auto pctrcted_ten = InitCtrctedTen(t1, t2, t1_ctrct_idxs, t2_ctrct_idxs);
   if (pctrcted_ten->indexes == kNullIndexes) {
     pctrcted_ten->scalar = VecSumOver(ctrcted_scalars);
@@ -92,89 +139,40 @@ GQTensor *InitCtrctedTen(
 }
 
 
-QNBlock *ContractBlock(
-    const QNBlock * b1,
-    const QNBlock * b2,
-    const std::vector<long> &t1_ctrct_idxs,
-    const std::vector<long> &t2_ctrct_idxs) {
-  auto b1_ctrct_info = BlkCtrctPreparer(*b1, t1_ctrct_idxs, "first");
-  auto b2_ctrct_info = BlkCtrctPreparer(*b2, t2_ctrct_idxs, "second");
+QNBlock *ContractBlockNoTrans(
+    const QNBlock &b1, const QNBlock &b2,
+    const std::size_t t1_ctrct_ndim, const std::size_t t2_ctrct_ndim) {
+  std::size_t b1_saved_size = 1;
+  std::size_t b1_ctrct_size = 1;
+  auto b1_saved_ndim = b1.ndim - t1_ctrct_ndim;
+  for (long i = 0; i < b1.ndim; i++) {
+    if (i < b1_saved_ndim) {
+      b1_saved_size *= b1.qnscts[i].dim;
+    } else {
+      b1_ctrct_size *= b1.qnscts[i].dim;
+    }
+  }
+  std::size_t b2_saved_size = 1;
+  std::size_t b2_ctrct_size = 1;
+  for (long i = 0; i < b2.ndim; ++i) {
+    if (i < t2_ctrct_ndim) {
+      b2_ctrct_size *= b2.qnscts[i].dim;
+    } else {
+      b2_saved_size *= b2.qnscts[i].dim;
+    }
+  }
   auto ctrcted_data = MatMul(
-                          b1_ctrct_info.data,
-                          b1_ctrct_info.savedim,
-                          b1_ctrct_info.ctrctdim,
-                          b2_ctrct_info.data,
-                          b2_ctrct_info.ctrctdim,
-                          b2_ctrct_info.savedim);
-  auto saved_qnscts = b1_ctrct_info.saved_qnscts;
-  saved_qnscts.insert(
-      saved_qnscts.end(),
-      b2_ctrct_info.saved_qnscts.begin(), b2_ctrct_info.saved_qnscts.end());
+                          b1.DataConstRef(),
+                          b1_saved_size, b1_ctrct_size,
+                          b2.DataConstRef(),
+                          b2_ctrct_size, b2_saved_size);
+  std::vector<QNSector> saved_qnscts(
+      b1.qnscts.cbegin(), b1.qnscts.cend()-t1_ctrct_ndim);
+  saved_qnscts.insert(saved_qnscts.end(),
+      b2.qnscts.cbegin()+t2_ctrct_ndim, b2.qnscts.cend());
   auto new_blk = new QNBlock(saved_qnscts);
   new_blk->DataRef() = ctrcted_data;
   return new_blk;
-}
-
-
-BlkCtrctInfo BlkCtrctPreparer(
-    const QNBlock &b,
-    const std::vector<long> &ctrct_idxs,
-    const std::string &which) {
-  std::vector<QNSector> saved_qnscts;
-  std::vector<long> saved_idxs;
-  long savedim = 1;
-  long ctrctdim = 1;
-  for (long i = 0; i < b.ndim; ++i) {
-    if (std::find(ctrct_idxs.begin(), ctrct_idxs.end(), i) == ctrct_idxs.end()) {
-      saved_idxs.push_back(i);
-      saved_qnscts.push_back(b.qnscts[i]);
-      savedim *= b.qnscts[i].dim;
-    } else {
-      ctrctdim *= b.qnscts[i].dim;
-    }
-  }
-  std::vector<long> new_idxs;
-  if (which == "first") {
-    new_idxs = saved_idxs;
-    new_idxs.insert(new_idxs.end(), ctrct_idxs.begin(), ctrct_idxs.end());
-  } else if (which == "second") {
-    new_idxs = ctrct_idxs;
-    new_idxs.insert(new_idxs.end(), saved_idxs.begin(), saved_idxs.end());
-  }
-  auto sorted_new_idxs = new_idxs;
-  std::sort(sorted_new_idxs.begin(), sorted_new_idxs.end());
-  const double *data;
-  if (new_idxs != sorted_new_idxs) {
-    data = TransposeData(
-               b.DataConstRef(),
-               b.ndim,
-               b.size,
-               b.shape,
-               new_idxs);
-  } else {
-    data = b.DataConstRef();
-  }
-  return BlkCtrctInfo(data, savedim, ctrctdim, saved_qnscts);
-}
-
-
-double *TransposeData(
-    const double *old_data,
-    const long &old_ndim,
-    const long &old_size,
-    const std::vector<long> &old_shape,
-    const std::vector<long> &transed_axes) {
-  int dim = old_ndim;
-  int perm[dim];  for (int i = 0; i < dim; ++i) { perm[i] = transed_axes[i]; }
-  int sizeA[dim]; for (int i = 0; i < dim; ++i) { sizeA[i] = old_shape[i]; }
-  int outerSizeB[dim];
-  for (int i = 0; i < dim; ++i) { outerSizeB[i] = old_shape[perm[i]]; }
-  auto transed_data = new double[old_size];
-  dTensorTranspose(perm, dim,
-      1.0, old_data, sizeA, sizeA,
-      0.0, transed_data, outerSizeB,
-      20, 1);
-  return transed_data;
 }
 
 
@@ -584,5 +582,57 @@ double VecSumOver(const std::vector<double> &v) {
   double sum = 0.0;
   for (auto &elem : v) { sum += elem; }
   return sum;
+}
+
+
+// Tensor contraction helpers.
+bool CtrctTransCheck(
+    const std::vector<long> &ctrct_axes,
+    const GQTensor &t,
+    char position,
+    std::vector<long> &transed_axes) {
+  auto ndim = t.indexes.size();
+  auto ctrct_ndim = ctrct_axes.size();
+  std::vector<long> saved_axes(ndim-ctrct_ndim);
+  std::size_t saved_axes_idx = 0;
+  std::vector<long> ordered_axes(ndim);
+  for (std::size_t i = 0; i < ndim; ++i) {
+    if (std::find(ctrct_axes.begin(), ctrct_axes.end(), i) ==
+        ctrct_axes.end()) {
+      saved_axes[saved_axes_idx] = i;
+      saved_axes_idx++;
+    }
+    ordered_axes[i] = 0;
+  }
+  switch (position) {
+    case '1':
+      transed_axes = saved_axes;
+      transed_axes.insert(
+          transed_axes.end(),
+          ctrct_axes.begin(), ctrct_axes.end());
+      if (transed_axes != ordered_axes) { return true; }
+      break;
+    case '2':
+      transed_axes = ctrct_axes;
+      transed_axes.insert(
+          transed_axes.end(),
+          saved_axes.begin(), saved_axes.end());
+      if (transed_axes != ordered_axes) { return true; }
+      break;
+    default:
+      std::cout << "position must be '1' or '2', but" << position << std::endl;
+      exit(1);
+  }
+  return false;
+}
+
+
+std::vector<std::size_t>GenPartHashTable(
+    const GQTensor &t, const std::vector<long>ctrct_axes) {
+  std::vector<std::size_t> part_hash_table(t.BlksConstRef().size());
+  for (std::size_t i = 0; i < t.BlksConstRef().size(); i++) {
+    part_hash_table[i] = t.BlksConstRef()[i]->PartHash(ctrct_axes);
+  }
+  return part_hash_table;
 }
 } /* gqten */ 

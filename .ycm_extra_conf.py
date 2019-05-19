@@ -34,6 +34,7 @@ flags = [
     '-I/usr/include',
     '-Iinclude',
     '-I${MKLROOT}/include',
+    '-Iexternal/hptt/include',
 ]
 
 # Add system includes

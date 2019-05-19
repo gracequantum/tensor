@@ -29,9 +29,8 @@ GQTensor *InitCtrctedTen(
     const GQTensor &, const GQTensor &,
     const std::vector<long> &, const std::vector<long> &);
 
-QNBlock *ContractBlock(
-    const QNBlock *, const QNBlock *,
-    const std::vector<long> &, const std::vector<long> &);
+QNBlock *ContractBlockNoTrans(
+    const QNBlock &, const QNBlock &, const std::size_t, const std::size_t);
 
 struct BlkCtrctInfo {
 public:
@@ -47,17 +46,6 @@ public:
   const long ctrctdim = 1;
   const std::vector<QNSector> saved_qnscts;
 };
-
-BlkCtrctInfo BlkCtrctPreparer(
-    const QNBlock &, const std::vector<long> &, const std::string &);
-
-double *TransposeData(
-    const double *,
-    const long &,
-    const long &,
-    const std::vector<long> &,
-    const std::vector<long> &);
-
 
 // Tensor SVD.
 struct BipartiteBlkData {
@@ -279,5 +267,12 @@ inline std::vector<double> NormVec(const std::vector<double> &v) {
   for (size_t i = 0; i < v.size(); ++i) { res[i] = v[i] / sum; }
   return res;
 }
+
+// Tensor contraction helpers.
+bool CtrctTransCheck(
+    const std::vector<long> &, const GQTensor &, char, std::vector<long> &);
+
+std::vector<std::size_t>GenPartHashTable(
+    const GQTensor &, const std::vector<long>);
 } /* gqten */ 
 #endif /* ifndef GQTEN_TEN_NUMER_FUNC_H */
