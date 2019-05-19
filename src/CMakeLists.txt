@@ -12,9 +12,11 @@ add_library(gqten
   gqten.cc)
 
 target_include_directories(gqten
-  PUBLIC "${PROJECT_SOURCE_DIR}/include")
+  PUBLIC "${PROJECT_SOURCE_DIR}/include"
+  PUBLIC "${PROJECT_SOURCE_DIR}/external/hptt/include")
 target_compile_options(gqten
   PUBLIC ${MATH_LIB_COMPILE_FLAGS})
 
 target_link_libraries(gqten
+  hptt
   "${MATH_LIB_LINK_FLAGS}")

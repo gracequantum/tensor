@@ -14,6 +14,7 @@
 #include <cstring>
 
 #include "mkl.h"
+#include "hptt.h"
 
 #ifdef Release
   #define NDEBUG
@@ -163,17 +164,16 @@ double *TransposeData(
     const long &old_size,
     const std::vector<long> &old_shape,
     const std::vector<long> &transed_axes) {
-  std::vector<long> transed_shape(old_ndim);
-  for (long i = 0; i < old_ndim; ++i) {
-    transed_shape[i] = old_shape[transed_axes[i]];
-  }
-  auto old_data_offsets = CalcDataOffsets(old_shape);
-  auto transed_data_offsets = CalcDataOffsets(transed_shape);
-  auto transed_data = new double [old_size];
-  for (auto &old_coors : GenAllCoors(old_shape)) {
-    transed_data[CalcOffset(TransCoors(old_coors, transed_axes), old_ndim, transed_data_offsets)] = 
-        old_data[CalcOffset(old_coors, old_ndim, old_data_offsets)];
-  }
+  int dim = old_ndim;
+  int perm[dim];  for (int i = 0; i < dim; ++i) { perm[i] = transed_axes[i]; }
+  int sizeA[dim]; for (int i = 0; i < dim; ++i) { sizeA[i] = old_shape[i]; }
+  int outerSizeB[dim];
+  for (int i = 0; i < dim; ++i) { outerSizeB[i] = old_shape[perm[i]]; }
+  auto transed_data = new double[old_size];
+  dTensorTranspose(perm, dim,
+      1.0, old_data, sizeA, sizeA,
+      0.0, transed_data, outerSizeB,
+      20, 1);
   return transed_data;
 }
 

@@ -35,6 +35,19 @@ size_t VecHasher(const std::vector<T> &vec) {
 }
 
 
+template<typename T>
+size_t VecPtrHasher(const std::vector<T> &vec) {
+  size_t len = vec.size();
+  size_t hash_val = _HASH_XXPRIME_5;
+  for (auto &item : vec) {
+    size_t item_hash_val = item->Hash();
+    hash_val += item_hash_val * _HASH_XXPRIME_2;
+    hash_val = _HASH_XXROTATE(hash_val);
+    hash_val *= _HASH_XXPRIME_1;
+  }
+  hash_val += len ^ _HASH_XXPRIME_5;
+  return hash_val;
+}
 // Helper classes.
 class HashableString {
 public:

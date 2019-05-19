@@ -298,11 +298,12 @@ QNBlock::operator()(const std::vector<long> &coors) {
 
 
 size_t QNBlock::PartHash(const std::vector<long> &dims) const {
-  std::vector<QNSector> selected_qnscts;
-  for (auto &dim : dims) {
-    selected_qnscts.push_back(qnscts[dim]);
+  auto selected_qnscts_ndim  = dims.size();
+  std::vector<const QNSector *> pselected_qnscts(selected_qnscts_ndim);
+  for (std::size_t i = 0; i < selected_qnscts_ndim; ++i) {
+    pselected_qnscts[i] = &qnscts[dims[i]];
   }
-  return VecHasher(selected_qnscts);
+  return VecPtrHasher(pselected_qnscts);
 }
 
 
