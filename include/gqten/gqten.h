@@ -196,6 +196,7 @@ public:
   double &operator()(const std::vector<long> &);
 
   size_t PartHash(const std::vector<long> &) const;
+  size_t QNSectorSetHash(void) const { return qnscts_hash_; }
 
   // Data access.
   const double *DataConstRef(void) const { return data_; }
@@ -212,6 +213,7 @@ public:
 private:
   double *data_ = nullptr;    // Data in a 1D array.
   std::vector<long> data_offsets_;
+  std::size_t qnscts_hash_ = 0;
 };
 
 std::ifstream &bfread(std::ifstream &, QNBlock &);

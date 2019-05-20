@@ -77,13 +77,13 @@ GQTensor *Contract(
                       *t1_to_ctrct_blks[ctrct_blk_pair.first],
                       *t2_to_ctrct_blks[ctrct_blk_pair.second],
                       t1_ctrct_ndim, t2_ctrct_ndim);
-    if (pnew_b->qnscts == kNullQNSectors) {
+    if (pnew_b->QNSectorSetHash() == 0) {
       ctrcted_scalars.push_back(pnew_b->DataConstRef()[0]);
       delete pnew_b;
     } else {
       auto has_blk = false;
       for (auto &pctrcted_blk : ctrcted_blocks) {
-        if (pnew_b->qnscts == pctrcted_blk->qnscts) {
+        if (pnew_b->QNSectorSetHash() == pctrcted_blk->QNSectorSetHash()) {
           auto data_size = pnew_b->size;
           assert(data_size == pctrcted_blk->size);
           ArrayElemAttach(

@@ -73,6 +73,17 @@ TEST_F(TestQNBlock, TestPartialHash) {
 }
 
 
+TEST_F(TestQNBlock, TestQNSectorSetHash) {
+  EXPECT_EQ(qnblock_default.QNSectorSetHash(), 0);
+  EXPECT_EQ(
+      qnblock_sz0sct_1d.QNSectorSetHash(),
+      QNSectorSet(qnblock_sz0sct_1d.qnscts).Hash());
+  EXPECT_EQ(
+      qnblock_sz1sct2_2d.QNSectorSetHash(),
+      QNSectorSet(qnblock_sz1sct2_2d.qnscts).Hash());
+}
+
+
 void RunTestQNBlockFileIOCase(const QNBlock &qnblk) {
   std::string file = "test.qnblk";
   std::ofstream out(file, std::ofstream::binary);

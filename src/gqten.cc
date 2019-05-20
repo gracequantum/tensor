@@ -245,6 +245,7 @@ QNBlock::QNBlock(const std::vector<QNSector> &init_qnscts) :
     }
     data_ = new double[size] ();    // Allocate memory and initialize to 0.
     data_offsets_ = CalcDataOffsets(shape);
+    qnscts_hash_ = QNSectorSet::Hash();
   }
 }
 
@@ -254,7 +255,8 @@ QNBlock::QNBlock(const QNBlock &qnblk) :
     ndim(qnblk.ndim),
     shape(qnblk.shape),
     size(qnblk.size),
-    data_offsets_(qnblk.data_offsets_) {
+    data_offsets_(qnblk.data_offsets_),
+    qnscts_hash_(qnblk.qnscts_hash_) {
   data_ = new double[size] ();
   std::memcpy(data_, qnblk.data_, size * sizeof(double));
 }
@@ -271,6 +273,7 @@ QNBlock &QNBlock::operator=(const QNBlock &rhs) {
   shape = rhs.shape;
   size = rhs.size;
   data_offsets_ = rhs.data_offsets_;
+  qnscts_hash_ = rhs.qnscts_hash_;
   return *this;
 }
 
@@ -373,6 +376,8 @@ std::ifstream &bfread(std::ifstream &ifs, QNBlock &qnblk) {
   qnblk.data_offsets_ = std::vector<long>(qnblk.ndim);
   for (auto &offset : qnblk.data_offsets_) { ifs >> offset; }
 
+  ifs >> qnblk.qnscts_hash_;
+
   ifs.seekg(1, std::ios::cur);    // Skip the line break.
 
   if (qnblk.size != 0) {
@@ -394,6 +399,8 @@ std::ofstream &bfwrite(std::ofstream &ofs, const QNBlock &qnblk) {
   for (auto &qnsct : qnblk.qnscts) { bfwrite(ofs, qnsct); }
 
   for (auto &offset : qnblk.data_offsets_) { ofs << offset << std::endl; }
+
+  ofs << qnblk.qnscts_hash_ << std::endl;
 
   if (qnblk.size != 0) {
     ofs.write((char *) qnblk.data_, qnblk.size*sizeof(double));
@@ -529,7 +536,7 @@ GQTensor GQTensor::operator+(const GQTensor &rhs) {
   for (auto &rhs_blk : rhs.BlksConstRef()) {
     auto  has_blk = false;
     for (auto &lhs_blk : blocks_) {
-      if (lhs_blk->qnscts == rhs_blk->qnscts) {
+      if (lhs_blk->QNSectorSetHash() == rhs_blk->QNSectorSetHash()) {
         assert(lhs_blk->size == rhs_blk->size);
         auto added_blk = new QNBlock(lhs_blk->qnscts);
         auto added_data = new double [lhs_blk->size];
@@ -552,7 +559,7 @@ GQTensor GQTensor::operator+(const GQTensor &rhs) {
   for (auto &lhs_blk : blocks_) {
     auto has_blk = false;
     for (auto &existed_blk : added_t.BlksConstRef()) {
-      if (existed_blk->qnscts == lhs_blk->qnscts) {
+      if (existed_blk->QNSectorSetHash() == lhs_blk->QNSectorSetHash()) {
         has_blk = true;
         break;
       }
@@ -570,7 +577,7 @@ GQTensor &GQTensor::operator+=(const GQTensor &rhs) {
   for (auto &prhs_blk : rhs.BlksConstRef()) {
     auto has_blk = false;
     for (auto &plhs_blk : blocks_) {
-      if (plhs_blk->qnscts == prhs_blk->qnscts) {
+      if (plhs_blk->QNSectorSetHash() == prhs_blk->QNSectorSetHash()) {
         auto lhs_blk_data = plhs_blk->DataRef();
         auto rhs_blk_data = prhs_blk->DataConstRef();
         assert(plhs_blk->size == prhs_blk->size);
@@ -606,7 +613,7 @@ GQTensor *GQTensor::operator-=(const GQTensor &rhs) {
   for (auto &rhs_blk : rhs.blocks_) {
     auto has_blk =  false;
     for (auto &lhs_blk : blocks_) {
-      if (lhs_blk->qnscts == rhs_blk->qnscts) {
+      if (lhs_blk->QNSectorSetHash() == rhs_blk->QNSectorSetHash()) {
         assert(lhs_blk->size == rhs_blk->size);
         auto lhs_blk_data = lhs_blk->DataRef();
         auto rhs_blk_data = rhs_blk->DataConstRef();
@@ -641,7 +648,7 @@ bool GQTensor::operator==(const GQTensor &rhs) const {
   for (auto &lhs_blk : blocks_) {
     auto has_eq_blk = false;
     for (auto &rhs_blk : rhs.blocks_) {
-      if (rhs_blk->qnscts == lhs_blk->qnscts) {
+      if (rhs_blk->QNSectorSetHash() == lhs_blk->QNSectorSetHash()) {
         if (!ArrayEq(
                  rhs_blk->DataConstRef(), rhs_blk->size,
                  lhs_blk->DataConstRef(), lhs_blk->size)) {
