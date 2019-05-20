@@ -52,7 +52,7 @@ struct BipartiteBlkData {
   BipartiteBlkData(
       const std::vector<QNSector> &lqnscts,
       const std::vector<QNSector> &rqnscts,
-      double *data) :
+      const double *data) :
       lqnscts(lqnscts), rqnscts(rqnscts), data(data) {}
   BipartiteBlkData(const BipartiteBlkData &blk_data) :
       lqnscts(blk_data.lqnscts), rqnscts(blk_data.rqnscts), data(blk_data.data) {}
@@ -61,7 +61,7 @@ struct BipartiteBlkData {
   }
   std::vector<QNSector> lqnscts;
   std::vector<QNSector> rqnscts;
-  double *data;
+  const double *data;
 };
 
 typedef std::vector<std::vector<QNSector>> QNSectorsSet;

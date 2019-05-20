@@ -200,7 +200,7 @@ PartDivsAndMergedBlk MergeBlocks(
     auto lpartdiv = CalcDiv(lqnscts, SliceFromBegin(t.indexes, ldims));
     auto rpartdiv = CalcDiv(rqnscts, SliceFromEnd(t.indexes, rdims));
     auto partdivs = std::make_pair(lpartdiv, rpartdiv);
-    auto blk_data = BipartiteBlkData(lqnscts, rqnscts, blk->DataRef());
+    auto blk_data = BipartiteBlkData(lqnscts, rqnscts, blk->DataConstRef());
     auto has_partdivs = false;
     for (auto &kv : tomerge_blkdatas) {
       if (partdivs_equaler(kv.first, partdivs)) {
@@ -299,6 +299,7 @@ TruncBlkSvdData TruncatedBlockSvd(
   std::vector<double> singular_values;
   for (auto &kv : merged_blocks) {
     auto raw_svd_data = MatSvd(kv.second.mat, kv.second.mat_ldim, kv.second.mat_rdim);
+    delete[] kv.second.mat;
     if (raw_svd_data.info == 0) {
       auto sdim = std::min(kv.second.mat_ldim, kv.second.mat_rdim);
       svd_data.emplace(
