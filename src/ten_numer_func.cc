@@ -166,7 +166,7 @@ QNBlock *ContractBlockNoTrans(
   saved_qnscts.insert(saved_qnscts.end(),
       b2.qnscts.cbegin()+t2_ctrct_ndim, b2.qnscts.cend());
   auto new_blk = new QNBlock(saved_qnscts);
-  if (saved_qnscts.size() == 0) { new_blk->DataRef() = new double; }
+  if (saved_qnscts.size() == 0) { new_blk->DataRef() = new double[1]; }
   MatMul(
       b1.DataConstRef(),
       b1_saved_size, b1_ctrct_size,
@@ -350,14 +350,14 @@ TruncBlkSvdData TruncatedBlockSvd(
     double *trunced_s = nullptr;
     double *trunced_v = nullptr;
     long kept_sv_num = 0;
+    MatTrans(kv.second.uldim, kv.second.sdim, kv.second.u);
     for (long i = 0; i < kv.second.sdim; ++i) {
-      auto ut = MatTrans(kv.second.u, kv.second.uldim, kv.second.sdim);
       if (kv.second.s[i] >= kept_smallest_sv) {
         MatAppendRow(
             trunced_u,
             kept_sv_num,
             kv.second.uldim,
-            MatGetConstRow(ut, i, kv.second.uldim));
+            MatGetConstRow(kv.second.u, i, kv.second.uldim));
         ArrayAppend(trunced_s, kept_sv_num, kv.second.s[i]);
         MatAppendRow(
             trunced_v,
@@ -371,7 +371,7 @@ TruncBlkSvdData TruncatedBlockSvd(
     delete [] kv.second.s; kv.second.s = nullptr;
     delete [] kv.second.v; kv.second.v = nullptr;
     if (kept_sv_num != 0) {
-      trunced_u = MatTrans(trunced_u, kept_sv_num, kv.second.uldim);
+      MatTrans(kept_sv_num, kv.second.uldim, trunced_u);
       truncated_blocks.emplace(
           kv.first,
           BlkSvdData(
