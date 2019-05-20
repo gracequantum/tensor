@@ -161,17 +161,18 @@ QNBlock *ContractBlockNoTrans(
       b2_saved_size *= b2.qnscts[i].dim;
     }
   }
-  auto ctrcted_data = MatMul(
-                          b1.DataConstRef(),
-                          b1_saved_size, b1_ctrct_size,
-                          b2.DataConstRef(),
-                          b2_ctrct_size, b2_saved_size);
   std::vector<QNSector> saved_qnscts(
       b1.qnscts.cbegin(), b1.qnscts.cend()-t1_ctrct_ndim);
   saved_qnscts.insert(saved_qnscts.end(),
       b2.qnscts.cbegin()+t2_ctrct_ndim, b2.qnscts.cend());
   auto new_blk = new QNBlock(saved_qnscts);
-  new_blk->DataRef() = ctrcted_data;
+  if (saved_qnscts.size() == 0) { new_blk->DataRef() = new double; }
+  MatMul(
+      b1.DataConstRef(),
+      b1_saved_size, b1_ctrct_size,
+      b2.DataConstRef(),
+      b2_ctrct_size, b2_saved_size,
+      new_blk->DataRef());
   return new_blk;
 }
 
@@ -400,7 +401,7 @@ SvdRes WrapBlock(
     auto sblk_qnsct = QNSector(sblk_qn, kv.second.sdim);
     sblk_qnscts.push_back(sblk_qnsct);
     auto sblock = new QNBlock({sblk_qnsct, sblk_qnsct});
-    sblock->DataRef() = GenDiagMat(kv.second.s, kv.second.sdim);
+    GenDiagMat(kv.second.s, kv.second.sdim, sblock->DataRef());
     delete [] kv.second.s; kv.second.s = nullptr;
     sblocks.push_back(sblock);
     // Create u and v block.
@@ -411,9 +412,10 @@ SvdRes WrapBlock(
       auto u_row_dim = MulDims(lqnscts);
       auto ublock_qnscts = lqnscts; ublock_qnscts.push_back(sblk_qnsct);
       auto ublock = new QNBlock(ublock_qnscts);
-      ublock->DataRef() = MatGetRows(
-                              kv.second.u, kv.second.uldim, kv.second.sdim,
-                              u_row_offset, u_row_dim);
+      MatGetRows(
+          kv.second.u, kv.second.uldim, kv.second.sdim,
+          u_row_offset, u_row_dim,
+          ublock->DataRef());
       ublocks.push_back(ublock);
       u_row_offset += u_row_dim;
     }
@@ -423,11 +425,11 @@ SvdRes WrapBlock(
       auto vblock_qnscts = rqnscts;
       vblock_qnscts.insert(vblock_qnscts.begin(), sblk_qnsct);
       auto vblock = new QNBlock(vblock_qnscts);
-      vblock->DataRef() = MatTrans(   /* TODO: two copy here, no efficiency.*/
-                              MatGetRows(
-                                  transed_v, kv.second.uldim, kv.second.sdim,
-                                  v_col_offset, v_col_dim),
-                              v_col_dim, kv.second.sdim);
+      MatGetRows(
+          transed_v, kv.second.uldim, kv.second.sdim,
+          v_col_offset, v_col_dim,
+          vblock->DataRef());
+      MatTrans(v_col_dim, kv.second.sdim, vblock->DataRef());
       vblocks.push_back(vblock);
       v_col_offset += v_col_dim;
     }
@@ -454,11 +456,12 @@ SvdRes WrapBlock(
 
 
 // Operations for matrix.
-double *MatMul(
+void MatMul(
     const double *m1, const long &ldim1, const long &rdim1,
-    const double *m2, const long &ldim2, const long &rdim2) {
+    const double *m2, const long &ldim2, const long &rdim2,
+    double *res) {
   assert(rdim1 == ldim2);
-  auto res = new double [ldim1*rdim2];
+  //auto res = new double [ldim1*rdim2];
   double alpha = 1.0, beta = 0.0;
   cblas_dgemm(
       CblasRowMajor, CblasNoTrans, CblasNoTrans,
@@ -468,7 +471,7 @@ double *MatMul(
       m2, rdim2,
       beta,
       res, rdim2);
-  return res;
+  //return res;
 }
 
 
@@ -522,6 +525,15 @@ double *MatTrans(
 }
 
 
+void MatTrans(const long &mat_ldim, const long &mat_rdim, double *mat) {
+  mkl_dimatcopy(
+      'R', 'T',
+      mat_ldim, mat_rdim,
+      1.0,
+      mat,
+      mat_rdim, mat_ldim);
+}
+
 void MatAppendRow(
     double * &mat, const long &rows, const long &cols, const double *new_row) {
   auto old_size = rows * cols;
@@ -539,12 +551,10 @@ void MatAppendRow(
 }
 
 
-double *GenDiagMat(const double *diag_v, const long &diag_v_dim) {
-  auto full_mat = new double [diag_v_dim*diag_v_dim] ();
+void GenDiagMat(const double *diag_v, const long &diag_v_dim, double *full_mat) {
   for (long i = 0; i < diag_v_dim; ++i) {
     *(full_mat + (i*diag_v_dim + i)) = diag_v[i];
   }
-  return full_mat;
 }
 
 
@@ -555,6 +565,15 @@ double *MatGetRows(
   auto new_mat = new double [new_size]; 
   std::memcpy(new_mat, mat+(from*cols), new_size*sizeof(double));
   return new_mat;
+}
+
+
+void MatGetRows(
+    const double *mat, const long &rows, const long &cols,
+    const long &from, const long &num_rows,
+    double *new_mat) {
+  auto new_size = num_rows*cols;
+  std::memcpy(new_mat, mat+(from*cols), new_size*sizeof(double));
 }
 
 

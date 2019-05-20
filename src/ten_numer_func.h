@@ -178,13 +178,16 @@ SvdRes WrapBlock(
 
 
 // Operations for matrix.
-double *MatMul(
+void MatMul(
     const double *, const long &, const long &,
-    const double *, const long &, const long &);
+    const double *, const long &, const long &,
+    double *);
 
 RawSvdData MatSvd(double *, const long &, const long &);
 
-double *MatTrans(const double *, const long &, const long &);
+double *MatTrans(const double *, const long &, const long &); // off-place
+
+void MatTrans(const long &, const long &, double *);          // in-place
 
 void MatAppendRow(double * &, const long &, const long &, const double *);
 
@@ -193,10 +196,14 @@ inline const double *MatGetConstRow(
   return mat + row_idx*cols;
 }
 
-double *GenDiagMat(const double *, const long &);
+void GenDiagMat(const double *, const long &, double *);
 
-double *MatGetRows(
+double *MatGetRows(       // off-place
     const double *, const long &, const long &, const long &, const long &);
+
+void MatGetRows(          // in-place
+    const double *, const long &, const long &, const long &, const long &,
+    double *);
 
 void ArrayAppend(double * &, const long &, const double &);
 

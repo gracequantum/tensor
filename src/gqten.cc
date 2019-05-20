@@ -619,12 +619,11 @@ GQTensor *GQTensor::operator-=(const GQTensor &rhs) {
     }
     if (!has_blk) {
       auto pnew_blk = new QNBlock(rhs_blk->qnscts);
-      auto pnew_data = new double [rhs_blk->size];
+      auto pnew_data = pnew_blk->DataRef();
       auto rhs_blk_data = rhs_blk->DataConstRef();
       for (long i = 0; i < rhs_blk->size; i++) {
         pnew_data[i] = -rhs_blk_data[i];
       }
-      pnew_blk->DataRef() = pnew_data;
       blocks_.push_back(pnew_blk);
     }
   }
