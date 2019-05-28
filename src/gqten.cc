@@ -166,6 +166,11 @@ std::ofstream &bfwrite(std::ofstream &ofs, const QNSector &qnsct) {
 
 
 // Quantum number sector set.
+QNSectorSet::QNSectorSet(const std::vector<const QNSector *> &pqnscts) {
+  for (auto &pqnsct : pqnscts) { qnscts.push_back(*pqnsct); }
+}
+
+
 inline size_t QNSectorSet::Hash(void) const { return VecHasher(qnscts); }
 
 
@@ -234,6 +239,24 @@ std::ofstream &bfwrite(std::ofstream &ofs, const Index &idx) {
 // Dense block labeled by the quantum number.
 QNBlock::QNBlock(const std::vector<QNSector> &init_qnscts) :
     QNSectorSet(init_qnscts) {
+  ndim = qnscts.size(); 
+  for (auto &qnsct : qnscts) {
+    shape.push_back(qnsct.dim);
+  }
+  if (ndim != 0) {
+    size = 1;       // Initialize the block size.
+    for (long i = 0; i < ndim; ++i) {
+      size *= shape[i];
+    }
+    data_ = new double[size] ();    // Allocate memory and initialize to 0.
+    data_offsets_ = CalcDataOffsets(shape);
+    qnscts_hash_ = QNSectorSet::Hash();
+  }
+}
+
+
+QNBlock::QNBlock(const std::vector<const QNSector *> &pinit_qnscts) :
+    QNSectorSet(pinit_qnscts) {
   ndim = qnscts.size(); 
   for (auto &qnsct : qnscts) {
     shape.push_back(qnsct.dim);
@@ -574,6 +597,12 @@ GQTensor GQTensor::operator+(const GQTensor &rhs) {
 
 
 GQTensor &GQTensor::operator+=(const GQTensor &rhs) {
+  if (this->indexes.size() == 0) {
+    assert(this->indexes == rhs.indexes);
+    this->scalar += rhs.scalar;
+    return *this;
+  }
+
   for (auto &prhs_blk : rhs.BlksConstRef()) {
     auto has_blk = false;
     for (auto &plhs_blk : blocks_) {
@@ -639,12 +668,19 @@ GQTensor *GQTensor::operator-=(const GQTensor &rhs) {
 
 
 bool GQTensor::operator==(const GQTensor &rhs) const {
+  // Indexes check.
   if (indexes != rhs.indexes) {
     return false;
   }
+  // Scalar check.
+  if (indexes.size() == 0 && rhs.indexes.size() == 0 && scalar != rhs.scalar) {
+    return false;
+  }
+  // Block number check.
   if (blocks_.size() != rhs.blocks_.size()) {
     return false;
   }
+  // Blocks check.
   for (auto &lhs_blk : blocks_) {
     auto has_eq_blk = false;
     for (auto &rhs_blk : rhs.blocks_) {
@@ -746,6 +782,12 @@ QN Div(const GQTensor &t) {
 
 GQTensor operator*(const GQTensor &t, const double &s) {
   auto muled_t = GQTensor(t);
+  // For scalar case.
+  if (muled_t.indexes.size() == 0) {
+    muled_t.scalar *= s;
+    return muled_t;
+  }
+  // For tensor case.
   for (auto &blk : muled_t.BlksRef()) {
     auto data = blk->DataRef();
     for (long i = 0; i < blk->size; ++i) {

@@ -101,6 +101,7 @@ public:
   QNSectorSet(void) {}
   QNSectorSet(const std::vector<QNSector> & qnscts) : qnscts(qnscts) {}
   QNSectorSet(const QNSectorSet &qnss) : qnscts(qnss.qnscts) {}
+  QNSectorSet(const std::vector<const QNSector*> &);
   virtual ~QNSectorSet() = default;
 
   virtual size_t Hash(void) const;
@@ -185,6 +186,7 @@ friend std::ofstream &bfwrite(std::ofstream &, const QNBlock &);
 public:
   QNBlock(void) = default;
   QNBlock(const std::vector<QNSector> &);
+  QNBlock(const std::vector<const QNSector *> &);
 
   QNBlock(const QNBlock &);
   QNBlock &operator=(const QNBlock &);
@@ -310,6 +312,14 @@ std::ofstream &bfwrite(std::ofstream &, const GQTensor &);
 GQTensor *Contract(
     const GQTensor &, const GQTensor &,
     const std::vector<std::vector<long>> &);
+
+// General GQTensor contraction.
+void gqten_dgetc(
+    const std::vector<long> &, const std::vector<long> &,
+    const double,
+    const GQTensor *, const GQTensor *,
+    const double,
+    GQTensor * &);
 
 // Tensor SVD.
 struct SvdRes {

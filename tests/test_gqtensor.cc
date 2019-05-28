@@ -234,9 +234,14 @@ TEST_F(TestGQTensor, TestSubtraction) {
 
 
 TEST_F(TestGQTensor, TestMultiplication) {
-  auto ten = GQTensor({idx_in,  idx_out});
+  auto ten = GQTensor();
+  ten.scalar = 1.0;
+  auto multed_ten = 2.33 * ten;
+  EXPECT_DOUBLE_EQ(multed_ten.scalar, 2.33);
+
+  ten = GQTensor({idx_in,  idx_out});
   ten.Random(QN({QNNameVal("Sz", 0)}));
-  auto multed_ten = 2.33  * ten;
+  multed_ten = 2.33  * ten;
   for (size_t i = 0; i < ten.BlksConstRef().size(); ++i) {
     for (long j = 0; j < ten.BlksConstRef()[i]->size; j++) {
         EXPECT_DOUBLE_EQ(

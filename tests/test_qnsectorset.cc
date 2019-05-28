@@ -10,22 +10,31 @@
 #include <vector>
 
 
+using namespace gqten;
+
+
 struct TestQNSectorSet : public testing::Test {
-  gqten::QNSectorSet qnscts_default;
-  std::vector<gqten::QNSector> qnscts1 = {
-      gqten::QNSector(gqten::QN({gqten::QNNameVal("Sz", 0)}), 1)};
-  gqten::QNSectorSet qnscts_1sct = gqten::QNSectorSet({qnscts1[0]});
-  std::vector<gqten::QNSector> qnscts2 = {
-      gqten::QNSector(gqten::QN({gqten::QNNameVal("Sz", 1)}), 1),
-      gqten::QNSector(gqten::QN({gqten::QNNameVal("Sz", 1)}), 2)};
-  gqten::QNSectorSet qnscts_2sct = gqten::QNSectorSet({qnscts2[0], qnscts2[1]});
+  QNSectorSet qnscts_default;
+
+  std::vector<QNSector> qnscts1 = {
+      QNSector(QN({QNNameVal("Sz", 0)}), 1)};
+  QNSectorSet qnscts_1sct = QNSectorSet({qnscts1[0]});
+
+  std::vector<const QNSector *> pqnscts1 = {&qnscts1[0]};
+  QNSectorSet qnscts_1sct_from_ptr = QNSectorSet(pqnscts1);
+
+  std::vector<QNSector> qnscts2 = {
+      QNSector(QN({QNNameVal("Sz", 1)}), 1),
+      QNSector(QN({QNNameVal("Sz", 1)}), 2)};
+  QNSectorSet qnscts_2sct = QNSectorSet({qnscts2[0], qnscts2[1]});
 };
 
 
 TEST_F(TestQNSectorSet, DataMembers) {
-  std::vector<gqten::QNSector> empty_qnscts;
+  std::vector<QNSector> empty_qnscts;
   EXPECT_EQ(qnscts_default.qnscts, empty_qnscts);
   EXPECT_EQ(qnscts_1sct.qnscts, qnscts1);
+  EXPECT_EQ(qnscts_1sct_from_ptr.qnscts, qnscts1);
   EXPECT_EQ(qnscts_2sct.qnscts, qnscts2);
 }
 
@@ -33,5 +42,6 @@ TEST_F(TestQNSectorSet, DataMembers) {
 TEST_F(TestQNSectorSet, Equivalent) {
   EXPECT_TRUE(qnscts_default == qnscts_default);
   EXPECT_TRUE(qnscts_1sct == qnscts_1sct);
+  EXPECT_TRUE(qnscts_1sct == qnscts_1sct_from_ptr);
   EXPECT_TRUE(qnscts_1sct != qnscts_2sct);
 }
