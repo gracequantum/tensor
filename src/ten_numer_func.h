@@ -48,6 +48,13 @@ public:
 };
 
 // General GQTensor contraction.
+std::vector<QNBlock *> GETCBlksCtrctBatch(
+    const std::vector<long> &, const std::vector<long> &,
+    const double,
+    const std::vector<QNBlock *> &, const std::vector<QNBlock *> &);
+
+std::vector<QNBlock *> MergeCtrctBlks(const std::vector<QNBlock *> &);
+
 void CalcCtrctBlkDimInfo(
     const std::size_t, const QNBlock *, const std::vector<long> &,
     std::vector<long> &, std::vector<long> &);
@@ -286,9 +293,12 @@ inline std::vector<double> NormVec(const std::vector<double> &v) {
 
 // Tensor contraction helpers.
 bool CtrctTransCheck(
-    const std::vector<long> &, const GQTensor &, char, std::vector<long> &);
+    const std::vector<long> &, const long, const char, std::vector<long> &);
 
-std::vector<std::size_t>GenPartHashTable(
-    const GQTensor &, const std::vector<long>);
+std::vector<std::size_t> TenGenPartHashTable(
+    const GQTensor &, const std::vector<long> &);
+
+std::vector<std::size_t> GenBlksPartHashTable(
+    const std::vector<QNBlock *> &, const std::vector<long> &);
 } /* gqten */ 
 #endif /* ifndef GQTEN_TEN_NUMER_FUNC_H */

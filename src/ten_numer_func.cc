@@ -32,10 +32,12 @@ GQTensor *Contract(
 
   // Block contraction data prepare.
   std::vector<long> t1_transed_axes, t2_transed_axes;
-  bool t1_need_trans = CtrctTransCheck(t1_ctrct_idxs, t1, '1', t1_transed_axes);
-  bool t2_need_trans = CtrctTransCheck(t2_ctrct_idxs, t2, '2', t2_transed_axes);
-  auto t1_blks_part_hash_table = GenPartHashTable(t1, t1_ctrct_idxs);
-  auto t2_blks_part_hash_table = GenPartHashTable(t2, t2_ctrct_idxs);
+  bool t1_need_trans = CtrctTransCheck(
+      t1_ctrct_idxs, t1.indexes.size(), '1', t1_transed_axes);
+  bool t2_need_trans = CtrctTransCheck(
+      t2_ctrct_idxs, t2.indexes.size(), '2', t2_transed_axes);
+  auto t1_blks_part_hash_table = TenGenPartHashTable(t1, t1_ctrct_idxs);
+  auto t2_blks_part_hash_table = TenGenPartHashTable(t2, t2_ctrct_idxs);
   auto t1_blks_num = t1.BlksConstRef().size();
   auto t2_blks_num = t2.BlksConstRef().size();
   std::vector<QNBlock *> t1_to_ctrct_blks(t1_blks_num);
@@ -186,14 +188,95 @@ void gqten_dgetc(
     const double beta,
     GQTensor * &tc) {
 
+  std::vector<QNBlock *> pnew_blks;
+  if (ta->BlksConstRef().size() > 0 && tb->BlksConstRef().size() > 0) {
+    pnew_blks = GETCBlksCtrctBatch(
+        ctrct_axes_a, ctrct_axes_b,
+        alpha, ta->BlksConstRef(), tb->BlksConstRef());
+  }
+
+  // Generate result tensor.
+  auto gemm_batch_grp_cnt = pnew_blks.size();
+  auto res_t  = InitCtrctedTen(*ta, *tb, ctrct_axes_a, ctrct_axes_b);
+  if (res_t->indexes.size() == 0) {   // Contract to scalar case.
+    if (gemm_batch_grp_cnt == 0) {    // No matched block pair.
+      if (beta != 0.0) {
+        assert(tc->indexes == res_t->indexes);
+        tc->scalar *= beta;
+        delete res_t;
+      } else {
+        delete tc;
+        tc = res_t;
+      }
+    } else {                          // Has matched block pair.
+      double scalar = 0;
+      for (auto &pnew_blk : pnew_blks) {
+        scalar += (pnew_blk->DataConstRef()[0]);
+        delete pnew_blk;
+      }
+      if (beta != 0.0) {
+        assert(tc->indexes == res_t->indexes);
+        tc->scalar *= beta;
+        tc->scalar += scalar;
+        delete res_t;
+      } else {
+        res_t->scalar = scalar;
+        delete tc;
+        tc = res_t;
+      }
+    }
+  } else {                            // Contract to tensor case.
+    auto merged_blks = MergeCtrctBlks(pnew_blks);
+    if (beta != 0.0) {
+      assert(tc->indexes == res_t->indexes);
+      for (auto &pblk : tc->BlksRef()) {
+        for (long i = 0; i < pblk->size; ++i) {
+          pblk->DataRef()[i] *= beta;
+        }
+      }
+      for (auto &pmerged_blk : merged_blks) {
+        auto has_blk = false;
+        for (auto &ptc_blk : tc->BlksRef()) {
+          if (pmerged_blk->QNSectorSetHash() == ptc_blk->QNSectorSetHash()) {
+            auto data_size = pmerged_blk->size;
+            assert(data_size == ptc_blk->size);
+            ArrayElemAttach(
+                ptc_blk->DataRef(), data_size, pmerged_blk->DataConstRef());
+            delete pmerged_blk;
+            has_blk = true;
+            break;
+          }
+        }
+        if (!has_blk) {
+          tc->BlksRef().push_back(pmerged_blk);
+        }
+      }
+      delete res_t;
+    } else {
+      res_t->BlksRef() = merged_blks;
+      delete tc;
+      tc = res_t;
+    }
+  }
+}
+
+
+std::vector<QNBlock *> GETCBlksCtrctBatch(
+    const std::vector<long> &ctrct_axes_a,
+    const std::vector<long> &ctrct_axes_b,
+    const double alpha,
+    const std::vector<QNBlock *> &ta_blks,
+    const std::vector<QNBlock *> &tb_blks) {
   // Data prepare.
   std::vector<long> transed_axes_a, transed_axes_b;
-  bool ta_need_trans = CtrctTransCheck(ctrct_axes_a, *ta, '1', transed_axes_a);
-  bool tb_need_trans = CtrctTransCheck(ctrct_axes_b, *tb, '2', transed_axes_b);
-  auto ta_blks_part_hash_table = GenPartHashTable(*ta, ctrct_axes_a);
-  auto tb_blks_part_hash_table = GenPartHashTable(*tb, ctrct_axes_b);
-  auto ta_blks_num = ta->BlksConstRef().size();
-  auto tb_blks_num = tb->BlksConstRef().size();
+  assert(ta_blks.size() > 0);
+  assert(tb_blks.size() > 0);
+  bool ta_need_trans = CtrctTransCheck(ctrct_axes_a, ta_blks[0]->ndim, '1', transed_axes_a);
+  bool tb_need_trans = CtrctTransCheck(ctrct_axes_b, tb_blks[0]->ndim, '2', transed_axes_b);
+  auto ta_blks_part_hash_table = GenBlksPartHashTable(ta_blks, ctrct_axes_a);
+  auto tb_blks_part_hash_table = GenBlksPartHashTable(tb_blks, ctrct_axes_b);
+  auto ta_blks_num = ta_blks.size();
+  auto tb_blks_num = tb_blks.size();
   std::vector<const double *> ta_to_ctrct_blk_datas(ta_blks_num, nullptr); 
   std::vector<const double *> tb_to_ctrct_blk_datas(tb_blks_num, nullptr);
   std::vector<long> ta_to_ctrct_blk_saved_dims(ta_blks_num, NULL);
@@ -213,7 +296,7 @@ void gqten_dgetc(
     for (std::size_t j = 0; j < tb_blks_num; ++j) {
       if (ta_blks_part_hash_table[i] == tb_blks_part_hash_table[j]) {
         auto pnew_blk_qnscts = GetPNewBlkQNScts(
-                                   ta->BlksConstRef()[i], tb->BlksConstRef()[j],
+                                   ta_blks[i], tb_blks[j],
                                    ctrct_axes_a, ctrct_axes_b);
         pnew_blks.push_back(new QNBlock(pnew_blk_qnscts));
         if (pnew_blks[gemm_batch_grp_cnt]->DataConstRef() == nullptr) {
@@ -222,19 +305,19 @@ void gqten_dgetc(
         if (ta_to_ctrct_blk_datas[i] == nullptr) {
           // Calculate dimensions information.
           CalcCtrctBlkDimInfo(
-              i, ta->BlksConstRef()[i], ctrct_axes_a,
+              i, ta_blks[i], ctrct_axes_a,
               ta_to_ctrct_blk_saved_dims, ta_to_ctrct_blk_ctrct_dims);
           // Generate contraction data.
           if (ta_need_trans) {
             auto blk_data_transed_to_ctrct = TransposeData(
-                ta->BlksConstRef()[i]->DataConstRef(),
-                ta->BlksConstRef()[i]->ndim,
-                ta->BlksConstRef()[i]->size,
-                ta->BlksConstRef()[i]->shape,
+                ta_blks[i]->DataConstRef(),
+                ta_blks[i]->ndim,
+                ta_blks[i]->size,
+                ta_blks[i]->shape,
                 transed_axes_a);
             ta_to_ctrct_blk_datas[i] = blk_data_transed_to_ctrct;
           } else {
-            ta_to_ctrct_blk_datas[i] = ta->BlksConstRef()[i]->DataConstRef();
+            ta_to_ctrct_blk_datas[i] = ta_blks[i]->DataConstRef();
           }
         } 
         // Assign gemm_batch parameters.
@@ -245,19 +328,19 @@ void gqten_dgetc(
         if (tb_to_ctrct_blk_datas[j] == nullptr) {
           // Calculate dimensions information.
           CalcCtrctBlkDimInfo(
-              j, tb->BlksConstRef()[j], ctrct_axes_b,
+              j, tb_blks[j], ctrct_axes_b,
               tb_to_ctrct_blk_saved_dims, tb_to_ctrct_blk_ctrct_dims);
           // Generate contraction data.
           if (tb_need_trans) {
             auto blk_data_transed_to_ctrct = TransposeData(
-                tb->BlksConstRef()[j]->DataConstRef(),
-                tb->BlksConstRef()[j]->ndim,
-                tb->BlksConstRef()[j]->size,
-                tb->BlksConstRef()[j]->shape,
+                tb_blks[j]->DataConstRef(),
+                tb_blks[j]->ndim,
+                tb_blks[j]->size,
+                tb_blks[j]->shape,
                 transed_axes_b);
             tb_to_ctrct_blk_datas[j] = blk_data_transed_to_ctrct;
           } else {
-            tb_to_ctrct_blk_datas[j] = tb->BlksConstRef()[j]->DataConstRef();
+            tb_to_ctrct_blk_datas[j] = tb_blks[j]->DataConstRef();
           }
         }
         // Assign gemm_batch parameters.
@@ -293,88 +376,6 @@ void gqten_dgetc(
         gemm_batch_grp_cnt,
         group_size_vec.data());
   }
-
-  // Generate result tensor.
-  auto res_t  = InitCtrctedTen(*ta, *tb, ctrct_axes_a, ctrct_axes_b);
-  if (res_t->indexes.size() == 0) {   // Contract to scalar case.
-    if (gemm_batch_grp_cnt == 0) {    // No matched block pair.
-      if (beta != 0.0) {
-        assert(tc->indexes == res_t->indexes);
-        tc->scalar *= beta;
-        delete res_t;
-      } else {
-        delete tc;
-        tc = res_t;
-      }
-    } else {                          // Has matched block pair.
-      double scalar = 0;
-      for (auto &pnew_blk : pnew_blks) {
-        scalar += (pnew_blk->DataConstRef()[0]);
-        delete pnew_blk;
-      }
-      if (beta != 0.0) {
-        assert(tc->indexes == res_t->indexes);
-        tc->scalar *= beta;
-        tc->scalar += scalar;
-        delete res_t;
-      } else {
-        res_t->scalar = scalar;
-        delete tc;
-        tc = res_t;
-      }
-    }
-  } else {                            // Contract to tensor case.
-    std::vector<QNBlock *> ctrct_blks;
-    for (auto &pnew_blk : pnew_blks) {
-      auto has_blk = false;  
-      for (auto &pctrct_blk : ctrct_blks) {
-        if (pnew_blk->QNSectorSetHash() == pctrct_blk->QNSectorSetHash()) {
-          auto data_size = pnew_blk->size;
-          assert(data_size == pctrct_blk->size);
-          ArrayElemAttach(
-              pctrct_blk->DataRef(), data_size,
-              pnew_blk->DataConstRef());
-          delete pnew_blk;
-          has_blk = true;
-          break;
-        }
-      }
-      if (!has_blk) {
-        ctrct_blks.push_back(pnew_blk);
-      }
-    }
-    if (beta != 0.0) {
-      assert(tc->indexes == res_t->indexes);
-      for (auto &pblk : tc->BlksRef()) {
-        for (long i = 0; i < pblk->size; ++i) {
-          pblk->DataRef()[i] *= beta;
-        }
-      }
-      for (auto &pctrct_blk : ctrct_blks) {
-        auto has_blk = false;
-        for (auto &ptc_blk : tc->BlksRef()) {
-          if (pctrct_blk->QNSectorSetHash() == ptc_blk->QNSectorSetHash()) {
-            auto data_size = pctrct_blk->size;
-            assert(data_size == ptc_blk->size);
-            ArrayElemAttach(
-                ptc_blk->DataRef(), data_size, pctrct_blk->DataConstRef());
-            delete pctrct_blk;
-            has_blk = true;
-            break;
-          }
-        }
-        if (!has_blk) {
-          tc->BlksRef().push_back(pctrct_blk);
-        }
-      }
-      delete res_t;
-    } else {
-      res_t->BlksRef() = ctrct_blks;
-      delete tc;
-      tc = res_t;
-    }
-  }
-
   // Free temporary block data.
   if (ta_need_trans) {
     for (auto &blk_data : ta_to_ctrct_blk_datas) { delete [] blk_data; }
@@ -382,6 +383,31 @@ void gqten_dgetc(
   if (tb_need_trans) {
     for (auto &blk_data : tb_to_ctrct_blk_datas) { delete [] blk_data; }
   }
+  return pnew_blks;
+}
+
+
+std::vector<QNBlock *> MergeCtrctBlks(const std::vector<QNBlock *> &pblks) {
+  std::vector<QNBlock *> merged_blks;
+  for (auto &pnew_blk : pblks) {
+    auto has_blk = false;  
+    for (auto &pmerged_blk : merged_blks) {
+      if (pnew_blk->QNSectorSetHash() == pmerged_blk->QNSectorSetHash()) {
+        auto data_size = pnew_blk->size;
+        assert(data_size == pmerged_blk->size);
+        ArrayElemAttach(
+            pmerged_blk->DataRef(), data_size,
+            pnew_blk->DataConstRef());
+        delete pnew_blk;
+        has_blk = true;
+        break;
+      }
+    }
+    if (!has_blk) {
+      merged_blks.push_back(pnew_blk);
+    }
+  }
+  return merged_blks;
 }
 
 
@@ -857,15 +883,14 @@ double VecSumOver(const std::vector<double> &v) {
 // Tensor contraction helpers.
 bool CtrctTransCheck(
     const std::vector<long> &ctrct_axes,
-    const GQTensor &t,
-    char position,
+    const long ndim,
+    const char position,
     std::vector<long> &transed_axes) {
-  auto ndim = t.indexes.size();
   auto ctrct_ndim = ctrct_axes.size();
   std::vector<long> saved_axes(ndim-ctrct_ndim);
   std::size_t saved_axes_idx = 0;
   std::vector<long> ordered_axes(ndim);
-  for (std::size_t i = 0; i < ndim; ++i) {
+  for (long i = 0; i < ndim; ++i) {
     if (std::find(ctrct_axes.begin(), ctrct_axes.end(), i) ==
         ctrct_axes.end()) {
       saved_axes[saved_axes_idx] = i;
@@ -896,11 +921,17 @@ bool CtrctTransCheck(
 }
 
 
-std::vector<std::size_t>GenPartHashTable(
-    const GQTensor &t, const std::vector<long>ctrct_axes) {
-  std::vector<std::size_t> part_hash_table(t.BlksConstRef().size());
-  for (std::size_t i = 0; i < t.BlksConstRef().size(); i++) {
-    part_hash_table[i] = t.BlksConstRef()[i]->PartHash(ctrct_axes);
+std::vector<std::size_t>TenGenPartHashTable(
+    const GQTensor &t, const std::vector<long> &ctrct_axes) {
+  return GenBlksPartHashTable(t.BlksConstRef(), ctrct_axes);
+}
+
+
+std::vector<std::size_t> GenBlksPartHashTable(
+    const std::vector<QNBlock *> &blks, const std::vector<long> &ctrct_axes) {
+  std::vector<std::size_t> part_hash_table(blks.size());
+  for (std::size_t i = 0; i < blks.size(); i++) {
+    part_hash_table[i] = blks[i]->PartHash(ctrct_axes);
   }
   return part_hash_table;
 }
