@@ -20,34 +20,11 @@
 namespace gqten {
 
 
-const std::vector<QNSector> kNullQNSectors;
-const std::vector<Index> kNullIndexes;
-
-
 // Tensor contraction.
 GQTensor *InitCtrctedTen(
     const GQTensor &, const GQTensor &,
     const std::vector<long> &, const std::vector<long> &);
 
-QNBlock *ContractBlockNoTrans(
-    const QNBlock &, const QNBlock &, const std::size_t, const std::size_t);
-
-struct BlkCtrctInfo {
-public:
-  BlkCtrctInfo(
-      const double *data,
-      const long &savedim, const long &ctrctdim,
-      const std::vector<QNSector> &saved_qnscts) :
-    data(data),
-    savedim(savedim), ctrctdim(ctrctdim),
-    saved_qnscts(saved_qnscts) {}
-  const double *data = nullptr;
-  const long savedim = 1;
-  const long ctrctdim = 1;
-  const std::vector<QNSector> saved_qnscts;
-};
-
-// General GQTensor contraction.
 std::vector<QNBlock *> GETCBlksCtrctBatch(
     const std::vector<long> &, const std::vector<long> &,
     const double,
@@ -225,8 +202,6 @@ void ArrayAppend(double * &, const long &, const double &);
 
 void ArrayElemAttach(double *, const long &, const double *);
 
-double VecSumOver(const std::vector<double> &);
-
 
 // Helpers.
 template<typename T>
@@ -294,9 +269,6 @@ inline std::vector<double> NormVec(const std::vector<double> &v) {
 // Tensor contraction helpers.
 bool CtrctTransCheck(
     const std::vector<long> &, const long, const char, std::vector<long> &);
-
-std::vector<std::size_t> TenGenPartHashTable(
-    const GQTensor &, const std::vector<long> &);
 
 std::vector<std::size_t> GenBlksPartHashTable(
     const std::vector<QNBlock *> &, const std::vector<long> &);

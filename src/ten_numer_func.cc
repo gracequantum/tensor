@@ -25,97 +25,36 @@ namespace gqten {
 
 // Tensor contraction.
 GQTensor *Contract(
-    const GQTensor &t1, const GQTensor &t2,
+    const GQTensor &ta, const GQTensor &tb,
     const std::vector<std::vector<long>> &axes_set) {
-  auto t1_ctrct_idxs = axes_set[0];
-  auto t2_ctrct_idxs = axes_set[1];
+  auto ctrct_axes_a = axes_set[0];
+  auto ctrct_axes_b = axes_set[1];
 
-  // Block contraction data prepare.
-  std::vector<long> t1_transed_axes, t2_transed_axes;
-  bool t1_need_trans = CtrctTransCheck(
-      t1_ctrct_idxs, t1.indexes.size(), '1', t1_transed_axes);
-  bool t2_need_trans = CtrctTransCheck(
-      t2_ctrct_idxs, t2.indexes.size(), '2', t2_transed_axes);
-  auto t1_blks_part_hash_table = TenGenPartHashTable(t1, t1_ctrct_idxs);
-  auto t2_blks_part_hash_table = TenGenPartHashTable(t2, t2_ctrct_idxs);
-  auto t1_blks_num = t1.BlksConstRef().size();
-  auto t2_blks_num = t2.BlksConstRef().size();
-  std::vector<QNBlock *> t1_to_ctrct_blks(t1_blks_num);
-  std::vector<QNBlock *> t2_to_ctrct_blks(t2_blks_num);
-  std::vector<std::pair<std::size_t, std::size_t>> ctrct_blk_pair_idxs;
-  for (std::size_t i = 0; i < t1_blks_num; ++i) {
-    for (std::size_t j = 0; j < t2_blks_num; ++j) {
-      if (t1_blks_part_hash_table[i] == t2_blks_part_hash_table[j]) {
-        ctrct_blk_pair_idxs.push_back(std::make_pair(i, j));
-        if (t1_to_ctrct_blks[i] == nullptr) {
-          if (t1_need_trans) {
-            auto blk_transed_to_ctrct = new QNBlock(*t1.BlksConstRef()[i]);
-            blk_transed_to_ctrct->Transpose(t1_transed_axes);
-            t1_to_ctrct_blks[i] = blk_transed_to_ctrct;
-          } else {
-            t1_to_ctrct_blks[i] = t1.BlksConstRef()[i]; 
-          }
-        }
-        if (t2_to_ctrct_blks[j] == nullptr) {
-          if (t2_need_trans) {
-            auto blk_transed_to_ctrct = new QNBlock(*t2.BlksConstRef()[j]);
-            blk_transed_to_ctrct->Transpose(t2_transed_axes);
-            t2_to_ctrct_blks[j] = blk_transed_to_ctrct;
-          } else {
-            t2_to_ctrct_blks[j] = t2.BlksConstRef()[j];
-          }
-        }
+  std::vector<QNBlock *> pnew_blks;
+  if (ta.BlksConstRef().size() > 0 && tb.BlksConstRef().size() > 0) {
+    pnew_blks = GETCBlksCtrctBatch(
+        ctrct_axes_a, ctrct_axes_b,
+        1.0, ta.BlksConstRef(), tb.BlksConstRef());
+  }
+  auto gemm_batch_grp_cnt = pnew_blks.size();
+  auto res_t  = InitCtrctedTen(ta, tb, ctrct_axes_a, ctrct_axes_b);
+  if (res_t->indexes.size() == 0) {   // Contract to scalar case.
+    if (gemm_batch_grp_cnt == 0) {    // No matched block pair.
+        return res_t;
+    } else {                          // Has matched block pair.
+      double scalar = 0;
+      for (auto &pnew_blk : pnew_blks) {
+        scalar += (pnew_blk->DataConstRef()[0]);
+        delete pnew_blk;
       }
+      res_t->scalar = scalar;
+      return res_t;
     }
+  } else {                            // Contract to tensor case.
+    auto merged_blks = MergeCtrctBlks(pnew_blks);
+      res_t->BlksRef() = merged_blks;
+    return res_t;
   }
-
-  // Contract blocks.
-  std::vector<QNBlock *> ctrcted_blocks;
-  std::vector<double> ctrcted_scalars;
-  auto t1_ctrct_ndim = t1_ctrct_idxs.size();
-  auto t2_ctrct_ndim = t2_ctrct_idxs.size();
-  for (auto &ctrct_blk_pair : ctrct_blk_pair_idxs) {
-    auto pnew_b = ContractBlockNoTrans(
-                      *t1_to_ctrct_blks[ctrct_blk_pair.first],
-                      *t2_to_ctrct_blks[ctrct_blk_pair.second],
-                      t1_ctrct_ndim, t2_ctrct_ndim);
-    if (pnew_b->QNSectorSetHash() == 0) {
-      ctrcted_scalars.push_back(pnew_b->DataConstRef()[0]);
-      delete pnew_b;
-    } else {
-      auto has_blk = false;
-      for (auto &pctrcted_blk : ctrcted_blocks) {
-        if (pnew_b->QNSectorSetHash() == pctrcted_blk->QNSectorSetHash()) {
-          auto data_size = pnew_b->size;
-          assert(data_size == pctrcted_blk->size);
-          ArrayElemAttach(
-              pctrcted_blk->DataRef(), data_size,
-              pnew_b->DataConstRef());
-          delete pnew_b;
-          has_blk = true;
-          break;
-        }
-      }
-      if (!has_blk) {
-        ctrcted_blocks.push_back(pnew_b);
-      }
-    }
-  }
-  if (t1_need_trans) {
-    for (auto &to_ctrct_blk : t1_to_ctrct_blks) { delete to_ctrct_blk; }
-  }
-  if (t2_need_trans) {
-    for (auto &to_ctrct_blk : t2_to_ctrct_blks) { delete to_ctrct_blk; }
-  }
-
-  // Wrap results.
-  auto pctrcted_ten = InitCtrctedTen(t1, t2, t1_ctrct_idxs, t2_ctrct_idxs);
-  if (pctrcted_ten->indexes == kNullIndexes) {
-    pctrcted_ten->scalar = VecSumOver(ctrcted_scalars);
-  } else {
-    pctrcted_ten->BlksRef() = ctrcted_blocks;
-  }
-  return pctrcted_ten;
 }
 
 
@@ -138,44 +77,6 @@ GQTensor *InitCtrctedTen(
   }
   auto pnew_ten = new GQTensor(saved_idxs);
   return pnew_ten;
-}
-
-
-QNBlock *ContractBlockNoTrans(
-    const QNBlock &b1, const QNBlock &b2,
-    const std::size_t t1_ctrct_ndim, const std::size_t t2_ctrct_ndim) {
-  std::size_t b1_saved_size = 1;
-  std::size_t b1_ctrct_size = 1;
-  auto b1_saved_ndim = b1.ndim - t1_ctrct_ndim;
-  for (long i = 0; i < b1.ndim; i++) {
-    if (i < b1_saved_ndim) {
-      b1_saved_size *= b1.qnscts[i].dim;
-    } else {
-      b1_ctrct_size *= b1.qnscts[i].dim;
-    }
-  }
-  std::size_t b2_saved_size = 1;
-  std::size_t b2_ctrct_size = 1;
-  for (long i = 0; i < b2.ndim; ++i) {
-    if (i < t2_ctrct_ndim) {
-      b2_ctrct_size *= b2.qnscts[i].dim;
-    } else {
-      b2_saved_size *= b2.qnscts[i].dim;
-    }
-  }
-  std::vector<QNSector> saved_qnscts(
-      b1.qnscts.cbegin(), b1.qnscts.cend()-t1_ctrct_ndim);
-  saved_qnscts.insert(saved_qnscts.end(),
-      b2.qnscts.cbegin()+t2_ctrct_ndim, b2.qnscts.cend());
-  auto new_blk = new QNBlock(saved_qnscts);
-  if (saved_qnscts.size() == 0) { new_blk->DataRef() = new double[1]; }
-  MatMul(
-      b1.DataConstRef(),
-      b1_saved_size, b1_ctrct_size,
-      b2.DataConstRef(),
-      b2_ctrct_size, b2_saved_size,
-      new_blk->DataRef());
-  return new_blk;
 }
 
 
@@ -737,7 +638,6 @@ void MatMul(
     const double *m2, const long &ldim2, const long &rdim2,
     double *res) {
   assert(rdim1 == ldim2);
-  //auto res = new double [ldim1*rdim2];
   double alpha = 1.0, beta = 0.0;
   cblas_dgemm(
       CblasRowMajor, CblasNoTrans, CblasNoTrans,
@@ -747,7 +647,6 @@ void MatMul(
       m2, rdim2,
       beta,
       res, rdim2);
-  //return res;
 }
 
 
@@ -873,13 +772,6 @@ void  ArrayElemAttach(
 }
 
 
-double VecSumOver(const std::vector<double> &v) {
-  double sum = 0.0;
-  for (auto &elem : v) { sum += elem; }
-  return sum;
-}
-
-
 // Tensor contraction helpers.
 bool CtrctTransCheck(
     const std::vector<long> &ctrct_axes,
@@ -918,12 +810,6 @@ bool CtrctTransCheck(
       exit(1);
   }
   return false;
-}
-
-
-std::vector<std::size_t>TenGenPartHashTable(
-    const GQTensor &t, const std::vector<long> &ctrct_axes) {
-  return GenBlksPartHashTable(t.BlksConstRef(), ctrct_axes);
 }
 
 
