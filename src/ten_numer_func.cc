@@ -342,7 +342,7 @@ std::vector<const QNSector *> GetPNewBlkQNScts(
 // Tensor linear combination.
 // Do the operation: res += (coefs[0]*ts[0] + coefs[1]*ts[1] + ...).
 void LinearCombine(
-    const std::vector<const double> &coefs,
+    const std::vector<double> &coefs,
     const std::vector<GQTensor *> &ts,
     GQTensor *res) {
   auto nt = ts.size();

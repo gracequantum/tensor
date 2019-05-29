@@ -290,7 +290,7 @@ struct TestLinearCombination : public testing::Test {
 
 
 void RunTestLinearCombinationCase(
-    const std::vector<const double> &coefs,
+    const std::vector<double> &coefs,
     const std::vector<GQTensor *> &pts,
     GQTensor *res) {
   GQTensor bnchmrk = *res;

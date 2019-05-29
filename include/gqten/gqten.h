@@ -323,7 +323,7 @@ GQTensor *SeriesContract(
 // Tensors linear combination.
 /* TODO: For scalar tensor case. */
 void LinearCombine(
-    const std::vector<const double> &,
+    const std::vector<double> &,
     const std::vector<GQTensor *> &,
     GQTensor *);
 
