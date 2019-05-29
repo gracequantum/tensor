@@ -320,6 +320,19 @@ GQTensor *SeriesContract(
     const std::vector<GQTensor *> &,
     const std::vector<std::pair<std::vector<long>, std::vector<long>>> &);
 
+// Tensors linear combination.
+/* TODO: For scalar tensor case. */
+void LinearCombine(
+    const std::vector<const double> &,
+    const std::vector<GQTensor *> &,
+    GQTensor *);
+
+void LinearCombine(
+    const std::size_t,
+    const double *,
+    const std::vector<GQTensor *> &,
+    GQTensor *);
+
 // Tensor SVD.
 struct SvdRes {
   SvdRes(

@@ -52,6 +52,9 @@ inline void FreeBlks(std::vector<QNBlock *> &blks) {
   for (auto &blk : blks) { delete blk; }
 }
 
+// Tensor linear combination.
+void LinearCombineOneTerm(const double, const GQTensor *, GQTensor *);
+
 // Tensor SVD.
 struct BipartiteBlkData {
   BipartiteBlkData(

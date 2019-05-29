@@ -339,6 +339,61 @@ std::vector<const QNSector *> GetPNewBlkQNScts(
 }
 
 
+// Tensor linear combination.
+// Do the operation: res += (coefs[0]*ts[0] + coefs[1]*ts[1] + ...).
+void LinearCombine(
+    const std::vector<const double> &coefs,
+    const std::vector<GQTensor *> &ts,
+    GQTensor *res) {
+  auto nt = ts.size();
+  assert(coefs.size() == nt);
+  for (std::size_t i = 0; i < nt; ++i) {
+    LinearCombineOneTerm(coefs[i], ts[i], res);
+  }
+}
+
+
+void LinearCombine(
+    const std::size_t size,
+    const double *coefs,
+    const std::vector<GQTensor *> &ts,
+    GQTensor *res) {
+  for (std::size_t i = 0; i < size; i++) {
+    LinearCombineOneTerm(coefs[i], ts[i], res);
+  }
+}
+
+
+
+void LinearCombineOneTerm(const double coef, const GQTensor *t, GQTensor *res) {
+  for (auto &blk : t->BlksConstRef()) {
+    auto has_blk = false;
+    for (auto &res_blk : res->BlksRef()) {
+      if (res_blk->QNSectorSetHash() == blk->QNSectorSetHash()) {
+        auto size = res_blk->size;
+        assert(size == blk->size);
+        auto blk_data = blk->DataConstRef();
+        auto res_blk_data = res_blk->DataRef();
+        for (std::size_t i = 0; i < size; ++i) {
+          res_blk_data[i] += (coef*blk_data[i]);
+        }
+        has_blk = true;
+        break;
+      }
+    }
+    if (!has_blk) {
+      auto new_blk = new QNBlock(*blk);
+      auto size = new_blk->size;
+      auto new_blk_data = new_blk->DataRef();
+      for (std::size_t i = 0; i < size; ++i) {
+        new_blk_data[i] *= coef;
+      }
+      res->BlksRef().push_back(new_blk);
+    }
+  }
+}
+
+
 // Tensor SVD.
 SvdRes Svd(
     const GQTensor &t,
