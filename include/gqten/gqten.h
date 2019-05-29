@@ -308,10 +308,16 @@ std::ifstream &bfread(std::ifstream &, GQTensor &);
 std::ofstream &bfwrite(std::ofstream &, const GQTensor &);
 
 
+// Tensor numerical functions.
 // Tensors contraction.
 GQTensor *Contract(
     const GQTensor &, const GQTensor &,
     const std::vector<std::vector<long>> &);
+
+// Tensors series contraction.
+GQTensor *SeriesContract(
+    const std::vector<GQTensor *> &,
+    const std::vector<std::pair<std::vector<long>, std::vector<long>>> &);
 
 // General GQTensor contraction.
 void gqten_dgetc(

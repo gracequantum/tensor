@@ -30,6 +30,14 @@ std::vector<QNBlock *> GETCBlksCtrctBatch(
     const double,
     const std::vector<QNBlock *> &, const std::vector<QNBlock *> &);
 
+void SeriesBlksCtrct(
+    const std::size_t, const std::size_t,
+    std::vector<QNBlock *> &, GQTensor * &,
+    const GQTensor *,
+    const std::pair<std::vector<long>, std::vector<long>> &);
+
+void WrapCtrctBlks(std::vector<QNBlock *> &, GQTensor *);
+
 std::vector<QNBlock *> MergeCtrctBlks(const std::vector<QNBlock *> &);
 
 void CalcCtrctBlkDimInfo(
@@ -39,6 +47,10 @@ void CalcCtrctBlkDimInfo(
 std::vector<const QNSector *> GetPNewBlkQNScts(
     const QNBlock *, const QNBlock *,
     const std::vector<long> &, const std::vector<long> &);
+
+inline void FreeBlks(std::vector<QNBlock *> &blks) {
+  for (auto &blk : blks) { delete blk; }
+}
 
 // Tensor SVD.
 struct BipartiteBlkData {

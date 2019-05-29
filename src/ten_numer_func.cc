@@ -36,47 +36,34 @@ GQTensor *Contract(
         ctrct_axes_a, ctrct_axes_b,
         1.0, ta.BlksConstRef(), tb.BlksConstRef());
   }
-  auto gemm_batch_grp_cnt = pnew_blks.size();
+
   auto res_t  = InitCtrctedTen(ta, tb, ctrct_axes_a, ctrct_axes_b);
-  if (res_t->indexes.size() == 0) {   // Contract to scalar case.
-    if (gemm_batch_grp_cnt == 0) {    // No matched block pair.
-        return res_t;
-    } else {                          // Has matched block pair.
-      double scalar = 0;
-      for (auto &pnew_blk : pnew_blks) {
-        scalar += (pnew_blk->DataConstRef()[0]);
-        delete pnew_blk;
-      }
-      res_t->scalar = scalar;
-      return res_t;
-    }
-  } else {                            // Contract to tensor case.
-    auto merged_blks = MergeCtrctBlks(pnew_blks);
-      res_t->BlksRef() = merged_blks;
-    return res_t;
-  }
+  WrapCtrctBlks(pnew_blks, res_t);
+  return res_t;
 }
 
 
-GQTensor *InitCtrctedTen(
-    const GQTensor &t1, const GQTensor &t2,
-    const std::vector<long> &t1_ctrct_idxs,
-    const std::vector<long> &t2_ctrct_idxs) {
-  std::vector<Index> saved_idxs;
-  const std::vector<Index> &t1_idxs  = t1.indexes;
-  const std::vector<Index> &t2_idxs  = t2.indexes;
-  for (size_t i = 0; i < t1_idxs.size(); ++i) {
-    if (std::find(t1_ctrct_idxs.begin(), t1_ctrct_idxs.end(), i) == t1_ctrct_idxs.end()) {
-      saved_idxs.push_back(t1.indexes[i]);
+GQTensor *SeriesContract(
+    const std::vector<GQTensor *> &ts,
+    const std::vector<std::pair<std::vector<long>,
+                                std::vector<long>>> &ctrct_axes_series) {
+  auto nt = ts.size();
+  auto nctrct = ctrct_axes_series.size();
+  assert(nt >= 2);
+  assert(nt == nctrct + 1);
+  std::vector<QNBlock *> res_blks = ts[0]->BlksRef();
+  GQTensor *res_t = ts[0];
+  for (std::size_t i = 0; i < ctrct_axes_series.size(); ++i) {
+    SeriesBlksCtrct(
+        i, nctrct,
+        res_blks, res_t,
+        ts[i+1], ctrct_axes_series[i]);
+    if (res_blks.size() == 0 && i != nctrct-1) {
+      return res_t;
     }
   }
-  for (size_t i = 0; i < t2_idxs.size(); ++i) {
-    if (std::find(t2_ctrct_idxs.begin(), t2_ctrct_idxs.end(), i) == t2_ctrct_idxs.end()) {
-      saved_idxs.push_back(t2.indexes[i]);
-    }
-  }
-  auto pnew_ten = new GQTensor(saved_idxs);
-  return pnew_ten;
+  WrapCtrctBlks(res_blks, res_t);
+  return res_t;
 }
 
 
@@ -159,6 +146,28 @@ void gqten_dgetc(
       tc = res_t;
     }
   }
+}
+
+
+GQTensor *InitCtrctedTen(
+    const GQTensor &t1, const GQTensor &t2,
+    const std::vector<long> &t1_ctrct_idxs,
+    const std::vector<long> &t2_ctrct_idxs) {
+  std::vector<Index> saved_idxs;
+  const std::vector<Index> &t1_idxs  = t1.indexes;
+  const std::vector<Index> &t2_idxs  = t2.indexes;
+  for (size_t i = 0; i < t1_idxs.size(); ++i) {
+    if (std::find(t1_ctrct_idxs.begin(), t1_ctrct_idxs.end(), i) == t1_ctrct_idxs.end()) {
+      saved_idxs.push_back(t1.indexes[i]);
+    }
+  }
+  for (size_t i = 0; i < t2_idxs.size(); ++i) {
+    if (std::find(t2_ctrct_idxs.begin(), t2_ctrct_idxs.end(), i) == t2_ctrct_idxs.end()) {
+      saved_idxs.push_back(t2.indexes[i]);
+    }
+  }
+  auto pnew_ten = new GQTensor(saved_idxs);
+  return pnew_ten;
 }
 
 
@@ -285,6 +294,65 @@ std::vector<QNBlock *> GETCBlksCtrctBatch(
     for (auto &blk_data : tb_to_ctrct_blk_datas) { delete [] blk_data; }
   }
   return pnew_blks;
+}
+
+
+void SeriesBlksCtrct(
+    const std::size_t i, const std::size_t nctrct,
+    std::vector<QNBlock *> &pres_blks, GQTensor * &rpres_t,
+    const GQTensor *pnew_t,
+    const std::pair<std::vector<long>, std::vector<long>> &ctrct_axes) {
+  std::vector<QNBlock *> pnew_blks;
+  if (pres_blks.size() > 0 && pnew_t->BlksConstRef().size() > 0) {
+    pnew_blks = GETCBlksCtrctBatch(
+        ctrct_axes.first, ctrct_axes.second,
+        1.0,
+        pres_blks, pnew_t->BlksConstRef());
+    auto pnew_res_t = InitCtrctedTen(
+        *rpres_t, *pnew_t,
+        ctrct_axes.first, ctrct_axes.second);
+
+    if (i != 0) {
+      FreeBlks(pres_blks);
+      delete rpres_t;
+    }
+
+    if (i != nctrct-1) {
+      pres_blks = MergeCtrctBlks(pnew_blks);
+    } else {
+      pres_blks = pnew_blks;
+    }
+    rpres_t = pnew_res_t;
+  } else {
+    auto pnew_res_t = InitCtrctedTen(
+        *rpres_t, *pnew_t,
+        ctrct_axes.first, ctrct_axes.second);
+    if (i != 0) {
+      FreeBlks(pres_blks);
+      delete rpres_t;
+    }
+    pres_blks = pnew_blks;
+    rpres_t = pnew_res_t;
+  }
+}
+
+
+void WrapCtrctBlks(std::vector<QNBlock *> &pnew_blks, GQTensor *res_t) {
+  auto nnew_blk = pnew_blks.size();   // nnew_blk: number of new blocks.
+  if (res_t->indexes.size() == 0) {   // Contract to scalar case.
+    if (nnew_blk == 0) {    // No matched block pair.
+    } else {                          // Has matched block pair.
+      double scalar = 0;
+      for (auto &pnew_blk : pnew_blks) {
+        scalar += (pnew_blk->DataConstRef()[0]);
+        delete pnew_blk;
+      }
+      res_t->scalar = scalar;
+    }
+  } else {                            // Contract to tensor case.
+    auto merged_blks = MergeCtrctBlks(pnew_blks);
+      res_t->BlksRef() = merged_blks;
+  }
 }
 
 
