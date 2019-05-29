@@ -25,7 +25,7 @@ GQTensor *InitCtrctedTen(
     const GQTensor &, const GQTensor &,
     const std::vector<long> &, const std::vector<long> &);
 
-std::vector<QNBlock *> GETCBlksCtrctBatch(
+std::vector<QNBlock *> BlksCtrctBatch(
     const std::vector<long> &, const std::vector<long> &,
     const double,
     const std::vector<QNBlock *> &, const std::vector<QNBlock *> &);

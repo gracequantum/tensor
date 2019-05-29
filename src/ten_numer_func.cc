@@ -32,7 +32,7 @@ GQTensor *Contract(
 
   std::vector<QNBlock *> pnew_blks;
   if (ta.BlksConstRef().size() > 0 && tb.BlksConstRef().size() > 0) {
-    pnew_blks = GETCBlksCtrctBatch(
+    pnew_blks = BlksCtrctBatch(
         ctrct_axes_a, ctrct_axes_b,
         1.0, ta.BlksConstRef(), tb.BlksConstRef());
   }
@@ -67,88 +67,6 @@ GQTensor *SeriesContract(
 }
 
 
-// General GQTensor contraction.
-void gqten_dgetc(
-    const std::vector<long> &ctrct_axes_a,
-    const std::vector<long> &ctrct_axes_b,
-    const double alpha,
-    const GQTensor *ta, const GQTensor *tb,
-    const double beta,
-    GQTensor * &tc) {
-
-  std::vector<QNBlock *> pnew_blks;
-  if (ta->BlksConstRef().size() > 0 && tb->BlksConstRef().size() > 0) {
-    pnew_blks = GETCBlksCtrctBatch(
-        ctrct_axes_a, ctrct_axes_b,
-        alpha, ta->BlksConstRef(), tb->BlksConstRef());
-  }
-
-  // Generate result tensor.
-  auto gemm_batch_grp_cnt = pnew_blks.size();
-  auto res_t  = InitCtrctedTen(*ta, *tb, ctrct_axes_a, ctrct_axes_b);
-  if (res_t->indexes.size() == 0) {   // Contract to scalar case.
-    if (gemm_batch_grp_cnt == 0) {    // No matched block pair.
-      if (beta != 0.0) {
-        assert(tc->indexes == res_t->indexes);
-        tc->scalar *= beta;
-        delete res_t;
-      } else {
-        delete tc;
-        tc = res_t;
-      }
-    } else {                          // Has matched block pair.
-      double scalar = 0;
-      for (auto &pnew_blk : pnew_blks) {
-        scalar += (pnew_blk->DataConstRef()[0]);
-        delete pnew_blk;
-      }
-      if (beta != 0.0) {
-        assert(tc->indexes == res_t->indexes);
-        tc->scalar *= beta;
-        tc->scalar += scalar;
-        delete res_t;
-      } else {
-        res_t->scalar = scalar;
-        delete tc;
-        tc = res_t;
-      }
-    }
-  } else {                            // Contract to tensor case.
-    auto merged_blks = MergeCtrctBlks(pnew_blks);
-    if (beta != 0.0) {
-      assert(tc->indexes == res_t->indexes);
-      for (auto &pblk : tc->BlksRef()) {
-        for (long i = 0; i < pblk->size; ++i) {
-          pblk->DataRef()[i] *= beta;
-        }
-      }
-      for (auto &pmerged_blk : merged_blks) {
-        auto has_blk = false;
-        for (auto &ptc_blk : tc->BlksRef()) {
-          if (pmerged_blk->QNSectorSetHash() == ptc_blk->QNSectorSetHash()) {
-            auto data_size = pmerged_blk->size;
-            assert(data_size == ptc_blk->size);
-            ArrayElemAttach(
-                ptc_blk->DataRef(), data_size, pmerged_blk->DataConstRef());
-            delete pmerged_blk;
-            has_blk = true;
-            break;
-          }
-        }
-        if (!has_blk) {
-          tc->BlksRef().push_back(pmerged_blk);
-        }
-      }
-      delete res_t;
-    } else {
-      res_t->BlksRef() = merged_blks;
-      delete tc;
-      tc = res_t;
-    }
-  }
-}
-
-
 GQTensor *InitCtrctedTen(
     const GQTensor &t1, const GQTensor &t2,
     const std::vector<long> &t1_ctrct_idxs,
@@ -171,7 +89,7 @@ GQTensor *InitCtrctedTen(
 }
 
 
-std::vector<QNBlock *> GETCBlksCtrctBatch(
+std::vector<QNBlock *> BlksCtrctBatch(
     const std::vector<long> &ctrct_axes_a,
     const std::vector<long> &ctrct_axes_b,
     const double alpha,
@@ -304,7 +222,7 @@ void SeriesBlksCtrct(
     const std::pair<std::vector<long>, std::vector<long>> &ctrct_axes) {
   std::vector<QNBlock *> pnew_blks;
   if (pres_blks.size() > 0 && pnew_t->BlksConstRef().size() > 0) {
-    pnew_blks = GETCBlksCtrctBatch(
+    pnew_blks = BlksCtrctBatch(
         ctrct_axes.first, ctrct_axes.second,
         1.0,
         pres_blks, pnew_t->BlksConstRef());

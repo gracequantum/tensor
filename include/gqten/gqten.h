@@ -319,14 +319,6 @@ GQTensor *SeriesContract(
     const std::vector<GQTensor *> &,
     const std::vector<std::pair<std::vector<long>, std::vector<long>>> &);
 
-// General GQTensor contraction.
-void gqten_dgetc(
-    const std::vector<long> &, const std::vector<long> &,
-    const double,
-    const GQTensor *, const GQTensor *,
-    const double,
-    GQTensor * &);
-
 // Tensor SVD.
 struct SvdRes {
   SvdRes(
