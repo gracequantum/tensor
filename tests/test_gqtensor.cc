@@ -161,7 +161,10 @@ TEST_F(TestGQTensor, TestTranspose) {
 void RunTestNormalizeCase(GQTensor &t, const QN &div) {
   srand(0);
   t.Random(div);
-  t.Normalize();
+  auto ten_norm1 = t.Norm();
+  auto ten_norm2 = t.Normalize();
+  EXPECT_DOUBLE_EQ(ten_norm1, ten_norm2);
+
   auto norm = 0.0;
   for (auto &blk : t.BlksConstRef()) {
     for (long i = 0; i < blk->size; ++i) {

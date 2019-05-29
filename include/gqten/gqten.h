@@ -255,7 +255,8 @@ public:
   // Inplace operations.
   void Random(const QN &);
   void Transpose(const std::vector<long> &);
-  void Normalize(void);
+  void Normalize(const double);
+  double Normalize(void);
   void Dag(void) { for (auto &index : indexes) { index.Dag(); } }
 
   // Operators overload.

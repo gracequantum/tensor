@@ -542,14 +542,20 @@ void GQTensor::Random(const QN &div) {
 
 
 // Normalize the GQTensor.
-void GQTensor::Normalize(void) {
-  auto norm = Norm();
+void GQTensor::Normalize(const double norm) {
   for (auto &blk : blocks_) {
     auto data = blk->DataRef();
     for (long i = 0; i < blk->size; ++i) {
       data[i] = data[i] / norm;
     }
   }
+}
+
+
+double GQTensor::Normalize(void) {
+  auto norm = Norm();
+  Normalize(norm);
+  return norm;
 }
 
 

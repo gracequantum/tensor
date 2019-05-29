@@ -99,8 +99,8 @@ std::vector<QNBlock *> BlksCtrctBatch(
   std::vector<long> transed_axes_a, transed_axes_b;
   assert(ta_blks.size() > 0);
   assert(tb_blks.size() > 0);
-  bool ta_need_trans = CtrctTransCheck(ctrct_axes_a, ta_blks[0]->ndim, '1', transed_axes_a);
-  bool tb_need_trans = CtrctTransCheck(ctrct_axes_b, tb_blks[0]->ndim, '2', transed_axes_b);
+  bool ta_need_trans = CtrctTransCheck(ctrct_axes_a, ta_blks[0]->ndim, 'a', transed_axes_a);
+  bool tb_need_trans = CtrctTransCheck(ctrct_axes_b, tb_blks[0]->ndim, 'b', transed_axes_b);
   auto ta_blks_part_hash_table = GenBlksPartHashTable(ta_blks, ctrct_axes_a);
   auto tb_blks_part_hash_table = GenBlksPartHashTable(tb_blks, ctrct_axes_b);
   auto ta_blks_num = ta_blks.size();
@@ -777,14 +777,14 @@ bool CtrctTransCheck(
     ordered_axes[i] = i;
   }
   switch (position) {
-    case '1':
+    case 'a':
       transed_axes = saved_axes;
       transed_axes.insert(
           transed_axes.end(),
           ctrct_axes.begin(), ctrct_axes.end());
       if (transed_axes != ordered_axes) { return true; }
       break;
-    case '2':
+    case 'b':
       transed_axes = ctrct_axes;
       transed_axes.insert(
           transed_axes.end(),
@@ -792,7 +792,7 @@ bool CtrctTransCheck(
       if (transed_axes != ordered_axes) { return true; }
       break;
     default:
-      std::cout << "position must be '1' or '2', but" << position << std::endl;
+      std::cout << "position must be 'a' or 'b', but" << position << std::endl;
       exit(1);
   }
   return false;
