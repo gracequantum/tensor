@@ -102,6 +102,7 @@ public:
   QNSectorSet(const std::vector<QNSector> & qnscts) : qnscts(qnscts) {}
   QNSectorSet(const QNSectorSet &qnss) : qnscts(qnss.qnscts) {}
   QNSectorSet(const std::vector<const QNSector*> &);
+
   virtual ~QNSectorSet() = default;
 
   virtual size_t Hash(void) const;
@@ -249,21 +250,18 @@ public:
   double Elem(const std::vector<long> &) const;
   double &operator()(const std::vector<long> &);
 
-  // Calculate properties.
-  double Norm(void);
-
   // Inplace operations.
   void Random(const QN &);
   void Transpose(const std::vector<long> &);
-  void Normalize(const double);
   double Normalize(void);
   void Dag(void) { for (auto &index : indexes) { index.Dag(); } }
 
   // Operators overload.
+  GQTensor operator-(void) const;
+
   GQTensor operator+(const GQTensor &);
   GQTensor &operator+=(const GQTensor &);
-  GQTensor operator-(void) const;
-  GQTensor *operator-=(const GQTensor &);
+
   bool operator==(const GQTensor &) const;
   bool operator!=(const GQTensor &rhs) const { return !(*this == rhs); }
 
@@ -272,6 +270,7 @@ public:
   std::vector<QNBlock *> &BlksRef(void) { return blocks_; }
 
   // Iterators.
+  // Return all the tensor coordinates. So heavy that you should not use it!
   std::vector<std::vector<long>> CoorsIter(void) const;
 
   // Public data members.
@@ -281,6 +280,8 @@ public:
 
 private:
   std::vector<QNBlock *> blocks_;
+
+  double Norm(void);
 
   BlkCoorsAndBlkKey TargetBlkCoorsAndBlkKey(const std::vector<long> &) const;
   std::vector<QNSectorSet> BlkKeysIter(void) const;
@@ -400,16 +401,6 @@ inline long CalcOffset(
     offset += coors[i] * data_offsets[i];
   }
   return offset;
-}
-
-
-inline std::vector<long> TransCoors(
-    const std::vector<long> &old_coors, const std::vector<long> &axes_map) {
-  std::vector<long> new_coors(old_coors.size());
-  for (size_t i = 0; i < axes_map.size(); ++i) {
-    new_coors[i] = old_coors[axes_map[i]];
-  }
-  return new_coors;
 }
 
 

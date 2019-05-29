@@ -674,23 +674,6 @@ SvdRes WrapBlock(
 
 
 // Operations for matrix.
-void MatMul(
-    const double *m1, const long &ldim1, const long &rdim1,
-    const double *m2, const long &ldim2, const long &rdim2,
-    double *res) {
-  assert(rdim1 == ldim2);
-  double alpha = 1.0, beta = 0.0;
-  cblas_dgemm(
-      CblasRowMajor, CblasNoTrans, CblasNoTrans,
-      ldim1, rdim2, ldim2,
-      alpha,
-      m1, ldim2,
-      m2, rdim2,
-      beta,
-      res, rdim2);
-}
-
-
 RawSvdData MatSvd(double *mat, const long &mld, const long &mrd) {
   auto m = mld;
   auto n = mrd;

@@ -186,11 +186,6 @@ SvdRes WrapBlock(
 
 
 // Operations for matrix.
-void MatMul(
-    const double *, const long &, const long &,
-    const double *, const long &, const long &,
-    double *);
-
 RawSvdData MatSvd(double *, const long &, const long &);
 
 double *MatTrans(const double *, const long &, const long &); // off-place

@@ -375,6 +375,7 @@ double *TransposeData(
   int outerSizeB[dim];
   for (int i = 0; i < dim; ++i) { outerSizeB[i] = old_shape[perm[i]]; }
   auto transed_data = new double[old_size];
+  /* TODO: Multi-threads for dTensorTranspose function. */
   dTensorTranspose(perm, dim,
       1.0, old_data, sizeA, sizeA,
       0.0, transed_data, outerSizeB,
@@ -542,19 +543,15 @@ void GQTensor::Random(const QN &div) {
 
 
 // Normalize the GQTensor.
-void GQTensor::Normalize(const double norm) {
+double GQTensor::Normalize(void) {
+  auto norm = Norm();
+  //Normalize(norm);
   for (auto &blk : blocks_) {
     auto data = blk->DataRef();
     for (long i = 0; i < blk->size; ++i) {
       data[i] = data[i] / norm;
     }
   }
-}
-
-
-double GQTensor::Normalize(void) {
-  auto norm = Norm();
-  Normalize(norm);
   return norm;
 }
 
@@ -641,35 +638,6 @@ GQTensor GQTensor::operator-(void) const {
     }
   }
   return minus_t;
-}
-
-
-GQTensor *GQTensor::operator-=(const GQTensor &rhs) {
-  for (auto &rhs_blk : rhs.blocks_) {
-    auto has_blk =  false;
-    for (auto &lhs_blk : blocks_) {
-      if (lhs_blk->QNSectorSetHash() == rhs_blk->QNSectorSetHash()) {
-        assert(lhs_blk->size == rhs_blk->size);
-        auto lhs_blk_data = lhs_blk->DataRef();
-        auto rhs_blk_data = rhs_blk->DataConstRef();
-        for (long i = 0; i < lhs_blk->size; i++) {
-           lhs_blk_data[i] -= rhs_blk_data[i];
-        }
-        has_blk = true;
-        break;
-      }
-    }
-    if (!has_blk) {
-      auto pnew_blk = new QNBlock(rhs_blk->qnscts);
-      auto pnew_data = pnew_blk->DataRef();
-      auto rhs_blk_data = rhs_blk->DataConstRef();
-      for (long i = 0; i < rhs_blk->size; i++) {
-        pnew_data[i] = -rhs_blk_data[i];
-      }
-      blocks_.push_back(pnew_blk);
-    }
-  }
-  return this;
 }
 
 

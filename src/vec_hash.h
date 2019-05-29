@@ -48,6 +48,8 @@ size_t VecPtrHasher(const std::vector<T> &vec) {
   hash_val += len ^ _HASH_XXPRIME_5;
   return hash_val;
 }
+
+
 // Helper classes.
 class HashableString {
 public:

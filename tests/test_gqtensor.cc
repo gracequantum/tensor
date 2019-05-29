@@ -4,6 +4,7 @@
 * 
 * Description: GraceQ/tensor project. Unittests for GQTensor object.
 */
+#include "testing_utils.h"
 #include "gtest/gtest.h"
 #include "gqten/gqten.h"
 
@@ -161,9 +162,7 @@ TEST_F(TestGQTensor, TestTranspose) {
 void RunTestNormalizeCase(GQTensor &t, const QN &div) {
   srand(0);
   t.Random(div);
-  auto ten_norm1 = t.Norm();
-  auto ten_norm2 = t.Normalize();
-  EXPECT_DOUBLE_EQ(ten_norm1, ten_norm2);
+  auto ten_norm = t.Normalize();
 
   auto norm = 0.0;
   for (auto &blk : t.BlksConstRef()) {
@@ -218,20 +217,6 @@ TEST_F(TestGQTensor, TestSummation) {
   sum2 += ten2;
   for (auto &coors : sum1.CoorsIter()) {
     EXPECT_NEAR(sum1.Elem(coors), sum2.Elem(coors), kEpsilon);
-  }
-}
-
-
-TEST_F(TestGQTensor, TestSubtraction) {
-  auto ten = GQTensor({idx_in, idx_out});
-  ten.Random(QN({QNNameVal("Sz", 0)}));
-  auto zero_t = ten -= ten;
-  for (auto &coors : ten.CoorsIter()) {
-    EXPECT_DOUBLE_EQ(ten.Elem(coors), 0.0);
-  }
-
-  for (auto &coors : zero_t->CoorsIter()) {
-    EXPECT_DOUBLE_EQ(zero_t->Elem(coors), 0.0);
   }
 }
 
