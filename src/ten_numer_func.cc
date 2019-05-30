@@ -105,8 +105,8 @@ std::vector<QNBlock *> BlksCtrctBatch(
   //Timer blks_ctrct_timer("blks_ctrct_batch");
   //blks_ctrct_timer.Restart();
   // Data prepare.
-  //Timer blk_match_timer("blk_match");
-  //blk_match_timer.Restart();
+  Timer blk_match_timer("blk_match");
+  blk_match_timer.Restart();
   auto ta_blks_num = ta_blks.size();
   auto tb_blks_num = tb_blks.size();
   assert(ta_blks_num > 0);
@@ -234,11 +234,11 @@ std::vector<QNBlock *> BlksCtrctBatch(
     }
   }
   std::cout << std::fixed;
-  //blk_match_timer.PrintElapsed();
+  blk_match_timer.PrintElapsed();
 
   // Call MKL ?gemm_batch function.
-  //Timer dgemm_batch_timer("gemm_batch");
-  //dgemm_batch_timer.Restart();
+  Timer dgemm_batch_timer("gemm_batch");
+  dgemm_batch_timer.Restart();
   cblas_dgemm_batch(
       CblasRowMajor,
       gemm_batch_transa_array, gemm_batch_transb_array,
@@ -252,7 +252,7 @@ std::vector<QNBlock *> BlksCtrctBatch(
       gemm_batch_c_array, gemm_batch_n_array,
       blk_pairs,
       gemm_batch_grp_size_array); 
-  //dgemm_batch_timer.PrintElapsed();
+  dgemm_batch_timer.PrintElapsed();
 
   // Free temporary variables.
   Timer free_blk_data_timer("free_temp_blks");
@@ -286,7 +286,7 @@ std::vector<QNBlock *> BlksCtrctBatch(
   delete[] gemm_batch_beta_array;
   delete[] gemm_batch_grp_size_array;
 
-  //free_blk_data_timer.PrintElapsed();
+  free_blk_data_timer.PrintElapsed();
   //blks_ctrct_timer.PrintElapsed();
   return pnew_blks;
 }
@@ -309,12 +309,9 @@ void SeriesBlksCtrct(
         pres_blks, pnew_t->BlksConstRef());
     blks_ctrct_timer.PrintElapsed();
 
-    Timer init_ten_timer("init_ten");
-    init_ten_timer.Restart();
     auto pnew_res_t = InitCtrctedTen(
         *rpres_t, *pnew_t,
         ctrct_axes.first, ctrct_axes.second);
-    init_ten_timer.PrintElapsed();
 
     if (i != 0) {
       FreeBlks(pres_blks);
@@ -332,12 +329,9 @@ void SeriesBlksCtrct(
     }
     rpres_t = pnew_res_t;
   } else {
-    Timer init_ten_timer("init_ten");
-    init_ten_timer.Restart();
     auto pnew_res_t = InitCtrctedTen(
         *rpres_t, *pnew_t,
         ctrct_axes.first, ctrct_axes.second);
-    init_ten_timer.PrintElapsed();
     if (i != 0) {
       FreeBlks(pres_blks);
       delete rpres_t;
