@@ -44,6 +44,10 @@ void CalcCtrctBlkDimInfo(
     const std::size_t, const QNBlock *, const std::vector<long> &,
     std::vector<long> &, std::vector<long> &);
 
+void CalcCtrctBlkDimInfo(
+    const std::size_t, const QNBlock *, const std::vector<long> &,
+    long *, long *);
+
 std::vector<const QNSector *> GetPNewBlkQNScts(
     const QNBlock *, const QNBlock *,
     const std::vector<long> &, const std::vector<long> &);

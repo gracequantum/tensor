@@ -417,5 +417,22 @@ inline bool ArrayEq(
   }
   return true;
 }
+
+
+// Timer.
+class Timer {
+public:
+  Timer(const std::string &);
+
+  void Restart(void);
+  double Elapsed(void);
+  void PrintElapsed(void);
+
+private:
+  double start_;
+  std::string notes_;
+
+  double GetWallTime(void);
+};
 } /* gqten */ 
 #endif /* ifndef GQTEN_GQTEN_H */

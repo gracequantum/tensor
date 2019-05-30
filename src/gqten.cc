@@ -5,6 +5,7 @@
 * Description: GraceQ/tensor project. The main source code file.
 */
 #include "gqten/gqten.h"
+#include "timer.h"
 #include "vec_hash.h"
 
 #include <iostream>
@@ -379,7 +380,7 @@ double *TransposeData(
   dTensorTranspose(perm, dim,
       1.0, old_data, sizeA, sizeA,
       0.0, transed_data, outerSizeB,
-      1, 1);
+      4, 1);
   return transed_data;
 }
 

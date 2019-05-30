@@ -53,15 +53,22 @@ GQTensor *SeriesContract(
   assert(nt == nctrct + 1);
   std::vector<QNBlock *> res_blks = ts[0]->BlksRef();
   GQTensor *res_t = ts[0];
+
+  Timer ser_blk_ctrct_timer("ser_blk_ctrc");
+  ser_blk_ctrct_timer.Restart();
   for (std::size_t i = 0; i < ctrct_axes_series.size(); ++i) {
     SeriesBlksCtrct(
         i, nctrct,
         res_blks, res_t,
         ts[i+1], ctrct_axes_series[i]);
     if (res_blks.size() == 0 && i != nctrct-1) {
+      std::cout << std::fixed;
+      ser_blk_ctrct_timer.PrintElapsed();
       return res_t;
     }
   }
+  std::cout << std::fixed;
+  ser_blk_ctrct_timer.PrintElapsed();
   WrapCtrctBlks(res_blks, res_t);
   return res_t;
 }
@@ -95,42 +102,87 @@ std::vector<QNBlock *> BlksCtrctBatch(
     const double alpha,
     const std::vector<QNBlock *> &ta_blks,
     const std::vector<QNBlock *> &tb_blks) {
+  //Timer blks_ctrct_timer("blks_ctrct_batch");
+  //blks_ctrct_timer.Restart();
   // Data prepare.
-  std::vector<long> transed_axes_a, transed_axes_b;
-  assert(ta_blks.size() > 0);
-  assert(tb_blks.size() > 0);
-  bool ta_need_trans = CtrctTransCheck(ctrct_axes_a, ta_blks[0]->ndim, 'a', transed_axes_a);
-  bool tb_need_trans = CtrctTransCheck(ctrct_axes_b, tb_blks[0]->ndim, 'b', transed_axes_b);
-  auto ta_blks_part_hash_table = GenBlksPartHashTable(ta_blks, ctrct_axes_a);
-  auto tb_blks_part_hash_table = GenBlksPartHashTable(tb_blks, ctrct_axes_b);
+  //Timer blk_match_timer("blk_match");
+  //blk_match_timer.Restart();
   auto ta_blks_num = ta_blks.size();
   auto tb_blks_num = tb_blks.size();
-  std::vector<const double *> ta_to_ctrct_blk_datas(ta_blks_num, nullptr); 
-  std::vector<const double *> tb_to_ctrct_blk_datas(tb_blks_num, nullptr);
-  std::vector<long> ta_to_ctrct_blk_saved_dims(ta_blks_num, NULL);
-  std::vector<long> tb_to_ctrct_blk_saved_dims(tb_blks_num, NULL);
-  std::vector<long> ta_to_ctrct_blk_ctrct_dims(ta_blks_num, NULL);
-  std::vector<long> tb_to_ctrct_blk_ctrct_dims(tb_blks_num, NULL);
-  std::vector<QNBlock *> pnew_blks;
-  // For MKL ?gemm_batch parameters.
-  std::vector<const double *> gemm_batch_a_array_vec;
-  std::vector<const double *> gemm_batch_b_array_vec;
-  std::vector<double *> gemm_batch_c_array_vec;
-  std::vector<MKL_INT> gemm_batch_m_array_vec;
-  std::vector<MKL_INT> gemm_batch_n_array_vec;
-  std::vector<MKL_INT> gemm_batch_k_array_vec;
-  long gemm_batch_grp_cnt = 0;
+  assert(ta_blks_num > 0);
+  assert(tb_blks_num > 0);
+  // Check whether need transpose.
+  std::vector<long> transed_axes_a, transed_axes_b;
+  bool ta_need_trans = CtrctTransCheck(
+                           ctrct_axes_a,
+                           ta_blks[0]->ndim, 'a',
+                           transed_axes_a);
+  bool tb_need_trans = CtrctTransCheck(
+                           ctrct_axes_b,
+                           tb_blks[0]->ndim, 'b',
+                           transed_axes_b);
+  // Generate blocks part-hash tokens.
+  auto ta_blks_part_hash_table = GenBlksPartHashTable(ta_blks, ctrct_axes_a);
+  auto tb_blks_part_hash_table = GenBlksPartHashTable(tb_blks, ctrct_axes_b);
+  // Count matched block pairs.
+  long blk_pairs = 0;
   for (std::size_t i = 0; i < ta_blks_num; ++i) {
     for (std::size_t j = 0; j < tb_blks_num; ++j) {
       if (ta_blks_part_hash_table[i] == tb_blks_part_hash_table[j]) {
+        ++blk_pairs;
+      }
+    }
+  }
+  // No match, return empty vector.
+  if (blk_pairs == 0) {
+    return std::vector<QNBlock *>();
+  }
+  // Initialize data.
+  // Data with size of tensor blocks.
+  auto ta_to_ctrct_blks = new const double *[ta_blks_num] ();
+  auto tb_to_ctrct_blks = new const double *[tb_blks_num] ();
+  auto ta_to_ctrct_blk_saved_dims = new long[ta_blks_num] ();
+  auto tb_to_ctrct_blk_saved_dims = new long[tb_blks_num] ();
+  auto ta_to_ctrct_blk_ctrct_dims = new long[ta_blks_num] ();
+  auto tb_to_ctrct_blk_ctrct_dims = new long[tb_blks_num] ();
+  // Data with size of block pairs.
+  auto gemm_batch_transa_array = new CBLAS_TRANSPOSE[blk_pairs];
+  auto gemm_batch_transb_array = new CBLAS_TRANSPOSE[blk_pairs];
+  for (long i = 0; i < blk_pairs; ++i) {
+    gemm_batch_transa_array[i] = CblasNoTrans;
+    gemm_batch_transb_array[i] = CblasNoTrans;
+  }
+  auto gemm_batch_a_array = new const double *[blk_pairs];
+  auto gemm_batch_b_array = new const double *[blk_pairs];
+  auto gemm_batch_c_array = new double *[blk_pairs];
+  auto gemm_batch_m_array = new MKL_INT[blk_pairs];
+  auto gemm_batch_n_array = new MKL_INT[blk_pairs];
+  auto gemm_batch_k_array = new MKL_INT[blk_pairs];
+  std::vector<QNBlock *> pnew_blks(blk_pairs, nullptr);
+  auto gemm_batch_alpha_array = new double[blk_pairs];
+  auto gemm_batch_beta_array = new double[blk_pairs] ();
+  auto gemm_batch_grp_size_array = new MKL_INT[blk_pairs];
+  for (long i = 0; i < blk_pairs; ++i) {
+    gemm_batch_alpha_array[i] = alpha;
+    gemm_batch_grp_size_array[i] = 1;
+  }
+
+  // Assign data.
+  long blk_pair_cnt = 0;
+  for (std::size_t i = 0; i < ta_blks_num; ++i) {
+    for (std::size_t j = 0; j < tb_blks_num; ++j) {
+      if (ta_blks_part_hash_table[i] == tb_blks_part_hash_table[j]) {
+        // Generate new blocks.
         auto pnew_blk_qnscts = GetPNewBlkQNScts(
                                    ta_blks[i], tb_blks[j],
                                    ctrct_axes_a, ctrct_axes_b);
-        pnew_blks.push_back(new QNBlock(pnew_blk_qnscts));
-        if (pnew_blks[gemm_batch_grp_cnt]->DataConstRef() == nullptr) {
-          pnew_blks[gemm_batch_grp_cnt]->DataRef() = new double[1];
-        } 
-        if (ta_to_ctrct_blk_datas[i] == nullptr) {
+        pnew_blks[blk_pair_cnt] = new QNBlock(pnew_blk_qnscts);
+        if (pnew_blks[blk_pair_cnt]->DataConstRef() == nullptr) {
+          pnew_blks[blk_pair_cnt]->DataRef() = new double[1];
+        }
+
+        // Deal with ta block.
+        if (ta_to_ctrct_blks[i] == nullptr) {
           // Calculate dimensions information.
           CalcCtrctBlkDimInfo(
               i, ta_blks[i], ctrct_axes_a,
@@ -143,17 +195,18 @@ std::vector<QNBlock *> BlksCtrctBatch(
                 ta_blks[i]->size,
                 ta_blks[i]->shape,
                 transed_axes_a);
-            ta_to_ctrct_blk_datas[i] = blk_data_transed_to_ctrct;
+            ta_to_ctrct_blks[i] = blk_data_transed_to_ctrct;
           } else {
-            ta_to_ctrct_blk_datas[i] = ta_blks[i]->DataConstRef();
+            ta_to_ctrct_blks[i] = ta_blks[i]->DataConstRef();
           }
-        } 
+        }
         // Assign gemm_batch parameters.
-        gemm_batch_a_array_vec.push_back(ta_to_ctrct_blk_datas[i]);
-        gemm_batch_m_array_vec.push_back(ta_to_ctrct_blk_saved_dims[i]);
-        gemm_batch_k_array_vec.push_back(ta_to_ctrct_blk_ctrct_dims[i]);
+        gemm_batch_a_array[blk_pair_cnt] = ta_to_ctrct_blks[i];
+        gemm_batch_m_array[blk_pair_cnt] = MKL_INT(ta_to_ctrct_blk_saved_dims[i]);
+        gemm_batch_k_array[blk_pair_cnt] = MKL_INT(ta_to_ctrct_blk_ctrct_dims[i]);
 
-        if (tb_to_ctrct_blk_datas[j] == nullptr) {
+        // Deal with tb block.
+        if (tb_to_ctrct_blks[j] == nullptr) {
           // Calculate dimensions information.
           CalcCtrctBlkDimInfo(
               j, tb_blks[j], ctrct_axes_b,
@@ -166,51 +219,75 @@ std::vector<QNBlock *> BlksCtrctBatch(
                 tb_blks[j]->size,
                 tb_blks[j]->shape,
                 transed_axes_b);
-            tb_to_ctrct_blk_datas[j] = blk_data_transed_to_ctrct;
+            tb_to_ctrct_blks[j] = blk_data_transed_to_ctrct;
           } else {
-            tb_to_ctrct_blk_datas[j] = tb_blks[j]->DataConstRef();
+            tb_to_ctrct_blks[j] = tb_blks[j]->DataConstRef();
           }
         }
         // Assign gemm_batch parameters.
-        gemm_batch_b_array_vec.push_back(tb_to_ctrct_blk_datas[j]);
-        gemm_batch_n_array_vec.push_back(tb_to_ctrct_blk_saved_dims[j]);
-        gemm_batch_c_array_vec.push_back(
-            pnew_blks[gemm_batch_grp_cnt]->DataRef());
-        ++gemm_batch_grp_cnt;
+        gemm_batch_b_array[blk_pair_cnt] = tb_to_ctrct_blks[j];
+        gemm_batch_n_array[blk_pair_cnt] = MKL_INT(tb_to_ctrct_blk_saved_dims[j]);
+        gemm_batch_c_array[blk_pair_cnt] = pnew_blks[blk_pair_cnt]->DataRef();
+
+        ++blk_pair_cnt;
       }
     }
   }
-  std::vector<CBLAS_TRANSPOSE> transa_array_vec(
-                                   gemm_batch_grp_cnt, CblasNoTrans);
-  std::vector<CBLAS_TRANSPOSE> transb_array_vec(
-                                   gemm_batch_grp_cnt, CblasNoTrans);
-  std::vector<double> alpha_array_vec(gemm_batch_grp_cnt, alpha);
-  std::vector<double> beta_array_vec(gemm_batch_grp_cnt, 0.0);
-  std::vector<MKL_INT> group_size_vec(gemm_batch_grp_cnt, 1);
+  std::cout << std::fixed;
+  //blk_match_timer.PrintElapsed();
 
   // Call MKL ?gemm_batch function.
-  if (gemm_batch_grp_cnt != 0) {
-    cblas_dgemm_batch(
-        CblasRowMajor,
-        transa_array_vec.data(), transb_array_vec.data(),
-        gemm_batch_m_array_vec.data(),
-        gemm_batch_n_array_vec.data(),
-        gemm_batch_k_array_vec.data(),
-        alpha_array_vec.data(),
-        gemm_batch_a_array_vec.data(), gemm_batch_k_array_vec.data(),
-        gemm_batch_b_array_vec.data(), gemm_batch_n_array_vec.data(),
-        beta_array_vec.data(),
-        gemm_batch_c_array_vec.data(), gemm_batch_n_array_vec.data(),
-        gemm_batch_grp_cnt,
-        group_size_vec.data());
-  }
-  // Free temporary block data.
+  //Timer dgemm_batch_timer("gemm_batch");
+  //dgemm_batch_timer.Restart();
+  cblas_dgemm_batch(
+      CblasRowMajor,
+      gemm_batch_transa_array, gemm_batch_transb_array,
+      gemm_batch_m_array,
+      gemm_batch_n_array,
+      gemm_batch_k_array,
+      gemm_batch_alpha_array,
+      gemm_batch_a_array, gemm_batch_k_array,
+      gemm_batch_b_array, gemm_batch_n_array,
+      gemm_batch_beta_array,
+      gemm_batch_c_array, gemm_batch_n_array,
+      blk_pairs,
+      gemm_batch_grp_size_array); 
+  //dgemm_batch_timer.PrintElapsed();
+
+  // Free temporary variables.
+  Timer free_blk_data_timer("free_temp_blks");
+  free_blk_data_timer.Restart();
   if (ta_need_trans) {
-    for (auto &blk_data : ta_to_ctrct_blk_datas) { delete [] blk_data; }
+    for (std::size_t i = 0; i < ta_blks_num; ++i) {
+      delete[] ta_to_ctrct_blks[i];
+    }
   }
   if (tb_need_trans) {
-    for (auto &blk_data : tb_to_ctrct_blk_datas) { delete [] blk_data; }
+    for (std::size_t i = 0; i < tb_blks_num; ++i) {
+      delete[] tb_to_ctrct_blks[i];
+    }
   }
+  delete[] ta_to_ctrct_blks;
+  delete[] tb_to_ctrct_blks;
+  delete[] ta_to_ctrct_blk_saved_dims;
+  delete[] tb_to_ctrct_blk_saved_dims;
+  delete[] ta_to_ctrct_blk_ctrct_dims;
+  delete[] tb_to_ctrct_blk_ctrct_dims;
+
+  delete[] gemm_batch_a_array;
+  delete[] gemm_batch_b_array;
+  delete[] gemm_batch_c_array;
+  delete[] gemm_batch_m_array;
+  delete[] gemm_batch_n_array;
+  delete[] gemm_batch_k_array;
+  delete[] gemm_batch_transa_array;
+  delete[] gemm_batch_transb_array;
+  delete[] gemm_batch_alpha_array;
+  delete[] gemm_batch_beta_array;
+  delete[] gemm_batch_grp_size_array;
+
+  //free_blk_data_timer.PrintElapsed();
+  //blks_ctrct_timer.PrintElapsed();
   return pnew_blks;
 }
 
@@ -222,13 +299,22 @@ void SeriesBlksCtrct(
     const std::pair<std::vector<long>, std::vector<long>> &ctrct_axes) {
   std::vector<QNBlock *> pnew_blks;
   if (pres_blks.size() > 0 && pnew_t->BlksConstRef().size() > 0) {
+
+    std::cout << std::fixed;
+    Timer blks_ctrct_timer("blks_ctrct_batch");
+    blks_ctrct_timer.Restart();
     pnew_blks = BlksCtrctBatch(
         ctrct_axes.first, ctrct_axes.second,
         1.0,
         pres_blks, pnew_t->BlksConstRef());
+    blks_ctrct_timer.PrintElapsed();
+
+    Timer init_ten_timer("init_ten");
+    init_ten_timer.Restart();
     auto pnew_res_t = InitCtrctedTen(
         *rpres_t, *pnew_t,
         ctrct_axes.first, ctrct_axes.second);
+    init_ten_timer.PrintElapsed();
 
     if (i != 0) {
       FreeBlks(pres_blks);
@@ -236,15 +322,22 @@ void SeriesBlksCtrct(
     }
 
     if (i != nctrct-1) {
+
+      Timer merge_blks_timer("merge_blks");
+      merge_blks_timer.Restart();
       pres_blks = MergeCtrctBlks(pnew_blks);
+      merge_blks_timer.PrintElapsed();
     } else {
       pres_blks = pnew_blks;
     }
     rpres_t = pnew_res_t;
   } else {
+    Timer init_ten_timer("init_ten");
+    init_ten_timer.Restart();
     auto pnew_res_t = InitCtrctedTen(
         *rpres_t, *pnew_t,
         ctrct_axes.first, ctrct_axes.second);
+    init_ten_timer.PrintElapsed();
     if (i != 0) {
       FreeBlks(pres_blks);
       delete rpres_t;
@@ -302,6 +395,24 @@ void CalcCtrctBlkDimInfo(
     const std::size_t blk_idx, const QNBlock *pblk,
     const std::vector<long> &ctrct_axes,
     std::vector<long> &saved_dims, std::vector<long> &ctrct_dims) {
+  long ctrct_dim = 1;
+  long saved_dim = 1;
+  for (long i = 0; i < pblk->ndim; ++i) {
+    if (std::find(ctrct_axes.begin(), ctrct_axes.end(), i) != ctrct_axes.end()) {
+      ctrct_dim *= pblk->qnscts[i].dim;
+    } else {
+      saved_dim *= pblk->qnscts[i].dim;
+    }
+  } 
+  saved_dims[blk_idx] = saved_dim;
+  ctrct_dims[blk_idx] = ctrct_dim;
+}
+
+
+void CalcCtrctBlkDimInfo(
+    const std::size_t blk_idx, const QNBlock *pblk,
+    const std::vector<long> &ctrct_axes,
+    long *saved_dims, long *ctrct_dims) {
   long ctrct_dim = 1;
   long saved_dim = 1;
   for (long i = 0; i < pblk->ndim; ++i) {
