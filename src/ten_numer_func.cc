@@ -32,13 +32,18 @@ GQTensor *Contract(
 
   std::vector<QNBlock *> pnew_blks;
   if (ta.BlksConstRef().size() > 0 && tb.BlksConstRef().size() > 0) {
+    std::cout << std::fixed;
+    Timer blks_ctrct_batch_timer("blks_ctrct_batch");
+    blks_ctrct_batch_timer.Restart();
     pnew_blks = BlksCtrctBatch(
         ctrct_axes_a, ctrct_axes_b,
         1.0, ta.BlksConstRef(), tb.BlksConstRef());
+    blks_ctrct_batch_timer.PrintElapsed();
   }
 
   auto res_t  = InitCtrctedTen(ta, tb, ctrct_axes_a, ctrct_axes_b);
   WrapCtrctBlks(pnew_blks, res_t);
+  std::cout << res_t->BlksConstRef().size() << std::endl;
   return res_t;
 }
 
@@ -63,12 +68,12 @@ GQTensor *SeriesContract(
         ts[i+1], ctrct_axes_series[i]);
     if (res_blks.size() == 0 && i != nctrct-1) {
       std::cout << std::fixed;
-      ser_blk_ctrct_timer.PrintElapsed();
+      //ser_blk_ctrct_timer.PrintElapsed();
       return res_t;
     }
   }
   std::cout << std::fixed;
-  ser_blk_ctrct_timer.PrintElapsed();
+  //ser_blk_ctrct_timer.PrintElapsed();
   WrapCtrctBlks(res_blks, res_t);
   return res_t;
 }
@@ -102,8 +107,6 @@ std::vector<QNBlock *> BlksCtrctBatch(
     const double alpha,
     const std::vector<QNBlock *> &ta_blks,
     const std::vector<QNBlock *> &tb_blks) {
-  //Timer blks_ctrct_timer("blks_ctrct_batch");
-  //blks_ctrct_timer.Restart();
   // Data prepare.
   Timer blk_match_timer("blk_match");
   blk_match_timer.Restart();
@@ -133,6 +136,7 @@ std::vector<QNBlock *> BlksCtrctBatch(
       }
     }
   }
+  std::cout << ta_blks_num << " " << tb_blks_num << " " << blk_pairs << std::endl;
   // No match, return empty vector.
   if (blk_pairs == 0) {
     return std::vector<QNBlock *>();
@@ -287,7 +291,6 @@ std::vector<QNBlock *> BlksCtrctBatch(
   delete[] gemm_batch_grp_size_array;
 
   free_blk_data_timer.PrintElapsed();
-  //blks_ctrct_timer.PrintElapsed();
   return pnew_blks;
 }
 
@@ -301,13 +304,13 @@ void SeriesBlksCtrct(
   if (pres_blks.size() > 0 && pnew_t->BlksConstRef().size() > 0) {
 
     std::cout << std::fixed;
-    Timer blks_ctrct_timer("blks_ctrct_batch");
-    blks_ctrct_timer.Restart();
+    Timer blks_ctrct_batch_timer("blks_ctrct_batch");
+    blks_ctrct_batch_timer.Restart();
     pnew_blks = BlksCtrctBatch(
         ctrct_axes.first, ctrct_axes.second,
         1.0,
         pres_blks, pnew_t->BlksConstRef());
-    blks_ctrct_timer.PrintElapsed();
+    blks_ctrct_batch_timer.PrintElapsed();
 
     auto pnew_res_t = InitCtrctedTen(
         *rpres_t, *pnew_t,
