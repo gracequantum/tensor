@@ -35,6 +35,7 @@ friend std::ofstream &bfwrite(std::ofstream &, const QN &);
 public:
   QN(void);
   QN(const std::vector<QNNameVal> &);
+  QN(const std::vector<long> &);
   QN(const QN &);
   QN &operator=(const QN &);
 
@@ -43,7 +44,6 @@ public:
   QN &operator+=(const QN &);
 
 private:
-  std::vector<std::string> names_; 
   std::vector<long> values_;
   std::size_t hash_;
 

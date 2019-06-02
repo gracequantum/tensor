@@ -50,18 +50,20 @@ size_t VecPtrHasher(const std::vector<T> &vec) {
 }
 
 
-// Helper classes.
-class HashableString {
-public:
-  HashableString(void) : str_("") {}
-  HashableString(const std::string &nstr) : str_(nstr) {} 
-  HashableString(const long num) : str_(std::to_string(num)) {}
-
-  std::size_t Hash(void) const { return strhasher_(str_); }
-
-private:
-  std::string str_;
-  std::hash<std::string> strhasher_;
-};
+// Type can use std::hash function.
+template<typename T>
+size_t VecStdTypeHasher(const std::vector<T> &vec) {
+  std::hash<T> item_hasher;
+  size_t len = vec.size();
+  size_t hash_val = _HASH_XXPRIME_5;
+  for (auto &item : vec) {
+    size_t item_hash_val = item_hasher(item);
+    hash_val += item_hash_val * _HASH_XXPRIME_2;
+    hash_val = _HASH_XXROTATE(hash_val);
+    hash_val *= _HASH_XXPRIME_1;
+  }
+  hash_val += len ^ _HASH_XXPRIME_5;
+  return hash_val;
+}
 } /* gqten */ 
 #endif /* ifndef GQTEN_VEC_HASH_H */

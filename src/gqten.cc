@@ -30,22 +30,23 @@ QN::QN(void) { hash_ = CalcHash(); }
 
 QN::QN(const std::vector<QNNameVal> &nm_vals) {
   for (auto &nm_val : nm_vals) {
-    names_.push_back(nm_val.name);
     values_.push_back(nm_val.val);
   }
   hash_ = CalcHash();
 }
 
 
-QN::QN(const QN &qn) {
-  names_ = qn.names_;
-  values_ = qn.values_;
+QN::QN(const std::vector<long> &qn_vals) : values_(qn_vals) {
+  hash_ = CalcHash();
+}
+
+
+QN::QN(const QN &qn) : values_(qn.values_) {
   hash_ = qn.hash_;
 }
 
 
 QN &QN::operator=(const QN &rhs) {
-  names_ = rhs.names_;
   values_ = rhs.values_;
   hash_ = rhs.hash_;
   return *this;
@@ -56,32 +57,29 @@ std::size_t QN::Hash(void) const { return hash_; }
 
 
 std::size_t QN::CalcHash(void) const {
-  if (names_.size() == 0) {
+  if (values_.size() == 0) {
     return 0; 
   } else {
-    std::vector<HashableString> val_strs;
-    for (auto &val : values_) { val_strs.push_back(HashableString(val)); }
-    return VecHasher(val_strs);
+    return VecStdTypeHasher(values_);
   }
 }
 
 
 // Overload unary minus operator.
 QN QN::operator-(void) const {
-  auto nm_vals_size = this->names_.size();
-  std::vector<QNNameVal> new_nm_vals(nm_vals_size);
-  for (size_t i = 0; i < nm_vals_size; i++) {
-    new_nm_vals[i] = QNNameVal(this->names_[i], -this->values_[i]);
+  auto qn_vals_size = this->values_.size();
+  std::vector<long> new_qn_vals(qn_vals_size);
+  for (std::size_t i = 0; i < qn_vals_size; ++i) {
+    new_qn_vals[i] = - this->values_[i];
   }
-  return QN(new_nm_vals);
+  return QN(new_qn_vals);
 }
 
 
 QN &QN::operator+=(const QN &rhs) {
-  assert(this->names_.size() == rhs.names_.size());
-  auto nm_vals_size = this->names_.size();
-  for (size_t i = 0; i < nm_vals_size; i++) {
-    assert(this->names_[i] == rhs.names_[i]);
+  auto qn_vals_size = this->values_.size();
+  assert(qn_vals_size == rhs.values_.size());
+  for (std::size_t i = 0; i < qn_vals_size; ++i) {
     this->values_[i] += rhs.values_[i];
   }
   hash_ = CalcHash();
@@ -112,11 +110,9 @@ QN operator-(const QN &lhs, const QN &rhs) {
 
 
 std::ifstream &bfread(std::ifstream &ifs, QN &qn) {
-  long nv_num;
-  ifs >> nv_num;
-  qn.names_ = std::vector<std::string>(nv_num);
-  for (auto &name : qn.names_) { ifs >> name; }
-  qn.values_ = std::vector<long>(nv_num);
+  long qn_vals_num;
+  ifs >> qn_vals_num;
+  qn.values_ = std::vector<long>(qn_vals_num);
   for (auto &value : qn.values_) { ifs >> value; }
   ifs >> qn.hash_;
   return ifs;
@@ -124,9 +120,8 @@ std::ifstream &bfread(std::ifstream &ifs, QN &qn) {
 
 
 std::ofstream &bfwrite(std::ofstream &ofs, const QN &qn) {
-  long nv_num = qn.names_.size();
-  ofs << nv_num << std::endl;
-  for (auto &name : qn.names_) { ofs << name << std::endl; }
+  long qn_vals_num = qn.values_.size();
+  ofs << qn_vals_num << std::endl;
   for (auto &value : qn.values_) { ofs << value << std::endl; }
   ofs << qn.hash_ << std::endl;
   return ofs;
