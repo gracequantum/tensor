@@ -30,19 +30,9 @@ std::vector<QNBlock *> BlksCtrctBatch(
     const double,
     const std::vector<QNBlock *> &, const std::vector<QNBlock *> &);
 
-void SeriesBlksCtrct(
-    const std::size_t, const std::size_t,
-    std::vector<QNBlock *> &, GQTensor * &,
-    const GQTensor *,
-    const std::pair<std::vector<long>, std::vector<long>> &);
-
 void WrapCtrctBlks(std::vector<QNBlock *> &, GQTensor *);
 
 std::vector<QNBlock *> MergeCtrctBlks(const std::vector<QNBlock *> &);
-
-void CalcCtrctBlkDimInfo(
-    const std::size_t, const QNBlock *, const std::vector<long> &,
-    std::vector<long> &, std::vector<long> &);
 
 void CalcCtrctBlkDimInfo(
     const std::size_t, const QNBlock *, const std::vector<long> &,

@@ -48,37 +48,6 @@ GQTensor *Contract(
 }
 
 
-GQTensor *SeriesContract(
-    const std::vector<GQTensor *> &ts,
-    const std::vector<std::pair<std::vector<long>,
-                                std::vector<long>>> &ctrct_axes_series) {
-  auto nt = ts.size();
-  auto nctrct = ctrct_axes_series.size();
-  assert(nt >= 2);
-  assert(nt == nctrct + 1);
-  std::vector<QNBlock *> res_blks = ts[0]->BlksRef();
-  GQTensor *res_t = ts[0];
-
-  Timer ser_blk_ctrct_timer("ser_blk_ctrc");
-  ser_blk_ctrct_timer.Restart();
-  for (std::size_t i = 0; i < ctrct_axes_series.size(); ++i) {
-    SeriesBlksCtrct(
-        i, nctrct,
-        res_blks, res_t,
-        ts[i+1], ctrct_axes_series[i]);
-    if (res_blks.size() == 0 && i != nctrct-1) {
-      std::cout << std::fixed;
-      //ser_blk_ctrct_timer.PrintElapsed();
-      return res_t;
-    }
-  }
-  std::cout << std::fixed;
-  //ser_blk_ctrct_timer.PrintElapsed();
-  WrapCtrctBlks(res_blks, res_t);
-  return res_t;
-}
-
-
 GQTensor *InitCtrctedTen(
     const GQTensor &t1, const GQTensor &t2,
     const std::vector<long> &t1_ctrct_idxs,
@@ -295,56 +264,6 @@ std::vector<QNBlock *> BlksCtrctBatch(
 }
 
 
-void SeriesBlksCtrct(
-    const std::size_t i, const std::size_t nctrct,
-    std::vector<QNBlock *> &pres_blks, GQTensor * &rpres_t,
-    const GQTensor *pnew_t,
-    const std::pair<std::vector<long>, std::vector<long>> &ctrct_axes) {
-  std::vector<QNBlock *> pnew_blks;
-  if (pres_blks.size() > 0 && pnew_t->BlksConstRef().size() > 0) {
-
-    std::cout << std::fixed;
-    Timer blks_ctrct_batch_timer("blks_ctrct_batch");
-    blks_ctrct_batch_timer.Restart();
-    pnew_blks = BlksCtrctBatch(
-        ctrct_axes.first, ctrct_axes.second,
-        1.0,
-        pres_blks, pnew_t->BlksConstRef());
-    blks_ctrct_batch_timer.PrintElapsed();
-
-    auto pnew_res_t = InitCtrctedTen(
-        *rpres_t, *pnew_t,
-        ctrct_axes.first, ctrct_axes.second);
-
-    if (i != 0) {
-      FreeBlks(pres_blks);
-      delete rpres_t;
-    }
-
-    if (i != nctrct-1) {
-
-      Timer merge_blks_timer("merge_blks");
-      merge_blks_timer.Restart();
-      pres_blks = MergeCtrctBlks(pnew_blks);
-      merge_blks_timer.PrintElapsed();
-    } else {
-      pres_blks = pnew_blks;
-    }
-    rpres_t = pnew_res_t;
-  } else {
-    auto pnew_res_t = InitCtrctedTen(
-        *rpres_t, *pnew_t,
-        ctrct_axes.first, ctrct_axes.second);
-    if (i != 0) {
-      FreeBlks(pres_blks);
-      delete rpres_t;
-    }
-    pres_blks = pnew_blks;
-    rpres_t = pnew_res_t;
-  }
-}
-
-
 void WrapCtrctBlks(std::vector<QNBlock *> &pnew_blks, GQTensor *res_t) {
   auto nnew_blk = pnew_blks.size();   // nnew_blk: number of new blocks.
   if (res_t->indexes.size() == 0) {   // Contract to scalar case.
@@ -385,24 +304,6 @@ std::vector<QNBlock *> MergeCtrctBlks(const std::vector<QNBlock *> &pblks) {
     }
   }
   return merged_blks;
-}
-
-
-void CalcCtrctBlkDimInfo(
-    const std::size_t blk_idx, const QNBlock *pblk,
-    const std::vector<long> &ctrct_axes,
-    std::vector<long> &saved_dims, std::vector<long> &ctrct_dims) {
-  long ctrct_dim = 1;
-  long saved_dim = 1;
-  for (long i = 0; i < pblk->ndim; ++i) {
-    if (std::find(ctrct_axes.begin(), ctrct_axes.end(), i) != ctrct_axes.end()) {
-      ctrct_dim *= pblk->qnscts[i].dim;
-    } else {
-      saved_dim *= pblk->qnscts[i].dim;
-    }
-  } 
-  saved_dims[blk_idx] = saved_dim;
-  ctrct_dims[blk_idx] = ctrct_dim;
 }
 
 
