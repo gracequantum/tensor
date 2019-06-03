@@ -187,6 +187,8 @@ friend std::ofstream &bfwrite(std::ofstream &, const QNBlock &);
 public:
   QNBlock(void) = default;
   QNBlock(const std::vector<QNSector> &);
+
+  // NOTE: For performance reason, this constructor will NOT initialize the data_ to 0!!!
   QNBlock(const std::vector<const QNSector *> &);
 
   QNBlock(const QNBlock &);
@@ -421,7 +423,7 @@ public:
 
   void Restart(void);
   double Elapsed(void);
-  void PrintElapsed(void);
+  void PrintElapsed(std::size_t precision = 5);
 
 private:
   double start_;

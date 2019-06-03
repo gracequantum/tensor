@@ -163,7 +163,12 @@ std::ofstream &bfwrite(std::ofstream &ofs, const QNSector &qnsct) {
 
 // Quantum number sector set.
 QNSectorSet::QNSectorSet(const std::vector<const QNSector *> &pqnscts) {
+
+  Timer new_qnsctset_timer("new_qnsctset");
+  new_qnsctset_timer.Restart();
   for (auto &pqnsct : pqnscts) { qnscts.push_back(*pqnsct); }
+  new_qnsctset_timer.PrintElapsed(6);
+
 }
 
 
@@ -253,18 +258,37 @@ QNBlock::QNBlock(const std::vector<QNSector> &init_qnscts) :
 
 QNBlock::QNBlock(const std::vector<const QNSector *> &pinit_qnscts) :
     QNSectorSet(pinit_qnscts) {
+
+  Timer new_blk_shape_timer("new_blk_shape");
+  new_blk_shape_timer.Restart();
   ndim = qnscts.size(); 
   for (auto &qnsct : qnscts) {
     shape.push_back(qnsct.dim);
   }
+  new_blk_shape_timer.PrintElapsed(6);
+
   if (ndim != 0) {
+
+    Timer new_blk_data_timer("new_blk_data");
+    new_blk_data_timer.Restart();
     size = 1;       // Initialize the block size.
     for (long i = 0; i < ndim; ++i) {
       size *= shape[i];
     }
-    data_ = new double[size] ();    // Allocate memory and initialize to 0.
+    new_blk_data_timer.PrintElapsed(6);
+    new_blk_data_timer.Restart();
+    data_ = new double[size];    // Allocate memory. NOT INITIALIZE TO ZERO!!!
+    new_blk_data_timer.PrintElapsed(6);
+
+    Timer new_blk_calc_offset_timer("new_blk_calc_offset");
+    new_blk_calc_offset_timer.Restart();
     data_offsets_ = CalcDataOffsets(shape);
+    new_blk_calc_offset_timer.PrintElapsed(6);
+
+    Timer new_blk_calc_hash_timer("new_blk_calc_hash");
+    new_blk_calc_hash_timer.Restart();
     qnscts_hash_ = QNSectorSet::Hash();
+    new_blk_calc_hash_timer.PrintElapsed(6);
   }
 }
 
