@@ -153,12 +153,6 @@ std::vector<QNBlock *> BlksCtrctBatch(
   }
 
   // Assign data.
-  Timer blk_match_data_assign_timer("blk_match_data_assign");
-  blk_match_data_assign_timer.Restart();
-  double new_new_blk_time = 0.0;
-  double trans_blk_time = 0.0;
-  Timer blk_match_data_assign_gen_new_blks_timer("blk_match_data_assign_gen_new_blks");
-  Timer blk_match_data_assign_trans_blk_timer("blk_match_data_assign_trans_blk");
   long blk_pair_cnt = 0;
   for (std::size_t i = 0; i < ta_blks_num; ++i) {
     for (std::size_t j = 0; j < tb_blks_num; ++j) {
@@ -167,13 +161,10 @@ std::vector<QNBlock *> BlksCtrctBatch(
         auto pnew_blk_qnscts = GetPNewBlkQNScts(
                                    ta_blks[i], tb_blks[j],
                                    ctrct_axes_a, ctrct_axes_b);
-
-        blk_match_data_assign_gen_new_blks_timer.Restart();
         pnew_blks[blk_pair_cnt] = new QNBlock(pnew_blk_qnscts);
         if (pnew_blks[blk_pair_cnt]->DataConstRef() == nullptr) {
           pnew_blks[blk_pair_cnt]->DataRef() = new double[1];
         }
-        new_new_blk_time += blk_match_data_assign_gen_new_blks_timer.Elapsed();
 
         // Deal with ta block.
         if (ta_to_ctrct_blks[i] == nullptr) {
@@ -182,7 +173,6 @@ std::vector<QNBlock *> BlksCtrctBatch(
               i, ta_blks[i], ctrct_axes_a,
               ta_to_ctrct_blk_saved_dims, ta_to_ctrct_blk_ctrct_dims);
           // Generate contraction data.
-          blk_match_data_assign_trans_blk_timer.Restart();
           if (ta_need_trans) {
             auto blk_data_transed_to_ctrct = TransposeData(
                 ta_blks[i]->DataConstRef(),
@@ -194,7 +184,6 @@ std::vector<QNBlock *> BlksCtrctBatch(
           } else {
             ta_to_ctrct_blks[i] = ta_blks[i]->DataConstRef();
           }
-          trans_blk_time += blk_match_data_assign_trans_blk_timer.Elapsed();
         }
         // Assign gemm_batch parameters.
         gemm_batch_a_array[blk_pair_cnt] = ta_to_ctrct_blks[i];
@@ -208,7 +197,6 @@ std::vector<QNBlock *> BlksCtrctBatch(
               j, tb_blks[j], ctrct_axes_b,
               tb_to_ctrct_blk_saved_dims, tb_to_ctrct_blk_ctrct_dims);
           // Generate contraction data.
-          blk_match_data_assign_trans_blk_timer.Restart();
           if (tb_need_trans) {
             auto blk_data_transed_to_ctrct = TransposeData(
                 tb_blks[j]->DataConstRef(),
@@ -220,7 +208,6 @@ std::vector<QNBlock *> BlksCtrctBatch(
           } else {
             tb_to_ctrct_blks[j] = tb_blks[j]->DataConstRef();
           }
-          trans_blk_time += blk_match_data_assign_trans_blk_timer.Elapsed();
         }
         // Assign gemm_batch parameters.
         gemm_batch_b_array[blk_pair_cnt] = tb_to_ctrct_blks[j];
@@ -231,9 +218,6 @@ std::vector<QNBlock *> BlksCtrctBatch(
       }
     }
   }
-  std::cout << new_new_blk_time << std::endl;
-  std::cout << trans_blk_time << std::endl;
-  blk_match_data_assign_timer.PrintElapsed();
   blk_match_timer.PrintElapsed();
 
   // Call MKL ?gemm_batch function.
