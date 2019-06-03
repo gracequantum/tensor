@@ -12,12 +12,16 @@
 #include <vector>
 #include <fstream>
 
+#include <cmath>
+
 
 namespace gqten {
 
 
 // GQTensor storage file suffix.
 const std::string kGQTenFileSuffix = "gqten";
+// Double numerical error.
+const double kDoubleEpsilon = 1.0E-15;
 
 // Quantum number.
 struct QNNameVal {
@@ -401,6 +405,15 @@ inline long CalcOffset(
 }
 
 
+inline bool DoubleEq(const double a, const double b) {
+  if (std::abs(a-b) < kDoubleEpsilon) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+
 inline bool ArrayEq(
     const double *aptr1, const size_t size1,
     const double *aptr2, const size_t size2) {
@@ -408,7 +421,7 @@ inline bool ArrayEq(
     return false;
   }
   for (size_t i = 0; i < size1; ++i) {
-    if (aptr1[i] != aptr2[i]) {
+    if (!DoubleEq(aptr1[i], aptr2[i])) {
       return false;
     }
   }

@@ -204,8 +204,6 @@ void MatGetRows(          // in-place
 
 void ArrayAppend(double * &, const long &, const double &);
 
-void ArrayElemAttach(double *, const long &, const double *);
-
 
 // Helpers.
 template<typename T>

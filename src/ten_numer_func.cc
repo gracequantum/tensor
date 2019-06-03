@@ -255,8 +255,6 @@ std::vector<QNBlock *> BlksCtrctBatch(
   dgemm_batch_timer.PrintElapsed();
 
   // Free temporary variables.
-  Timer free_blk_data_timer("free_temp_blks");
-  free_blk_data_timer.Restart();
   if (ta_need_trans) {
     for (std::size_t i = 0; i < ta_blks_num; ++i) {
       delete[] ta_to_ctrct_blks[i];
@@ -286,7 +284,6 @@ std::vector<QNBlock *> BlksCtrctBatch(
   delete[] gemm_batch_beta_array;
   delete[] gemm_batch_grp_size_array;
 
-  free_blk_data_timer.PrintElapsed();
   return pnew_blks;
 }
 
@@ -305,7 +302,7 @@ void WrapCtrctBlks(std::vector<QNBlock *> &pnew_blks, GQTensor *res_t) {
     }
   } else {                            // Contract to tensor case.
     auto merged_blks = MergeCtrctBlks(pnew_blks);
-      res_t->BlksRef() = merged_blks;
+    res_t->BlksRef() = merged_blks;
   }
 }
 
@@ -318,9 +315,10 @@ std::vector<QNBlock *> MergeCtrctBlks(const std::vector<QNBlock *> &pblks) {
       if (pnew_blk->QNSectorSetHash() == pmerged_blk->QNSectorSetHash()) {
         auto data_size = pnew_blk->size;
         assert(data_size == pmerged_blk->size);
-        ArrayElemAttach(
-            pmerged_blk->DataRef(), data_size,
-            pnew_blk->DataConstRef());
+        cblas_daxpy(
+            data_size,
+            1.0, pnew_blk->DataConstRef(), 1,
+            pmerged_blk->DataRef(), 1);
         delete pnew_blk;
         has_blk = true;
         break;
@@ -341,7 +339,8 @@ void CalcCtrctBlkDimInfo(
   long ctrct_dim = 1;
   long saved_dim = 1;
   for (long i = 0; i < pblk->ndim; ++i) {
-    if (std::find(ctrct_axes.begin(), ctrct_axes.end(), i) != ctrct_axes.end()) {
+    if (std::find(ctrct_axes.begin(), ctrct_axes.end(), i) !=
+        ctrct_axes.end()) {
       ctrct_dim *= pblk->qnscts[i].dim;
     } else {
       saved_dim *= pblk->qnscts[i].dim;
@@ -410,9 +409,7 @@ void LinearCombineOneTerm(const double coef, const GQTensor *t, GQTensor *res) {
         assert(size == blk->size);
         auto blk_data = blk->DataConstRef();
         auto res_blk_data = res_blk->DataRef();
-        for (std::size_t i = 0; i < size; ++i) {
-          res_blk_data[i] += (coef*blk_data[i]);
-        }
+        cblas_daxpy(size, coef, blk_data, 1, res_blk_data, 1);
         has_blk = true;
         break;
       }
@@ -823,12 +820,6 @@ void ArrayAppend(double * &v, const long &size, const double &elem) {
     new_v[size] = elem;
     v = new_v;
   }
-}
-
-
-void  ArrayElemAttach(
-    double * to_v, const long &size, const double * from_v) {
-  for (long i = 0; i < size; i++) { to_v[i] += from_v[i]; }
 }
 
 
