@@ -359,6 +359,9 @@ void QNBlock::Transpose(const std::vector<long> &transed_axes) {
 }
 
 
+int tensor_transpose_num_threads = kTensorTransposeDefaultNumThreads;
+
+
 double *TransposeData(
     const double *old_data,
     const long &old_ndim,
@@ -375,11 +378,19 @@ double *TransposeData(
   dTensorTranspose(perm, dim,
       1.0, old_data, sizeA, sizeA,
       0.0, transed_data, outerSizeB,
-      4, 1);
+      tensor_transpose_num_threads, 1);
   return transed_data;
 }
 
 
+int GQTenGetTensorTransposeNumThreads(void) {
+  return tensor_transpose_num_threads;
+}
+
+
+void GQTenSetTensorTransposeNumThreads(int num_threads) {
+  tensor_transpose_num_threads = num_threads;
+}
 
 
 std::ifstream &bfread(std::ifstream &ifs, QNBlock &qnblk) {

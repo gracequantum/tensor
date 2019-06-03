@@ -22,6 +22,8 @@ namespace gqten {
 const std::string kGQTenFileSuffix = "gqten";
 // Double numerical error.
 const double kDoubleEpsilon = 1.0E-15;
+// Tensor transpose threads number.
+const int kTensorTransposeDefaultNumThreads = 4;
 
 // Quantum number.
 struct QNNameVal {
@@ -370,6 +372,10 @@ double *TransposeData(
     const long &,
     const std::vector<long> &,
     const std::vector<long> &);
+
+int GQTenGetTensorTransposeNumThreads(void);
+
+void GQTenSetTensorTransposeNumThreads(int);
 
 std::vector<std::vector<long>> GenAllCoors(const std::vector<long> &);
 
