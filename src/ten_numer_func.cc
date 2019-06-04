@@ -418,9 +418,22 @@ SvdRes Svd(
     const QN &ldiv, const QN &rdiv,
     const double &cutoff, const long &Dmin, const long &Dmax) {
   assert((ldims + rdims) == t.indexes.size());
+
+  Timer svd_merge_blks_timer("svd_merge_blks");
+  svd_merge_blks_timer.Restart();
   auto merged_blocks = MergeBlocks(t, ldims, rdims);
+  svd_merge_blks_timer.PrintElapsed();
+
+  Timer svd_blks_svd_timer("svd_blks_svd");
+  svd_blks_svd_timer.Restart();
   auto trunc_blk_svd_res = TruncatedBlockSvd(merged_blocks, cutoff, Dmin, Dmax);
-  return WrapBlock(trunc_blk_svd_res, ldiv, rdiv, t.indexes, ldims, rdims);
+  svd_blks_svd_timer.PrintElapsed();
+  
+  Timer svd_wrap_blks("svd_wrap_blks");
+  svd_wrap_blks.Restart();
+  auto res = WrapBlock(trunc_blk_svd_res, ldiv, rdiv, t.indexes, ldims, rdims);
+  svd_wrap_blks.PrintElapsed();
+  return res;
 }
 
 
