@@ -46,6 +46,7 @@ public:
   QN &operator=(const QN &);
 
   std::size_t Hash(void) const;
+
   QN operator-(void) const;
   QN &operator+=(const QN &);
 

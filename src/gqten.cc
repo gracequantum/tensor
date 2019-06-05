@@ -749,6 +749,10 @@ GQTensor Dag(const GQTensor &t) {
 QN Div(const GQTensor &t) {
   auto blks = t.BlksConstRef();
   auto blk_num = blks.size();
+  if (blk_num == 0) {
+    std::cout << "Tensor does not have a block. Retrun QN()." << std::endl;
+    return QN();
+  }
   QN div = CalcDiv(blks[0]->qnscts, t.indexes);
   for (size_t i = 1; i < blk_num; ++i) {
     auto blki_div = CalcDiv(blks[i]->qnscts, t.indexes);
