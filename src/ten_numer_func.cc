@@ -437,6 +437,29 @@ SvdRes Svd(
 }
 
 
+SvdRes Svd(
+    const GQTensor &t,
+    const long ldims, const long rdims,
+    const QN &ldiv, const QN &rdiv) {
+  auto t_shape = t.shape;
+  long lsize = 1;
+  long rsize = 1;
+  for (std::size_t i = 0; i < t_shape.size(); ++i) {
+    if (i < ldims) {
+      lsize *= t_shape[i];
+    } else {
+      rsize *= t_shape[i];
+    }
+  }
+  auto D = ((lsize >= rsize) ? lsize : rsize);
+  return Svd(
+      t,
+      ldims, rdims,
+      ldiv, rdiv,
+      0, D, D);
+}
+
+
 PartDivsAndMergedBlk MergeBlocks(
     const GQTensor &t, const long &ldims, const long &rdims) {
   PartDivsAndBipartiteBlkDatas tomerge_blkdatas;

@@ -353,6 +353,11 @@ struct SvdRes {
 
 SvdRes Svd(
     const GQTensor &,
+    const long, const long,
+    const QN &, const QN &);
+
+SvdRes Svd(
+    const GQTensor &,
     const long &, const long &,
     const QN &, const QN &,
     const double &, const long &, const long &);
