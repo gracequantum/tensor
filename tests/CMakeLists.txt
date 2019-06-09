@@ -1,3 +1,4 @@
+#  SPDX-License-Identifier: LGPL-3.0-only
 # 
 #  Author: Rongyang Sun <sun-rongyang@outlook.com>
 #  Creation Date: 2019-04-24 21:16
