@@ -422,7 +422,7 @@ SvdRes Svd(
 
   Timer svd_merge_blks_timer("svd_merge_blks");
   svd_merge_blks_timer.Restart();
-  auto merged_blocks = MergeBlocks(t, ldims, rdims);
+  auto merged_blocks = SvdMergeBlocks(t, ldims, rdims);
   svd_merge_blks_timer.PrintElapsed();
 
   Timer svd_blks_svd_timer("svd_blks_svd");
@@ -432,7 +432,11 @@ SvdRes Svd(
   
   Timer svd_wrap_blks("svd_wrap_blks");
   svd_wrap_blks.Restart();
-  auto res = WrapBlock(trunc_blk_svd_res, ldiv, rdiv, t.indexes, ldims, rdims);
+  auto res = SvdWrapBlocks(
+                 trunc_blk_svd_res,
+                 ldiv, rdiv,
+                 t.indexes,
+                 ldims, rdims);
   svd_wrap_blks.PrintElapsed();
   return res;
 }
@@ -461,7 +465,7 @@ SvdRes Svd(
 }
 
 
-PartDivsAndMergedBlk MergeBlocks(
+PartDivsAndMergedBlk SvdMergeBlocks(
     const GQTensor &t, const long &ldims, const long &rdims) {
   PartDivsAndBipartiteBlkDatas tomerge_blkdatas;
   PartDivsEqual partdivs_equaler;
@@ -486,13 +490,13 @@ PartDivsAndMergedBlk MergeBlocks(
   }
   PartDivsAndMergedBlk merged_blocks;
   for (auto &kv : tomerge_blkdatas) {
-    merged_blocks.emplace(kv.first, MergeBlock(kv.second));
+    merged_blocks.emplace(kv.first, SvdMergeBlk(kv.second));
   }
   return merged_blocks;
 }
 
 
-MergedBlk MergeBlock(const std::vector<BipartiteBlkData> &blkdatas) {
+MergedBlk SvdMergeBlk(const std::vector<BipartiteBlkData> &blkdatas) {
   QNSectorsSet lqnscts_set;
   QNSectorsSet rqnscts_set;
   long extra_ldim = 0;
@@ -569,18 +573,20 @@ TruncBlkSvdData TruncatedBlockSvd(
   PartDivsAndBlkSvdData svd_data;
   std::vector<double> singular_values;
   for (auto &kv : merged_blocks) {
-    auto raw_svd_data = MatSvd(kv.second.mat, kv.second.mat_ldim, kv.second.mat_rdim);
+    auto raw_svd_res = MatSvd(
+                           kv.second.mat,
+                           kv.second.mat_ldim, kv.second.mat_rdim);
     delete[] kv.second.mat;
-    if (raw_svd_data.info == 0) {
+    if (raw_svd_res.info == 0) {
       auto sdim = std::min(kv.second.mat_ldim, kv.second.mat_rdim);
       svd_data.emplace(
           kv.first,
           BlkSvdData(
               kv.second.lqnscts_set, kv.second.rqnscts_set,
-              raw_svd_data.u, raw_svd_data.s, raw_svd_data.v,
+              raw_svd_res.u, raw_svd_res.s, raw_svd_res.v,
               kv.second.mat_ldim, sdim, kv.second.mat_rdim));
       for (long i = 0; i < sdim; i++) {
-        auto sv = raw_svd_data.s[i];
+        auto sv = raw_svd_res.s[i];
         if (sv != 0.0) { singular_values.push_back(sv); }
       }
     } else {
@@ -589,69 +595,41 @@ TruncBlkSvdData TruncatedBlockSvd(
     }
   }
   long total_dim = singular_values.size();
-  double trunc_err = 0.0;
-  long kept_dim = total_dim;
+  if (total_dim <= dmin) {
+    TruncBlkSvdData truncated_blk_svd_data;
+    truncated_blk_svd_data.trunc_blks = svd_data;
+    truncated_blk_svd_data.trunc_err = 0.0;
+    truncated_blk_svd_data.kept_dim = total_dim;
+    return truncated_blk_svd_data;
+  }
   std::sort(singular_values.begin(), singular_values.end());
   auto sv_squares = SquareVec(singular_values);
   auto normalized_sv_squares = NormVec(sv_squares);
-  if (total_dim > dmax) {
-    trunc_err = std::accumulate(
-                    normalized_sv_squares.begin(),
-                    normalized_sv_squares.end()-dmax,
-                    0.0);
-    normalized_sv_squares = SliceFromEnd(normalized_sv_squares, dmax);
-    kept_dim = dmax;
-  }
-  if (kept_dim > dmin) {
-    for (auto &nsvs : normalized_sv_squares) {
-      if (trunc_err + nsvs > cutoff) {
-        break;
-      } else {
-        trunc_err += nsvs;
-        kept_dim -= 1;
-        if (kept_dim == dmin) {
-          break;
-        }
-      }
+  long kept_dim = dmin;
+  double trunc_err = std::accumulate(
+                         normalized_sv_squares.begin(),
+                         normalized_sv_squares.end()-kept_dim,
+                         0.0);
+  long next_kept_dim;
+  double next_trunc_err;
+  while (true) {
+    next_kept_dim = kept_dim + 1;
+    next_trunc_err = trunc_err -
+                     normalized_sv_squares[total_dim-(kept_dim+1)];
+    if (DoubleEq(next_trunc_err, 0)) { next_trunc_err = 0; }
+    if (next_kept_dim > total_dim ||
+        next_kept_dim > dmax ||
+        next_trunc_err < cutoff) {
+      break;
+    } else {
+      kept_dim = next_kept_dim;
+      trunc_err = next_trunc_err;
     }
   }
-  auto kept_smallest_sv = *(singular_values.end() + (-kept_dim));
+  assert(kept_dim <= total_dim);
+  auto kept_smallest_sv = singular_values[total_dim-kept_dim];
   PartDivsAndBlkSvdData truncated_blocks;
-  for (auto &kv : svd_data) {
-    double *trunced_u = nullptr;
-    double *trunced_s = nullptr;
-    double *trunced_v = nullptr;
-    long kept_sv_num = 0;
-    MatTrans(kv.second.uldim, kv.second.sdim, kv.second.u);
-    for (long i = 0; i < kv.second.sdim; ++i) {
-      if (kv.second.s[i] >= kept_smallest_sv) {
-        MatAppendRow(
-            trunced_u,
-            kept_sv_num,
-            kv.second.uldim,
-            MatGetConstRow(kv.second.u, i, kv.second.uldim));
-        ArrayAppend(trunced_s, kept_sv_num, kv.second.s[i]);
-        MatAppendRow(
-            trunced_v,
-            kept_sv_num,
-            kv.second.vrdim,
-            MatGetConstRow(kv.second.v, i, kv.second.vrdim));
-        kept_sv_num += 1;
-      }
-    }
-    delete [] kv.second.u; kv.second.u = nullptr;
-    delete [] kv.second.s; kv.second.s = nullptr;
-    delete [] kv.second.v; kv.second.v = nullptr;
-    if (kept_sv_num != 0) {
-      MatTrans(kept_sv_num, kv.second.uldim, trunced_u);
-      truncated_blocks.emplace(
-          kv.first,
-          BlkSvdData(
-              kv.second.lqnscts_set, kv.second.rqnscts_set,
-              trunced_u, trunced_s, trunced_v,
-              kv.second.uldim, kept_sv_num, kv.second.vrdim));
-    }
-  }
+  SvdTruncteBlks(svd_data, kept_smallest_sv, truncated_blocks);
   TruncBlkSvdData truncated_blk_svd_data;
   truncated_blk_svd_data.trunc_blks = truncated_blocks;
   truncated_blk_svd_data.trunc_err = trunc_err;
@@ -660,7 +638,62 @@ TruncBlkSvdData TruncatedBlockSvd(
 }
 
 
-SvdRes WrapBlock(
+void SvdTruncteBlks(
+    PartDivsAndBlkSvdData &svd_data,
+    const double kept_smallest_sv,
+    PartDivsAndBlkSvdData &truncated_svd_data) {
+  for (auto &kv : svd_data) {
+    double *trunced_u = nullptr;
+    double *trunced_s = nullptr;
+    double *trunced_v = nullptr;
+    auto blk_kept_dim = 0;
+    for (long i = 0; i < kv.second.sdim; ++i) {
+      if (kv.second.s[i] < kept_smallest_sv) {
+        break;
+      } else {
+        ++blk_kept_dim;
+      }
+    }
+    if (blk_kept_dim == 0) {
+      delete [] kv.second.u; kv.second.u = nullptr;
+      delete [] kv.second.s; kv.second.s = nullptr;
+      delete [] kv.second.v; kv.second.v = nullptr;
+    } else if (blk_kept_dim < kv.second.sdim) {
+      trunced_s = new double [blk_kept_dim];
+      std::memcpy(trunced_s, kv.second.s, blk_kept_dim*sizeof(double));
+      MatTrans(kv.second.uldim, kv.second.sdim, kv.second.u);
+      trunced_u = MatGetRows(
+                      kv.second.u, kv.second.sdim, kv.second.uldim,
+                      0, blk_kept_dim);
+      MatTrans(blk_kept_dim, kv.second.uldim, trunced_u);
+      trunced_v = MatGetRows(
+                      kv.second.v, kv.second.sdim, kv.second.vrdim,
+                      0, blk_kept_dim);
+      truncated_svd_data.emplace(
+          kv.first,
+          BlkSvdData(
+              kv.second.lqnscts_set, kv.second.rqnscts_set,
+              trunced_u, trunced_s, trunced_v,
+              kv.second.uldim, blk_kept_dim, kv.second.vrdim));
+      delete [] kv.second.u; kv.second.u = nullptr;
+      delete [] kv.second.s; kv.second.s = nullptr;
+      delete [] kv.second.v; kv.second.v = nullptr;
+    } else {
+      trunced_s = kv.second.s;
+      trunced_u = kv.second.u;
+      trunced_v = kv.second.v;
+      truncated_svd_data.emplace(
+          kv.first,
+          BlkSvdData(
+              kv.second.lqnscts_set, kv.second.rqnscts_set,
+              trunced_u, trunced_s, trunced_v,
+              kv.second.uldim, blk_kept_dim, kv.second.vrdim));
+    }
+  }
+}
+
+
+SvdRes SvdWrapBlocks(
     TruncBlkSvdData &truncated_blk_svd_data,
     const QN &ldiv, const QN &rdiv,
     const std::vector<Index> &indexes,
@@ -676,10 +709,8 @@ SvdRes WrapBlock(
     GenDiagMat(kv.second.s, kv.second.sdim, sblock->DataRef());
     delete [] kv.second.s; kv.second.s = nullptr;
     sblocks.push_back(sblock);
-    // Create u and v block.
+    // Create u block.
     long u_row_offset = 0;
-    long v_col_offset = 0;
-    auto transed_v = MatTrans(kv.second.v, kv.second.sdim, kv.second.vrdim);
     for (auto &lqnscts : kv.second.lqnscts_set) {
       auto u_row_dim = MulDims(lqnscts);
       auto ublock_qnscts = lqnscts; ublock_qnscts.push_back(sblk_qnsct);
@@ -692,6 +723,9 @@ SvdRes WrapBlock(
       u_row_offset += u_row_dim;
     }
     delete [] kv.second.u; kv.second.u = nullptr;
+    // Create v block.
+    long v_col_offset = 0;
+    auto transed_v = MatTrans(kv.second.v, kv.second.sdim, kv.second.vrdim);
     for (auto &rqnscts : kv.second.rqnscts_set) {
       auto v_col_dim = MulDims(rqnscts);
       auto vblock_qnscts = rqnscts;
@@ -728,7 +762,7 @@ SvdRes WrapBlock(
 
 
 // Operations for matrix.
-RawSvdData MatSvd(double *mat, const long &mld, const long &mrd) {
+RawSvdRes MatSvd(double *mat, const long &mld, const long &mrd) {
   auto m = mld;
   auto n = mrd;
   auto lda = n;
@@ -754,12 +788,12 @@ RawSvdData MatSvd(double *mat, const long &mld, const long &mrd) {
       s,
       u, ldu,
       vt, ldvt);
-  RawSvdData raw_svd_data;
-  raw_svd_data.info = info;
-  raw_svd_data.u = u;
-  raw_svd_data.s = s;
-  raw_svd_data.v = vt;
-  return raw_svd_data;
+  RawSvdRes raw_svd_res;
+  raw_svd_res.info = info;
+  raw_svd_res.u = u;
+  raw_svd_res.s = s;
+  raw_svd_res.v = vt;
+  return raw_svd_res;
 }
 
 
@@ -787,23 +821,6 @@ void MatTrans(const long &mat_ldim, const long &mat_rdim, double *mat) {
       mat_rdim, mat_ldim);
 }
 
-void MatAppendRow(
-    double * &mat, const long &rows, const long &cols, const double *new_row) {
-  auto old_size = rows * cols;
-  auto new_size = (rows+1) * cols;
-  auto new_mat = new double [new_size];
-  if (old_size == 0) {
-    std::memcpy(new_mat+old_size, new_row, cols*sizeof(double));
-    mat = new_mat;
-  } else {
-    std::memcpy(new_mat, mat, old_size*sizeof(double));
-    std::memcpy(new_mat+old_size, new_row, cols*sizeof(double));
-    delete [] mat;
-    mat = new_mat;
-  }
-}
-
-
 void GenDiagMat(const double *diag_v, const long &diag_v_dim, double *full_mat) {
   for (long i = 0; i < diag_v_dim; ++i) {
     *(full_mat + (i*diag_v_dim + i)) = diag_v[i];
@@ -827,20 +844,6 @@ void MatGetRows(
     double *new_mat) {
   auto new_size = num_rows*cols;
   std::memcpy(new_mat, mat+(from*cols), new_size*sizeof(double));
-}
-
-
-void ArrayAppend(double * &v, const long &size, const double &elem) {
-  if (size == 0) {
-    v = new double [1];
-    v[0] = elem;
-  } else {
-    auto new_v = new double [size + 1];
-    std::memcpy(new_v, v, size*sizeof(double));
-    delete [] v;
-    new_v[size] = elem;
-    v = new_v;
-  }
 }
 
 

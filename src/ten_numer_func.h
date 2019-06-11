@@ -113,13 +113,13 @@ typedef
                        PartDivsHash, PartDivsEqual>
     PartDivsAndBipartiteBlkDatas;
 
-PartDivsAndMergedBlk MergeBlocks(
+PartDivsAndMergedBlk SvdMergeBlocks(
     const GQTensor &, const long &, const long &); 
 
-MergedBlk MergeBlock(const std::vector<BipartiteBlkData> &);
+MergedBlk SvdMergeBlk(const std::vector<BipartiteBlkData> &);
 
 // For SVD block data process.
-struct RawSvdData {
+struct RawSvdRes {
   int info;
   double *u;
   double *s;
@@ -172,8 +172,12 @@ TruncBlkSvdData TruncatedBlockSvd(
     const long &,
     const long &);
 
+void SvdTruncteBlks(
+    PartDivsAndBlkSvdData &, const double,
+    PartDivsAndBlkSvdData &);
+
 // For block wrap.
-SvdRes WrapBlock(
+SvdRes SvdWrapBlocks(
     TruncBlkSvdData &,
     const QN &, const QN &,
     const std::vector<Index> &,
@@ -181,18 +185,11 @@ SvdRes WrapBlock(
 
 
 // Operations for matrix.
-RawSvdData MatSvd(double *, const long &, const long &);
+RawSvdRes MatSvd(double *, const long &, const long &);
 
 double *MatTrans(const double *, const long &, const long &); // off-place
 
 void MatTrans(const long &, const long &, double *);          // in-place
-
-void MatAppendRow(double * &, const long &, const long &, const double *);
-
-inline const double *MatGetConstRow(
-    const double *mat, const long &row_idx, const long &cols) {
-  return mat + row_idx*cols;
-}
 
 void GenDiagMat(const double *, const long &, double *);
 
@@ -202,8 +199,6 @@ double *MatGetRows(       // off-place
 void MatGetRows(          // in-place
     const double *, const long &, const long &, const long &, const long &,
     double *);
-
-void ArrayAppend(double * &, const long &, const double &);
 
 
 // Helpers.
