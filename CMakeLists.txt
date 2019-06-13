@@ -20,6 +20,11 @@ if(${CMAKE_BUILD_TYPE} MATCHES Debug)
   set(CMAKE_VERBOSE_MAKEFILE ON)
 endif()
 
+option(GQTEN_USE_MKL_GEMM_BATCH "Use MKL's cblas_dgemm_batch function." ON)
+if(GQTEN_USE_MKL_GEMM_BATCH)
+  add_definitions(-DGQTEN_USE_MKL_GEMM_BATCH)
+endif()
+
 
 set(CMAKE_CXX_STANDARD 11)
 
