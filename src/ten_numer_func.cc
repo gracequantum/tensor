@@ -221,10 +221,10 @@ std::vector<QNBlock *> BlksCtrctBatch(
   }
   blk_match_timer.PrintElapsed();
 
-  // Call MKL ?gemm_batch function.
+  // Call gemm_batch function.
   Timer dgemm_batch_timer("gemm_batch");
   dgemm_batch_timer.Restart();
-  cblas_dgemm_batch(
+  GemmBatch(
       CblasRowMajor,
       gemm_batch_transa_array, gemm_batch_transb_array,
       gemm_batch_m_array,

@@ -18,6 +18,9 @@
 #include <cmath>
 
 
+#include "mkl.h"
+
+
 namespace gqten {
 
 
@@ -34,6 +37,30 @@ std::vector<QNBlock *> BlksCtrctBatch(
 void WrapCtrctBlks(std::vector<QNBlock *> &, GQTensor *);
 
 std::vector<QNBlock *> MergeCtrctBlks(const std::vector<QNBlock *> &);
+
+inline void GemmBatch(
+    const CBLAS_LAYOUT Layout,
+    const CBLAS_TRANSPOSE* transa_array, const CBLAS_TRANSPOSE* transb_array,
+    const MKL_INT* m_array, const MKL_INT* n_array, const MKL_INT* k_array,
+    const double* alpha_array,
+    const double **a_array, const MKL_INT* lda_array,
+    const double **b_array, const MKL_INT* ldb_array,
+    const double* beta_array,
+    double **c_array, const MKL_INT* ldc_array,
+    const MKL_INT group_count,
+    const MKL_INT* group_size) {
+  cblas_dgemm_batch (
+      Layout,
+      transa_array, transb_array,
+      m_array, n_array, k_array,
+      alpha_array,
+      a_array, lda_array,
+      b_array, ldb_array,
+      beta_array,
+      c_array, ldc_array,
+      group_count,
+      group_size);
+}
 
 void CalcCtrctBlkDimInfo(
     const std::size_t, const QNBlock *, const std::vector<long> &,
