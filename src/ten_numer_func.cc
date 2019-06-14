@@ -572,6 +572,8 @@ TruncBlkSvdData TruncatedBlockSvd(
     const long &dmax) {
   PartDivsAndBlkSvdData svd_data;
   std::vector<double> singular_values;
+  Timer svd_gesdd_timer("svd_gesdd");
+  svd_gesdd_timer.Restart();
   for (auto &kv : merged_blocks) {
     auto raw_svd_res = MatSvd(
                            kv.second.mat,
@@ -594,6 +596,7 @@ TruncBlkSvdData TruncatedBlockSvd(
       exit(1);
     }
   }
+  svd_gesdd_timer.PrintElapsed();
   long total_dim = singular_values.size();
   if (total_dim <= dmin) {
     TruncBlkSvdData truncated_blk_svd_data;
@@ -629,7 +632,10 @@ TruncBlkSvdData TruncatedBlockSvd(
   assert(kept_dim <= total_dim);
   auto kept_smallest_sv = singular_values[total_dim-kept_dim];
   PartDivsAndBlkSvdData truncated_blocks;
+  Timer svd_trunc_blks_timer("svd_trunc_blks");
+  svd_trunc_blks_timer.Restart();
   SvdTruncteBlks(svd_data, kept_smallest_sv, truncated_blocks);
+  svd_trunc_blks_timer.PrintElapsed();
   TruncBlkSvdData truncated_blk_svd_data;
   truncated_blk_svd_data.trunc_blks = truncated_blocks;
   truncated_blk_svd_data.trunc_err = trunc_err;
