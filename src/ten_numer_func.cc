@@ -632,10 +632,7 @@ TruncBlkSvdData TruncatedBlockSvd(
   assert(kept_dim <= total_dim);
   auto kept_smallest_sv = singular_values[total_dim-kept_dim];
   PartDivsAndBlkSvdData truncated_blocks;
-  Timer svd_trunc_blks_timer("svd_trunc_blks");
-  svd_trunc_blks_timer.Restart();
   SvdTruncteBlks(svd_data, kept_smallest_sv, truncated_blocks);
-  svd_trunc_blks_timer.PrintElapsed();
   TruncBlkSvdData truncated_blk_svd_data;
   truncated_blk_svd_data.trunc_blks = truncated_blocks;
   truncated_blk_svd_data.trunc_err = trunc_err;
@@ -667,11 +664,9 @@ void SvdTruncteBlks(
     } else if (blk_kept_dim < kv.second.sdim) {
       trunced_s = new double [blk_kept_dim];
       std::memcpy(trunced_s, kv.second.s, blk_kept_dim*sizeof(double));
-      MatTrans(kv.second.uldim, kv.second.sdim, kv.second.u);
-      trunced_u = MatGetRows(
-                      kv.second.u, kv.second.sdim, kv.second.uldim,
-                      0, blk_kept_dim);
-      MatTrans(blk_kept_dim, kv.second.uldim, trunced_u);
+      trunced_u = MatGetCols(
+                        kv.second.u, kv.second.uldim, kv.second.sdim,
+                        0, blk_kept_dim);
       trunced_v = MatGetRows(
                       kv.second.v, kv.second.sdim, kv.second.vrdim,
                       0, blk_kept_dim);
@@ -731,21 +726,18 @@ SvdRes SvdWrapBlocks(
     delete [] kv.second.u; kv.second.u = nullptr;
     // Create v block.
     long v_col_offset = 0;
-    auto transed_v = MatTrans(kv.second.v, kv.second.sdim, kv.second.vrdim);
     for (auto &rqnscts : kv.second.rqnscts_set) {
       auto v_col_dim = MulDims(rqnscts);
       auto vblock_qnscts = rqnscts;
       vblock_qnscts.insert(vblock_qnscts.begin(), sblk_qnsct);
       auto vblock = new QNBlock(vblock_qnscts);
-      MatGetRows(
-          transed_v, kv.second.uldim, kv.second.sdim,
+      MatGetCols(
+          kv.second.v, kv.second.sdim, kv.second.vrdim,
           v_col_offset, v_col_dim,
           vblock->DataRef());
-      MatTrans(v_col_dim, kv.second.sdim, vblock->DataRef());
       vblocks.push_back(vblock);
       v_col_offset += v_col_dim;
     }
-    delete [] transed_v; transed_v = nullptr;
     delete [] kv.second.v; kv.second.v = nullptr;
   }
   auto s_index_in = Index(sblk_qnscts, IN);
@@ -803,30 +795,6 @@ RawSvdRes MatSvd(double *mat, const long &mld, const long &mrd) {
 }
 
 
-double *MatTrans(
-    const double *mat, const long &mat_ldim, const long &mat_rdim) {
-  auto size = mat_ldim*mat_rdim;
-  auto transed_mat = new double [size];
-  std::memcpy(transed_mat, mat, size*sizeof(double));
-  mkl_dimatcopy(
-      'R', 'T',
-      mat_ldim, mat_rdim,
-      1.0,
-      transed_mat,
-      mat_rdim, mat_ldim);
-  return transed_mat;
-}
-
-
-void MatTrans(const long &mat_ldim, const long &mat_rdim, double *mat) {
-  mkl_dimatcopy(
-      'R', 'T',
-      mat_ldim, mat_rdim,
-      1.0,
-      mat,
-      mat_rdim, mat_ldim);
-}
-
 void GenDiagMat(const double *diag_v, const long &diag_v_dim, double *full_mat) {
   for (long i = 0; i < diag_v_dim; ++i) {
     *(full_mat + (i*diag_v_dim + i)) = diag_v[i];
@@ -850,6 +818,30 @@ void MatGetRows(
     double *new_mat) {
   auto new_size = num_rows*cols;
   std::memcpy(new_mat, mat+(from*cols), new_size*sizeof(double));
+}
+
+
+void MatGetCols(
+    const double *mat, const long rows, const long cols,
+    const long from, const long num_cols,
+    double *new_mat) {
+  long offset = from;
+  long new_offset = 0;
+  for (long i = 0; i < rows; ++i) {
+    std::memcpy(new_mat+new_offset, mat+offset, num_cols*sizeof(double));
+    offset += cols;
+    new_offset += num_cols;
+  }
+}
+
+
+double *MatGetCols(
+    const double *mat, const long rows, const long cols,
+    const long from, const long num_cols) {
+  auto new_size = num_cols * rows;
+  auto new_mat = new double [new_size];
+  MatGetCols(mat, rows, cols, from, num_cols, new_mat);
+  return new_mat;
 }
 
 
