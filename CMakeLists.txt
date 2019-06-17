@@ -38,6 +38,8 @@ if(GQTEN_CONTRACT_BLOCK_COUNTING)
   add_definitions(-DGQTEN_CONTRACT_BLOCK_COUNTING)
 endif()
 
+option(GQTEN_BUILD_UNITTEST "Build unittests for GraceQ/tensor." OFF)
+
 
 # Compilation and linking control.
 set(CMAKE_CXX_STANDARD 11)
@@ -52,5 +54,7 @@ add_subdirectory(src lib)
 
 
 # Unittests
-enable_testing()
-add_subdirectory(tests tests)
+if(GQTEN_BUILD_UNITTEST)
+  enable_testing()
+  add_subdirectory(tests tests)
+endif()
