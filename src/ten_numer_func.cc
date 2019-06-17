@@ -9,6 +9,7 @@
 #include "gqten/gqten.h"
 
 #include <iostream>
+#include <iomanip>
 #include <vector>
 #include <algorithm>
 #include <numeric>
@@ -132,10 +133,10 @@ std::vector<QNBlock *> BlksCtrctBatch(
   }
 
 #ifdef GQTEN_CONTRACT_BLOCK_COUNTING
-  std::cout << "[counting] ";
-  std::cout << "ta # of blks " << ta_blks_num << "\t\t";
-  std::cout << "tb # of blks " << tb_blks_num << "\t\t";
-  std::cout << "matched pairs " << blk_pairs << std::endl;
+  std::cout << "[counting] "
+            << "ta # of blks " << std::setw(10) << std::left << ta_blks_num
+            << "tb # of blks " << std::setw(10) << std::left << tb_blks_num
+            << "matched pair " << std::setw(10) << std::left << blk_pairs << std::endl;
 #endif
 
   // No match, return empty vector.
@@ -236,9 +237,9 @@ std::vector<QNBlock *> BlksCtrctBatch(
         gemm_batch_c_array[blk_pair_cnt] = pnew_blks[blk_pair_cnt]->DataRef();
 
 #ifdef GQTEN_CONTRACT_BLOCK_COUNTING
-        std::cout << "[counting] blk_m_dim " << gemm_batch_m_array[blk_pair_cnt] << "\t\t"
-                  << "blk_k_dim " << gemm_batch_k_array[blk_pair_cnt] << "\t\t"
-                  << "blk_n_dim " << gemm_batch_n_array[blk_pair_cnt] << std::endl;
+        std::cout << "[counting] blk_m_dim " << std::setw(10) << std::left << gemm_batch_m_array[blk_pair_cnt]
+                  << "blk_k_dim " << std::setw(10) << std::left << gemm_batch_k_array[blk_pair_cnt]
+                  << "blk_n_dim " << std::setw(10) << std::left << gemm_batch_n_array[blk_pair_cnt] << std::endl;
 #endif
 
         ++blk_pair_cnt;
