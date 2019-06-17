@@ -12,6 +12,7 @@ project("GraceQ/tensor"
   LANGUAGES CXX)
 
 
+# Build type.
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
 endif()
@@ -20,21 +21,33 @@ if(${CMAKE_BUILD_TYPE} MATCHES Debug)
   set(CMAKE_VERBOSE_MAKEFILE ON)
 endif()
 
+
+# Advanced options.
 option(GQTEN_USE_MKL_GEMM_BATCH "Use MKL's cblas_dgemm_batch function." ON)
 if(GQTEN_USE_MKL_GEMM_BATCH)
   add_definitions(-DGQTEN_USE_MKL_GEMM_BATCH)
 endif()
 
+option(GQTEN_TIMING_MODE "Timing mode." OFF)
+if(GQTEN_TIMING_MODE)
+  add_definitions(-DGQTEN_TIMING_MODE)
+endif()
 
+option(GQTEN_CONTRACT_BLOCK_COUNTING "Count the number of blocks when contracting tensors." OFF)
+if(GQTEN_CONTRACT_BLOCK_COUNTING)
+  add_definitions(-DGQTEN_CONTRACT_BLOCK_COUNTING)
+endif()
+
+
+# Compilation and linking control.
 set(CMAKE_CXX_STANDARD 11)
-
 add_definitions("-g")
-
 set(MATH_LIB_COMPILE_FLAGS -m64 -I$ENV{MKLROOT}/include)
 set(MATH_LIB_LINK_FLAGS "-L$ENV{MKLROOT}/lib -Wl,-rpath,$ENV{MKLROOT}/lib -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm -ldl")
 
-add_subdirectory(external)
 
+# Subdirectories.
+add_subdirectory(external)
 add_subdirectory(src lib)
 
 

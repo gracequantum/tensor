@@ -457,7 +457,7 @@ public:
 
   void Restart(void);
   double Elapsed(void);
-  void PrintElapsed(std::size_t precision = 5);
+  double PrintElapsed(std::size_t precision = 5);
 
 private:
   double start_;

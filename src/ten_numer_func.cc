@@ -35,25 +35,35 @@ GQTensor *Contract(
   std::vector<QNBlock *> pnew_blks;
   if (ta.BlksConstRef().size() > 0 && tb.BlksConstRef().size() > 0) {
 
+#ifdef GQTEN_TIMING_MODE
     Timer blks_ctrct_batch_timer("blks_ctrct_batch");
     blks_ctrct_batch_timer.Restart();
+#endif
+
     pnew_blks = BlksCtrctBatch(
         ctrct_axes_a, ctrct_axes_b,
         1.0, ta.BlksConstRef(), tb.BlksConstRef());
     std::cout << std::fixed;
+
+#ifdef GQTEN_TIMING_MODE
     blks_ctrct_batch_timer.PrintElapsed();
+#endif
 
   }
 
   auto res_t  = InitCtrctedTen(ta, tb, ctrct_axes_a, ctrct_axes_b);
 
-  // Wrap blocks.
+#ifdef GQTEN_TIMING_MODE
   Timer blks_wrap_timer("blks_wrap");
   blks_wrap_timer.Restart();
-  WrapCtrctBlks(pnew_blks, res_t);
-  blks_wrap_timer.PrintElapsed();
+#endif
 
-  std::cout << res_t->BlksConstRef().size() << std::endl;
+  // Wrap blocks.
+  WrapCtrctBlks(pnew_blks, res_t);
+
+#ifdef GQTEN_TIMING_MODE
+  blks_wrap_timer.PrintElapsed();
+#endif
 
   return res_t;
 }
@@ -88,9 +98,12 @@ std::vector<QNBlock *> BlksCtrctBatch(
     const std::vector<QNBlock *> &ta_blks,
     const std::vector<QNBlock *> &tb_blks) {
   // Data prepare.
+#ifdef GQTEN_TIMING_MODE
   std::cout << std::fixed;
   Timer blk_match_timer("blk_match");
   blk_match_timer.Restart();
+#endif
+
   auto ta_blks_num = ta_blks.size();
   auto tb_blks_num = tb_blks.size();
   assert(ta_blks_num > 0);
@@ -117,7 +130,14 @@ std::vector<QNBlock *> BlksCtrctBatch(
       }
     }
   }
-  std::cout << ta_blks_num << " " << tb_blks_num << " " << blk_pairs << std::endl;
+
+#ifdef GQTEN_CONTRACT_BLOCK_COUNTING
+  std::cout << "[counting] ";
+  std::cout << "ta num of blks: " << ta_blks_num << "\t";
+  std::cout << "tb num of blks: " << tb_blks_num << "\t";
+  std::cout << "matched pairs: " << blk_pairs << std::endl;
+#endif
+
   // No match, return empty vector.
   if (blk_pairs == 0) {
     return std::vector<QNBlock *>();
@@ -219,11 +239,17 @@ std::vector<QNBlock *> BlksCtrctBatch(
       }
     }
   }
+
+#ifdef GQTEN_TIMING_MODE
   blk_match_timer.PrintElapsed();
+#endif
 
   // Call gemm_batch function.
+#ifdef GQTEN_TIMING_MODE
   Timer dgemm_batch_timer("gemm_batch");
   dgemm_batch_timer.Restart();
+#endif
+
   GemmBatch(
       CblasRowMajor,
       gemm_batch_transa_array, gemm_batch_transb_array,
@@ -237,7 +263,10 @@ std::vector<QNBlock *> BlksCtrctBatch(
       gemm_batch_c_array, gemm_batch_n_array,
       blk_pairs,
       gemm_batch_grp_size_array); 
+
+#ifdef GQTEN_TIMING_MODE
   dgemm_batch_timer.PrintElapsed();
+#endif
 
   // Free temporary variables.
   if (ta_need_trans) {
@@ -289,6 +318,11 @@ void WrapCtrctBlks(std::vector<QNBlock *> &pnew_blks, GQTensor *res_t) {
     auto merged_blks = MergeCtrctBlks(pnew_blks);
     res_t->BlksRef() = merged_blks;
   }
+
+#ifdef GQTEN_CONTRACT_BLOCK_COUNTING
+  std::cout << "[counting] res num of blks: "
+            << res_t->BlksConstRef().size() << std::endl;
+#endif
 }
 
 
@@ -420,24 +454,43 @@ SvdRes Svd(
     const double &cutoff, const long &Dmin, const long &Dmax) {
   assert((ldims + rdims) == t.indexes.size());
 
+#ifdef GQTEN_TIMING_MODE
   Timer svd_merge_blks_timer("svd_merge_blks");
   svd_merge_blks_timer.Restart();
-  auto merged_blocks = SvdMergeBlocks(t, ldims, rdims);
-  svd_merge_blks_timer.PrintElapsed();
+#endif
 
+  auto merged_blocks = SvdMergeBlocks(t, ldims, rdims);
+
+#ifdef GQTEN_TIMING_MODE
+  svd_merge_blks_timer.PrintElapsed();
+#endif
+
+#ifdef GQTEN_TIMING_MODE
   Timer svd_blks_svd_timer("svd_blks_svd");
   svd_blks_svd_timer.Restart();
+#endif
+
   auto trunc_blk_svd_res = TruncatedBlockSvd(merged_blocks, cutoff, Dmin, Dmax);
+
+#ifdef GQTEN_TIMING_MODE
   svd_blks_svd_timer.PrintElapsed();
+#endif
   
+#ifdef GQTEN_TIMING_MODE
   Timer svd_wrap_blks("svd_wrap_blks");
   svd_wrap_blks.Restart();
+#endif
+
   auto res = SvdWrapBlocks(
                  trunc_blk_svd_res,
                  ldiv, rdiv,
                  t.indexes,
                  ldims, rdims);
+
+#ifdef GQTEN_TIMING_MODE
   svd_wrap_blks.PrintElapsed();
+#endif
+
   return res;
 }
 
@@ -572,8 +625,12 @@ TruncBlkSvdData TruncatedBlockSvd(
     const long &dmax) {
   PartDivsAndBlkSvdData svd_data;
   std::vector<double> singular_values;
+
+#ifdef GQTEN_TIMING_MODE
   Timer svd_gesdd_timer("svd_gesdd");
   svd_gesdd_timer.Restart();
+#endif
+
   for (auto &kv : merged_blocks) {
     auto raw_svd_res = MatSvd(
                            kv.second.mat,
@@ -589,15 +646,22 @@ TruncBlkSvdData TruncatedBlockSvd(
               kv.second.mat_ldim, sdim, kv.second.mat_rdim));
       for (long i = 0; i < sdim; i++) {
         auto sv = raw_svd_res.s[i];
-        if (sv != 0.0) { singular_values.push_back(sv); }
+        if (sv != 0.0) {
+          singular_values.push_back(sv);
+        }
       }
     } else {
       std::cout << "LAPACKE_dgesdd error." << std::endl;
       exit(1);
     }
   }
+
+#ifdef GQTEN_TIMING_MODE
   svd_gesdd_timer.PrintElapsed();
+#endif
+
   long total_dim = singular_values.size();
+  assert(total_dim > 0);
   if (total_dim <= dmin) {
     TruncBlkSvdData truncated_blk_svd_data;
     truncated_blk_svd_data.trunc_blks = svd_data;
