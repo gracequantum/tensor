@@ -147,12 +147,20 @@ public:
       const std::string &tag) : QNSectorSet(qnscts), dir(dir), tag(tag) {
     dim = CalcDim(); 
   }
-  Index(
-      const std::vector<QNSector> &qnscts) :
-          Index(qnscts, NDIR, "") {}
-  Index(
-      const std::vector<QNSector> &qnscts,
-      const std::string &dir) : Index(qnscts, dir, "") {}
+  Index(const std::vector<QNSector> &qnscts) : Index(qnscts, NDIR, "") {}
+  Index(const std::vector<QNSector> &qnscts, const std::string &dir) :
+      Index(qnscts, dir, "") {}
+
+  Index(const Index &index) :
+      QNSectorSet(index.qnscts),
+      dim(index.dim), dir(index.dir), tag(index.tag) {}
+  Index &operator=(const Index &rhs) {
+    qnscts = rhs.qnscts;
+    dim = rhs.dim;
+    dir = rhs.dir;
+    tag = rhs.tag;
+    return *this;
+  }
 
   size_t Hash(void) const override;
   InterOffsetQnsct CoorOffsetAndQnsct(long) const;
