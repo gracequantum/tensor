@@ -23,7 +23,7 @@ endif()
 
 
 # Advanced options.
-option(GQTEN_USE_MKL_GEMM_BATCH "Use MKL's cblas_dgemm_batch function." ON)
+option(GQTEN_USE_MKL_GEMM_BATCH "Use MKL's cblas_dgemm_batch function." OFF)
 if(GQTEN_USE_MKL_GEMM_BATCH)
   add_definitions(-DGQTEN_USE_MKL_GEMM_BATCH)
 endif()
