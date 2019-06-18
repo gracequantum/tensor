@@ -25,6 +25,11 @@ const std::string kGQTenFileSuffix = "gqten";
 const double kDoubleEpsilon = 1.0E-15;
 // Tensor transpose threads number.
 const int kTensorTransposeDefaultNumThreads = 4;
+// Constants for OpenMP gemm batch method.
+#ifdef GQTEN_USE_OMP_GEMM_BATCH
+const int kDefaultGemmBatchOmpNumThreads = 1;
+const int kDefaultGemmBatchMklNumThreadsLocal = 4;
+#endif
 
 // Quantum number.
 struct QNNameVal {
@@ -333,6 +338,14 @@ std::ofstream &bfwrite(std::ofstream &, const GQTensor &);
 GQTensor *Contract(
     const GQTensor &, const GQTensor &,
     const std::vector<std::vector<long>> &);
+
+#ifdef GQTEN_USE_OMP_GEMM_BATCH
+int GQTenGetGemmBatchOmpNumThreads(void);
+
+void GQTenSetGemmBatchOmpNumThreads(const int);
+
+void GQTenSetGemmBatchMklNumThreadsLocal(const int);
+#endif
 
 // Tensors linear combination.
 /* TODO: For scalar tensor case. */

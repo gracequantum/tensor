@@ -11,6 +11,7 @@
 
 #include "gqten/gqten.h"
 
+#include <iostream>
 #include <vector>
 #include <unordered_map>
 #include <numeric>
@@ -19,6 +20,10 @@
 
 
 #include "mkl.h"
+
+#ifdef GQTEN_USE_OMP_GEMM_BATCH
+#include "omp.h"
+#endif
 
 
 namespace gqten {
@@ -38,6 +43,24 @@ void WrapCtrctBlks(std::vector<QNBlock *> &, GQTensor *);
 
 std::vector<QNBlock *> MergeCtrctBlks(const std::vector<QNBlock *> &);
 
+#ifdef GQTEN_USE_OMP_GEMM_BATCH
+int gemm_batch_omp_num_threads = kDefaultGemmBatchOmpNumThreads;
+
+int gemm_batch_mkl_num_threads_local = kDefaultGemmBatchMklNumThreadsLocal;
+
+int GQTenGetGemmBatchOmpNumThreads(void) {
+  return gemm_batch_omp_num_threads;
+}
+
+void GQTenSetGemmBatchOmpNumThreads(const int num_threads) {
+  gemm_batch_omp_num_threads = num_threads;
+}
+
+void GQTenSetGemmBatchMklNumThreadsLocal(const int num_threads) {
+  gemm_batch_mkl_num_threads_local = num_threads;
+}
+#endif
+
 inline void GemmBatch(
     const CBLAS_LAYOUT Layout,
     const CBLAS_TRANSPOSE* transa_array, const CBLAS_TRANSPOSE* transb_array,
@@ -49,7 +72,9 @@ inline void GemmBatch(
     double **c_array, const MKL_INT* ldc_array,
     const MKL_INT group_count,
     const MKL_INT* group_size) {
+
 #ifdef GQTEN_USE_MKL_GEMM_BATCH
+
   cblas_dgemm_batch (
       Layout,
       transa_array, transb_array,
@@ -61,7 +86,39 @@ inline void GemmBatch(
       c_array, ldc_array,
       group_count,
       group_size);
+
+#elif GQTEN_USE_OMP_GEMM_BATCH
+
+  omp_set_nested(true);
+
+#ifdef GQTEN_OMP_DEV_MODE
+  std::cout << "[omp_dev] omp nested " << omp_get_nested() << std::endl;
+#endif
+
+#pragma omp parallel for num_threads(gemm_batch_omp_num_threads)
+  for (MKL_INT i = 0; i < group_count; ++i) {
+
+#ifdef GQTEN_OMP_DEV_MODE
+    std::cout << "[omp_dev] tot # of threads " << omp_get_num_threads() << std::endl;
+    std::cout << "[omp_dev] in thread " << omp_get_thread_num() << std::endl;
+    std::cout << "[omp_dev] mkl local # of threads " << mkl_set_num_threads_local(gemm_batch_mkl_num_threads_local) << std::endl;
 #else
+    mkl_set_num_threads_local(gemm_batch_mkl_num_threads_local);
+#endif
+
+    cblas_dgemm(
+        Layout,
+        transa_array[i], transb_array[i],
+        m_array[i], n_array[i], k_array[i],
+        alpha_array[i],
+        a_array[i], lda_array[i],
+        b_array[i], ldb_array[i],
+        beta_array[i],
+        c_array[i], ldc_array[i]);
+  }
+
+#else // Use direct gemm loop.
+
   auto idx = 0;
   for (MKL_INT i = 0; i < group_count; ++i) {
     for (MKL_INT j = 0; j < group_size[i]; ++j) {
@@ -77,6 +134,7 @@ inline void GemmBatch(
       ++idx;
     }
   }
+
 #endif
 }
 

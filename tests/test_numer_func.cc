@@ -77,6 +77,45 @@ TEST_F(TestContraction, 2DCase) {
 }
 
 
+#ifdef GQTEN_USE_OMP_GEMM_BATCH
+TEST_F(TestContraction, 2DCaseUseOmpGemmBatch) {
+  auto gemm_batch_omp_num_threads = 2;
+  auto gemm_batch_mkl_num_threads_local = 2;
+  GQTenSetGemmBatchOmpNumThreads(gemm_batch_omp_num_threads);
+  EXPECT_EQ(GQTenGetGemmBatchOmpNumThreads(), gemm_batch_omp_num_threads);
+  GQTenSetGemmBatchMklNumThreadsLocal(gemm_batch_mkl_num_threads_local);
+
+  auto ten = GQTensor({idx, idx});
+  srand(0);
+  auto dense_ten = new double [idx_size * idx_size];
+  for (long i = 0; i < idx_size; ++i) {
+    for (long j = 0; j < idx_size; ++j) {
+      dense_ten[i*idx_size + j] = drand();
+      ten({i, j}) = dense_ten[i*idx_size + j];
+    }
+  }
+  auto res = Contract(ten, ten, {{1}, {0}});
+  auto res0 = new double [idx_size * idx_size];
+  cblas_dgemm(
+      CblasRowMajor, CblasNoTrans, CblasNoTrans,
+      idx_size, idx_size, idx_size,
+      1.0,
+      dense_ten, idx_size,
+      dense_ten, idx_size,
+      0.0,
+      res0, idx_size);
+  for (long i = 0; i < idx_size; ++i) {
+    for (long j = 0; j < idx_size; ++j) {
+      EXPECT_NEAR(res->Elem({i, j}), res0[i*idx_size + j], kEpsilon);
+    }
+  }
+
+  GQTenSetGemmBatchOmpNumThreads(kDefaultGemmBatchOmpNumThreads);
+  GQTenSetGemmBatchMklNumThreadsLocal(kDefaultGemmBatchMklNumThreadsLocal);
+}
+#endif
+
+
 TEST_F(TestContraction, 3DCase) {
   auto ten = GQTensor({idx, idx, idx});
   srand(0);

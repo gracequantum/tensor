@@ -271,7 +271,7 @@ std::vector<QNBlock *> BlksCtrctBatch(
   blk_match_timer.PrintElapsed();
 #endif
 
-  // Call gemm_batch function.
+  // Call gemm batch function.
 #ifdef GQTEN_TIMING_MODE
   Timer dgemm_batch_timer("gemm_batch");
   dgemm_batch_timer.Restart();
