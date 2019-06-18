@@ -44,7 +44,6 @@ GQTensor *Contract(
     pnew_blks = BlksCtrctBatch(
         ctrct_axes_a, ctrct_axes_b,
         1.0, ta.BlksConstRef(), tb.BlksConstRef());
-    std::cout << std::fixed;
 
 #ifdef GQTEN_TIMING_MODE
     blks_ctrct_batch_timer.PrintElapsed();
@@ -52,6 +51,7 @@ GQTensor *Contract(
 
   }
 
+  // Initialize contracted tensor.
   auto res_t  = InitCtrctedTen(ta, tb, ctrct_axes_a, ctrct_axes_b);
 
 #ifdef GQTEN_TIMING_MODE
@@ -100,9 +100,9 @@ std::vector<QNBlock *> BlksCtrctBatch(
     const std::vector<QNBlock *> &tb_blks) {
   // Data prepare.
 #ifdef GQTEN_TIMING_MODE
-  std::cout << std::fixed;
   Timer blk_match_timer("blk_match");
   blk_match_timer.Restart();
+  Timer blk_match_ten_trans_timer("blk_match_ten_trans");
 #endif
 
   auto ta_blks_num = ta_blks.size();
@@ -196,12 +196,22 @@ std::vector<QNBlock *> BlksCtrctBatch(
               ta_to_ctrct_blk_saved_dims, ta_to_ctrct_blk_ctrct_dims);
           // Generate contraction data.
           if (ta_need_trans) {
+
+#ifdef GQTEN_TIMING_MODE
+            blk_match_ten_trans_timer.Restart();
+#endif
+
             auto blk_data_transed_to_ctrct = TransposeData(
                 ta_blks[i]->DataConstRef(),
                 ta_blks[i]->ndim,
                 ta_blks[i]->size,
                 ta_blks[i]->shape,
                 transed_axes_a);
+
+#ifdef GQTEN_TIMING_MODE
+            blk_match_ten_trans_timer.PrintElapsed(8);
+#endif
+
             ta_to_ctrct_blks[i] = blk_data_transed_to_ctrct;
           } else {
             ta_to_ctrct_blks[i] = ta_blks[i]->DataConstRef();
@@ -220,6 +230,11 @@ std::vector<QNBlock *> BlksCtrctBatch(
               tb_to_ctrct_blk_saved_dims, tb_to_ctrct_blk_ctrct_dims);
           // Generate contraction data.
           if (tb_need_trans) {
+
+#ifdef GQTEN_TIMING_MODE
+            blk_match_ten_trans_timer.Restart();
+#endif
+
             auto blk_data_transed_to_ctrct = TransposeData(
                 tb_blks[j]->DataConstRef(),
                 tb_blks[j]->ndim,
@@ -227,6 +242,11 @@ std::vector<QNBlock *> BlksCtrctBatch(
                 tb_blks[j]->shape,
                 transed_axes_b);
             tb_to_ctrct_blks[j] = blk_data_transed_to_ctrct;
+
+#ifdef GQTEN_TIMING_MODE
+            blk_match_ten_trans_timer.PrintElapsed(8);
+#endif
+
           } else {
             tb_to_ctrct_blks[j] = tb_blks[j]->DataConstRef();
           }
@@ -335,16 +355,31 @@ void WrapCtrctBlks(std::vector<QNBlock *> &pnew_blks, GQTensor *res_t) {
 
 std::vector<QNBlock *> MergeCtrctBlks(const std::vector<QNBlock *> &pblks) {
   std::vector<QNBlock *> merged_blks;
+
+#ifdef GQTEN_TIMING_MODE
+  Timer blks_wrap_daxpy_timer("blks_wrap_daxpy");
+#endif
+
   for (auto &pnew_blk : pblks) {
     auto has_blk = false;  
     for (auto &pmerged_blk : merged_blks) {
       if (pnew_blk->QNSectorSetHash() == pmerged_blk->QNSectorSetHash()) {
         auto data_size = pnew_blk->size;
         assert(data_size == pmerged_blk->size);
+
+#ifdef GQTEN_TIMING_MODE
+  blks_wrap_daxpy_timer.Restart();
+#endif
+
         cblas_daxpy(
             data_size,
             1.0, pnew_blk->DataConstRef(), 1,
             pmerged_blk->DataRef(), 1);
+
+#ifdef GQTEN_TIMING_MODE
+  blks_wrap_daxpy_timer.PrintElapsed(8);
+#endif
+
         delete pnew_blk;
         has_blk = true;
         break;
