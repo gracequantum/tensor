@@ -42,9 +42,7 @@ QN::QN(const std::vector<long> &qn_vals) : values_(qn_vals) {
 }
 
 
-QN::QN(const QN &qn) : values_(qn.values_) {
-  hash_ = qn.hash_;
-}
+QN::QN(const QN &qn) : values_(qn.values_), hash_(qn.hash_) {}
 
 
 QN &QN::operator=(const QN &rhs) {
@@ -190,7 +188,7 @@ size_t Index::Hash(void) const {
 }
 
 
-InterOffsetQnsct Index::CoorOffsetAndQnsct(long coor) const {
+InterOffsetQnsct Index::CoorInterOffsetAndQnsct(const long coor) const {
   long inter_offset = 0;
   for (auto &qnsct : qnscts) {
     long temp_inter_offset = inter_offset + qnsct.dim;
@@ -698,7 +696,7 @@ GQTensor::TargetBlkCoorsAndBlkKey(const std::vector<long> &coors) const {
   std::vector<long> blk_coors(coors.size());
   std::vector<QNSector> blk_key(coors.size());
   for (size_t i = 0; i < coors.size(); ++i) {
-    auto inter_offset_and_qnsct = indexes[i].CoorOffsetAndQnsct(coors[i]);
+    auto inter_offset_and_qnsct = indexes[i].CoorInterOffsetAndQnsct(coors[i]);
     blk_coors[i] = coors[i] - inter_offset_and_qnsct.inter_offset;
     blk_key[i] = inter_offset_and_qnsct.qnsct;
   }

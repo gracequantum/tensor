@@ -19,10 +19,10 @@ struct TestIndex : public testing::Test {
   Index idx_1sct = Index({QNSector(QN({QNNameVal("Sz", 0)}), 1)});
   Index idx_1sct_in = Index({QNSector(QN({QNNameVal("Sz", 0)}), 1)}, IN);
   std::vector<QNSector> qnscts2 = {
-      QNSector(QN({QNNameVal("Sz", 1)}), 1),
+      QNSector(QN({QNNameVal("Sz", 0)}), 1),
       QNSector(QN({QNNameVal("Sz", 1)}), 2)};
   Index idx_2sct_out = Index(
-      {QNSector(QN({QNNameVal("Sz", 1)}), 1),
+      {QNSector(QN({QNNameVal("Sz", 0)}), 1),
        QNSector(QN({QNNameVal("Sz", 1)}), 2)}, OUT);
 };
 
@@ -53,27 +53,43 @@ TEST_F(TestIndex, Tag) {
 
 
 TEST_F(TestIndex, Hashable) {
-  EXPECT_EQ(idx_default.Hash(), idx_default.Hash());
+  EXPECT_EQ(idx_default.Hash(), Index().Hash());
   EXPECT_TRUE(idx_default == idx_default);
+
   idx_default.tag = "default";
-  EXPECT_NE(idx_default.Hash(), gqten::Index().Hash());
-  EXPECT_FALSE(idx_default == gqten::Index());
+  EXPECT_NE(idx_default.Hash(), Index().Hash());
+  EXPECT_FALSE(idx_default == Index());
 }
 
 
 TEST_F(TestIndex, InterOffsetAndQnsct) {
-  auto res = idx_1sct.CoorOffsetAndQnsct(0);
+  auto res = idx_1sct.CoorInterOffsetAndQnsct(0);
   EXPECT_EQ(res.inter_offset, 0);
   EXPECT_EQ(res.qnsct, QNSector(QN({QNNameVal("Sz", 0)}), 1));
-  res = idx_2sct_out.CoorOffsetAndQnsct(0);
+  res = idx_2sct_out.CoorInterOffsetAndQnsct(0);
   EXPECT_EQ(res.inter_offset, 0);
-  EXPECT_EQ(res.qnsct, QNSector(QN({QNNameVal("Sz", 1)}), 1));
-  res = idx_2sct_out.CoorOffsetAndQnsct(1);
+  EXPECT_EQ(res.qnsct, QNSector(QN({QNNameVal("Sz", 0)}), 1));
+  res = idx_2sct_out.CoorInterOffsetAndQnsct(1);
   EXPECT_EQ(res.inter_offset, 1);
   EXPECT_EQ(res.qnsct, QNSector(QN({QNNameVal("Sz", 1)}), 2));
-  res = idx_2sct_out.CoorOffsetAndQnsct(2);
+  res = idx_2sct_out.CoorInterOffsetAndQnsct(2);
   EXPECT_EQ(res.inter_offset, 1);
   EXPECT_EQ(res.qnsct, QNSector(QN({QNNameVal("Sz", 1)}), 2));
+}
+
+
+TEST_F(TestIndex, Dag) {
+  auto idx_default_dag = Index(idx_default);
+  idx_default_dag.Dag();
+  EXPECT_EQ(idx_default_dag.dir, NDIR);
+
+  auto idx_1sct_in_dag = Index(idx_1sct_in);
+  idx_1sct_in_dag.Dag();
+  EXPECT_EQ(idx_1sct_in_dag.dir, OUT);
+
+  auto idx_2sct_out_dag = Index(idx_2sct_out);
+  idx_2sct_out_dag.Dag();
+  EXPECT_EQ(idx_2sct_out_dag.dir, IN);
 }
 
 
@@ -89,6 +105,7 @@ void RunTestIndexFileIOCase(const Index &idx) {
   std::remove(file.c_str());
   EXPECT_EQ(idx_cpy, idx);
 }
+
 
 TEST_F(TestIndex, FileIO) {
   RunTestIndexFileIOCase(idx_default);

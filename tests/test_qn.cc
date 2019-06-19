@@ -24,7 +24,7 @@ struct TestQN : public testing::Test {
   QN qn_u1_2 = QN({QNNameVal("Sz", 1)});
   QN qn_u1_3 = QN({QNNameVal("Sz", -1)});
   QN qn_u1_u1_1 = QN({QNNameVal("Sz", 0), QNNameVal("N", 0)});
-  QN qn_u1_u1_2 = QN({QNNameVal("Sz", 1), QNNameVal("N", 1)});
+  QN qn_u1_u1_2 = QN({QNNameVal("Sz", 1), QNNameVal("N", 2)});
 };
 
 
@@ -34,12 +34,14 @@ TEST_F(TestQN, Hashable) {
   EXPECT_EQ(qn_u1_2.Hash(), VecStdTypeHasher(std::vector<long>{1}));
   EXPECT_EQ(qn_u1_3.Hash(), VecStdTypeHasher(std::vector<long>{-1}));
   EXPECT_EQ(qn_u1_u1_1.Hash(), VecStdTypeHasher(std::vector<long>{0, 0}));
-  EXPECT_EQ(qn_u1_u1_2.Hash(), VecStdTypeHasher(std::vector<long>{1, 1}));
+  EXPECT_EQ(qn_u1_u1_2.Hash(), VecStdTypeHasher(std::vector<long>{1, 2}));
 }
 
 
 TEST_F(TestQN, Equivalent) {
   EXPECT_TRUE(qn_default == QN());
+  EXPECT_TRUE(qn_u1_1 == qn_u1_1);
+  EXPECT_TRUE(qn_u1_u1_1 == qn_u1_u1_1);
   EXPECT_TRUE(qn_u1_1 != qn_u1_2);
   EXPECT_TRUE(qn_u1_1 != qn_u1_u1_2);
 }
@@ -58,7 +60,7 @@ TEST_F(TestQN, Summation) {
   res = qn_u1_2 + qn_u1_2;
   EXPECT_EQ(res, QN({QNNameVal("Sz", 2)}));
   res = qn_u1_u1_1 + qn_u1_u1_2;
-  EXPECT_EQ(res, QN({QNNameVal("Sz", 1), QNNameVal("N", 1)}));
+  EXPECT_EQ(res, QN({QNNameVal("Sz", 1), QNNameVal("N", 2)}));
 
 }
 

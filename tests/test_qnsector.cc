@@ -20,7 +20,7 @@ using namespace gqten;
 struct TestQNSector : public testing::Test {
   QNSector qnsct_default = QNSector();
   QNSector qnsct1 = QNSector(QN({QNNameVal("Sz", 1)}), 1);
-  QNSector qnsct2 = QNSector(QN({QNNameVal("Sz", -1)}), 2);
+  QNSector qnsct2 = QNSector(QN({QNNameVal("Sz", -1), QNNameVal("N", 1)}), 2);
 };
 
 
@@ -28,6 +28,8 @@ TEST_F(TestQNSector, DataMembers) {
   EXPECT_EQ(qnsct_default.qn, QN());
   EXPECT_EQ(qnsct1.qn, QN({QNNameVal("Sz", 1)}));
   EXPECT_EQ(qnsct1.dim, 1);
+  EXPECT_EQ(qnsct2.qn, QN({QNNameVal("Sz", -1), QNNameVal("N", 1)}));
+  EXPECT_EQ(qnsct2.dim, 2);
 }
 
 
@@ -35,13 +37,16 @@ TEST_F(TestQNSector, Hashable) {
   std::hash<int> int_hasher;
   EXPECT_EQ(qnsct_default.Hash(), (QN().Hash())^int_hasher(0));
   EXPECT_EQ(qnsct1.Hash(), (QN({QNNameVal("Sz", 1)}).Hash())^int_hasher(1));
-  EXPECT_EQ(qnsct2.Hash(), (QN({QNNameVal("Sz", -1)}).Hash())^int_hasher(2));
+  EXPECT_EQ(qnsct2.Hash(),
+            (QN({QNNameVal("Sz", -1),
+                 QNNameVal("N", 1)}).Hash())^int_hasher(2));
 }
 
 
 TEST_F(TestQNSector, Equivalent) {
   EXPECT_TRUE(qnsct_default == qnsct_default);
   EXPECT_TRUE(qnsct1 == qnsct1);
+  EXPECT_TRUE(qnsct2 == qnsct2);
   EXPECT_TRUE(qnsct_default != qnsct1);
   EXPECT_TRUE(qnsct1 != qnsct2);
 }

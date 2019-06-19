@@ -48,6 +48,7 @@ public:
   QN(void);
   QN(const std::vector<QNNameVal> &);
   QN(const std::vector<long> &);
+
   QN(const QN &);
   QN &operator=(const QN &);
 
@@ -86,6 +87,7 @@ public:
     hash_ = CalcHash();
   }
   QNSector(void) : QNSector(QN(), 0) {}
+
   QNSector(const QNSector &qns) : qn(qns.qn), dim(qns.dim), hash_(qns.hash_) {}
   QNSector &operator=(const QNSector &rhs);
 
@@ -112,9 +114,10 @@ std::ofstream &bfwrite(std::ofstream &, const QNSector &);
 class QNSectorSet {
 public:
   QNSectorSet(void) {}
-  QNSectorSet(const std::vector<QNSector> & qnscts) : qnscts(qnscts) {}
-  QNSectorSet(const QNSectorSet &qnss) : qnscts(qnss.qnscts) {}
+  QNSectorSet(const std::vector<QNSector> &qnscts) : qnscts(qnscts) {}
   QNSectorSet(const std::vector<const QNSector*> &);
+
+  QNSectorSet(const QNSectorSet &qnss) : qnscts(qnss.qnscts) {}
 
   virtual ~QNSectorSet() = default;
 
@@ -168,7 +171,7 @@ public:
   }
 
   size_t Hash(void) const override;
-  InterOffsetQnsct CoorOffsetAndQnsct(long) const;
+  InterOffsetQnsct CoorInterOffsetAndQnsct(const long) const;
 
   // Inplace operations.
   void Dag(void) {

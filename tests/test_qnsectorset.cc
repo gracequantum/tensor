@@ -19,15 +19,15 @@ struct TestQNSectorSet : public testing::Test {
 
   std::vector<QNSector> qnscts1 = {
       QNSector(QN({QNNameVal("Sz", 0)}), 1)};
-  QNSectorSet qnscts_1sct = QNSectorSet({qnscts1[0]});
+  QNSectorSet qnscts_1sct = QNSectorSet(qnscts1);
 
   std::vector<const QNSector *> pqnscts1 = {&qnscts1[0]};
   QNSectorSet qnscts_1sct_from_ptr = QNSectorSet(pqnscts1);
 
   std::vector<QNSector> qnscts2 = {
-      QNSector(QN({QNNameVal("Sz", 1)}), 1),
+      QNSector(QN({QNNameVal("Sz", 0)}), 1),
       QNSector(QN({QNNameVal("Sz", 1)}), 2)};
-  QNSectorSet qnscts_2sct = QNSectorSet({qnscts2[0], qnscts2[1]});
+  QNSectorSet qnscts_2sct = QNSectorSet(qnscts2);
 };
 
 
@@ -43,6 +43,7 @@ TEST_F(TestQNSectorSet, DataMembers) {
 TEST_F(TestQNSectorSet, Equivalent) {
   EXPECT_TRUE(qnscts_default == qnscts_default);
   EXPECT_TRUE(qnscts_1sct == qnscts_1sct);
+  EXPECT_TRUE(qnscts_2sct == qnscts_2sct);
   EXPECT_TRUE(qnscts_1sct == qnscts_1sct_from_ptr);
   EXPECT_TRUE(qnscts_1sct != qnscts_2sct);
 }
