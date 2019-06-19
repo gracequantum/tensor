@@ -82,8 +82,8 @@ TEST_F(TestContraction, 2DCaseUseOmpGemmBatch) {
   auto gemm_batch_omp_num_threads = 2;
   auto gemm_batch_mkl_num_threads_local = 2;
   GQTenSetGemmBatchOmpNumThreads(gemm_batch_omp_num_threads);
-  EXPECT_EQ(GQTenGetGemmBatchOmpNumThreads(), gemm_batch_omp_num_threads);
   GQTenSetGemmBatchMklNumThreadsLocal(gemm_batch_mkl_num_threads_local);
+  EXPECT_EQ(GQTenGetGemmBatchOmpNumThreads(), gemm_batch_omp_num_threads);
 
   auto ten = GQTensor({idx, idx});
   srand(0);
@@ -300,7 +300,7 @@ void RunTestSvdCase(
     }
   }
   auto dense_mat = new double [rows*cols];
-  auto offsets = CalcDataOffsets(t.shape);
+  auto offsets = CalcMultiDimDataOffsets(t.shape);
   for (auto &coors : GenAllCoors(t.shape)) {
     dense_mat[IntDot(ndim, coors.data(), offsets.data())] = t.Elem(coors);
   }
@@ -474,6 +474,7 @@ TEST_F(TestSvd, 3DCase) {
       2, 1,
       0, 1, smalld*3,
       &qn0);
+
   // Large case
   auto lt3 = GQTensor({lidx_in, lidx_out, lidx_out});
   RunTestSvdCase(

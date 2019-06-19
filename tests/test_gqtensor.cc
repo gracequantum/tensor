@@ -30,13 +30,11 @@ struct TestGQTensor : public testing::Test {
   Index idx_in = Index({
                      QNSector(QN({QNNameVal("Sz", -1)}), d),
                      QNSector(QN({QNNameVal("Sz",  0)}), d),
-                     QNSector(QN({QNNameVal("Sz",  1)}), d)},
-                     IN);
+                     QNSector(QN({QNNameVal("Sz",  1)}), d)}, IN);
   Index idx_out = Index({
                       QNSector(QN({QNNameVal("Sz", -1)}), d),
                       QNSector(QN({QNNameVal("Sz",  0)}), d),
-                      QNSector(QN({QNNameVal("Sz",  1)}), d)},
-                      OUT);
+                      QNSector(QN({QNNameVal("Sz",  1)}), d)}, OUT);
   GQTensor vec_rand_up = GQTensor({tpb});
 
   void SetUp(void) {
@@ -49,16 +47,18 @@ TEST_F(TestGQTensor, Initialization) {
   // Test default constructor.
   GQTensor gqten_default = GQTensor(); 
   EXPECT_EQ(gqten_default.indexes, std::vector<Index>());
-  // Test regular constructor.
+
+  // Test common constructor.
   EXPECT_EQ(vec.indexes, std::vector<Index>{tpb});
   EXPECT_EQ(site.indexes, (std::vector<Index>{bpb, tpb}));
+
   // Test copy constructor.
-  GQTensor vec_rand_up2(vec_rand_up);
-  EXPECT_EQ(vec_rand_up2.indexes, std::vector<Index>{tpb});
-  EXPECT_NE(vec_rand_up2.BlksConstRef()[0], vec_rand_up.BlksConstRef()[0]);
+  GQTensor vec_rand_up_cpy(vec_rand_up);
+  EXPECT_EQ(vec_rand_up_cpy.indexes, std::vector<Index>{tpb});
+  EXPECT_NE(vec_rand_up_cpy.cblocks()[0], vec_rand_up.cblocks()[0]);
   EXPECT_EQ(
-      vec_rand_up2.BlksConstRef()[0]->cdata()[0],
-       vec_rand_up.BlksConstRef()[0]->cdata()[0]);
+      vec_rand_up_cpy.cblocks()[0]->cdata()[0],
+      vec_rand_up.cblocks()[0]->cdata()[0]);
 }
 
 
@@ -66,11 +66,13 @@ TEST_F(TestGQTensor, ElementSetGet) {
   vec({0}) = 1;
   EXPECT_EQ(vec.Elem({0}), 1);
   EXPECT_EQ(vec.Elem({1}), 0);
+
   site({0, 0}) = 1;
   EXPECT_EQ(site.Elem({0, 0}), 1);
   EXPECT_EQ(site.Elem({1, 0}), 0);
   EXPECT_EQ(site.Elem({0, 1}), 0);
   EXPECT_EQ(site.Elem({1, 1}), 0);
+
   site({1, 1}) = 1;
   EXPECT_EQ(site.Elem({0, 0}), 1);
   EXPECT_EQ(site.Elem({1, 0}), 0);
@@ -80,16 +82,18 @@ TEST_F(TestGQTensor, ElementSetGet) {
 
 
 TEST_F(TestGQTensor, Random) {
+  // Small case.
   srand(0);
   vec.Random(QN({QNNameVal("Sz", 1)}));
   srand(0);
   EXPECT_EQ(vec.Elem({0}), 0);
   EXPECT_EQ(vec.Elem({1}), double(rand())/RAND_MAX);
+
   // Large case.
-  auto lidx_in = Index(
-                   {QNSector(QN({QNNameVal("Sz", -1)}), 10),
-                    QNSector(QN({QNNameVal("Sz",  0)}), 10),
-                    QNSector(QN({QNNameVal("Sz",  1)}), 10)}, IN);
+  auto lidx_in = Index({
+                     QNSector(QN({QNNameVal("Sz", -1)}), 10),
+                     QNSector(QN({QNNameVal("Sz",  0)}), 10),
+                     QNSector(QN({QNNameVal("Sz",  1)}), 10)}, IN);
   auto lidx_out = InverseIndex(lidx_in);
   auto lt2 = GQTensor({lidx_in, lidx_out});
   srand(0);
@@ -98,21 +102,16 @@ TEST_F(TestGQTensor, Random) {
   std::vector<QNSector> qnscts = {
       QNSector(QN({QNNameVal("Sz", -1)}), 10),
       QNSector(QN({QNNameVal("Sz",  0)}), 10)};
-  EXPECT_EQ(lt2.BlksConstRef()[0]->qnscts, qnscts);
-  for (long i = 0; i < lt2.BlksConstRef()[0]->size; i++) {
-    EXPECT_EQ(
-        lt2.BlksConstRef()[0]->cdata()[i],
-        double(rand())/RAND_MAX);
+  EXPECT_EQ(lt2.cblocks()[0]->qnscts, qnscts);
+  for (long i = 0; i < lt2.cblocks()[0]->size; i++) {
+    EXPECT_EQ(lt2.cblocks()[0]->cdata()[i], double(rand())/RAND_MAX);
   }
   qnscts = {
       QNSector(QN({QNNameVal("Sz", 0)}), 10),
-      QNSector(QN({QNNameVal("Sz", 1)}), 10)
-  };
-  EXPECT_EQ(lt2.BlksConstRef()[1]->qnscts, qnscts);
-  for (long i = 0; i < lt2.BlksConstRef()[1]->size; i++) {
-    EXPECT_EQ(
-        lt2.BlksConstRef()[1]->cdata()[i],
-        double(rand())/RAND_MAX);
+      QNSector(QN({QNNameVal("Sz", 1)}), 10)};
+  EXPECT_EQ(lt2.cblocks()[1]->qnscts, qnscts);
+  for (long i = 0; i < lt2.cblocks()[1]->size; i++) {
+    EXPECT_EQ(lt2.cblocks()[1]->cdata()[i], double(rand())/RAND_MAX);
   }
 }
 
@@ -147,6 +146,7 @@ TEST_F(TestGQTensor, TestTranspose) {
   ten2.Random(QN({QNNameVal("Sz", 0)}));
   RunTestTransposeCase(ten2, {0, 1});
   RunTestTransposeCase(ten2, {1, 0});
+
   // 3D case.
   ten = GQTensor({idx_in, idx_out, idx_out});
   srand(0);
@@ -163,10 +163,11 @@ TEST_F(TestGQTensor, TestTranspose) {
 void RunTestNormalizeCase(GQTensor &t, const QN &div) {
   srand(0);
   t.Random(div);
-  auto ten_norm = t.Normalize();
+
+  t.Normalize();
 
   auto norm = 0.0;
-  for (auto &blk : t.BlksConstRef()) {
+  for (auto &blk : t.cblocks()) {
     for (long i = 0; i < blk->size; ++i) {
       norm += std::pow(blk->cdata()[i], 2.0);
     }
@@ -180,6 +181,7 @@ TEST_F(TestGQTensor, TestNormalize) {
   auto ten = GQTensor({idx_in, idx_out});
   RunTestNormalizeCase(ten, QN({QNNameVal("Sz", 0)}));
   RunTestNormalizeCase(ten, QN({QNNameVal("Sz", 1)}));
+
   // 3D case.
   ten = GQTensor({idx_in, idx_out, idx_out});
   RunTestNormalizeCase(ten, QN({QNNameVal("Sz", 0)}));
@@ -188,7 +190,6 @@ TEST_F(TestGQTensor, TestNormalize) {
 
 
 TEST_F(TestGQTensor, TestDag) {
-  // 2D case
   auto ten = GQTensor({idx_in, idx_out});
   auto ten_dag = Dag(ten);
   EXPECT_EQ(ten_dag.indexes[0], idx_out);
@@ -198,9 +199,11 @@ TEST_F(TestGQTensor, TestDag) {
 
 TEST_F(TestGQTensor, TestDiv) {
   auto ten = GQTensor({idx_in, idx_out});
+
   auto div = QN({QNNameVal("Sz", 0)});
   ten.Random(div);
   EXPECT_EQ(Div(ten), div);
+
   div = QN({QNNameVal("Sz", 1)});
   ten.Random(div);
   EXPECT_EQ(Div(ten), div);
@@ -222,7 +225,7 @@ TEST_F(TestGQTensor, TestSummation) {
 }
 
 
-TEST_F(TestGQTensor, TestMultiplication) {
+TEST_F(TestGQTensor, TestDotMultiplication) {
   auto ten = GQTensor();
   ten.scalar = 1.0;
   auto multed_ten = 2.33 * ten;
@@ -231,11 +234,11 @@ TEST_F(TestGQTensor, TestMultiplication) {
   ten = GQTensor({idx_in,  idx_out});
   ten.Random(QN({QNNameVal("Sz", 0)}));
   multed_ten = 2.33  * ten;
-  for (size_t i = 0; i < ten.BlksConstRef().size(); ++i) {
-    for (long j = 0; j < ten.BlksConstRef()[i]->size; j++) {
+  for (size_t i = 0; i < ten.cblocks().size(); ++i) {
+    for (long j = 0; j < ten.cblocks()[i]->size; j++) {
         EXPECT_DOUBLE_EQ(
-          multed_ten.BlksConstRef()[i]->cdata()[j],
-          2.33 * ten.BlksConstRef()[i]->cdata()[j]);
+          multed_ten.cblocks()[i]->cdata()[j],
+          2.33 * ten.cblocks()[i]->cdata()[j]);
     }
   }
 }
@@ -245,6 +248,7 @@ TEST_F(TestGQTensor, TestEq) {
   auto ten1 = GQTensor({idx_in,  idx_out});
   ten1.Random(QN({QNNameVal("Sz", 0)}));
   EXPECT_TRUE(ten1 == ten1);
+
   auto ten2 = GQTensor({idx_in, idx_out});
   ten2.Random(QN({QNNameVal("Sz", 1)}));
   EXPECT_TRUE(ten1 != ten2);
@@ -265,14 +269,17 @@ void RunTestGQTensorFileIOCase(const GQTensor &t) {
 
 
 TEST_F(TestGQTensor, FileIO) {
+  // Default case.
   RunTestGQTensorFileIOCase(GQTensor());
+
+  // Small case.
   RunTestGQTensorFileIOCase(vec_rand_up);
 
-  //// Large case.
-  auto lidx_in = Index(
-                   {QNSector(QN({QNNameVal("Sz", -1)}), 10),
-                    QNSector(QN({QNNameVal("Sz",  0)}), 10),
-                    QNSector(QN({QNNameVal("Sz",  1)}), 10)}, IN);
+  // Large case.
+  auto lidx_in = Index({
+                     QNSector(QN({QNNameVal("Sz", -1)}), 10),
+                     QNSector(QN({QNNameVal("Sz",  0)}), 10),
+                     QNSector(QN({QNNameVal("Sz",  1)}), 10)}, IN);
   auto lidx_out = InverseIndex(lidx_in);
   auto lt2 = GQTensor({lidx_in, lidx_out});
   srand(0);

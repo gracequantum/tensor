@@ -34,7 +34,7 @@ GQTensor *Contract(
 
   // Blocks contraction batch.
   std::vector<QNBlock *> pnew_blks;
-  if (ta.BlksConstRef().size() > 0 && tb.BlksConstRef().size() > 0) {
+  if (ta.cblocks().size() > 0 && tb.cblocks().size() > 0) {
 
 #ifdef GQTEN_TIMING_MODE
     Timer blks_ctrct_batch_timer("blks_ctrct_batch");
@@ -43,7 +43,7 @@ GQTensor *Contract(
 
     pnew_blks = BlksCtrctBatch(
         ctrct_axes_a, ctrct_axes_b,
-        1.0, ta.BlksConstRef(), tb.BlksConstRef());
+        1.0, ta.cblocks(), tb.cblocks());
 
 #ifdef GQTEN_TIMING_MODE
     blks_ctrct_batch_timer.PrintElapsed();
@@ -343,12 +343,12 @@ void WrapCtrctBlks(std::vector<QNBlock *> &pnew_blks, GQTensor *res_t) {
     }
   } else {                            // Contract to tensor case.
     auto merged_blks = MergeCtrctBlks(pnew_blks);
-    res_t->BlksRef() = merged_blks;
+    res_t->blocks() = merged_blks;
   }
 
 #ifdef GQTEN_CONTRACT_BLOCK_COUNTING
   std::cout << "[counting] res # of blks "
-            << res_t->BlksConstRef().size() << std::endl;
+            << res_t->cblocks().size() << std::endl;
 #endif
 }
 
@@ -462,9 +462,9 @@ void LinearCombine(
 
 
 void LinearCombineOneTerm(const double coef, const GQTensor *t, GQTensor *res) {
-  for (auto &blk : t->BlksConstRef()) {
+  for (auto &blk : t->cblocks()) {
     auto has_blk = false;
-    for (auto &res_blk : res->BlksRef()) {
+    for (auto &res_blk : res->blocks()) {
       if (res_blk->QNSectorSetHash() == blk->QNSectorSetHash()) {
         auto size = res_blk->size;
         assert(size == blk->size);
@@ -482,7 +482,7 @@ void LinearCombineOneTerm(const double coef, const GQTensor *t, GQTensor *res) {
       for (std::size_t i = 0; i < size; ++i) {
         new_blk_data[i] *= coef;
       }
-      res->BlksRef().push_back(new_blk);
+      res->blocks().push_back(new_blk);
     }
   }
 }
@@ -564,7 +564,7 @@ PartDivsAndMergedBlk SvdMergeBlocks(
     const GQTensor &t, const long &ldims, const long &rdims) {
   PartDivsAndBipartiteBlkDatas tomerge_blkdatas;
   PartDivsEqual partdivs_equaler;
-  for (auto &blk : t.BlksConstRef()) {
+  for (auto &blk : t.cblocks()) {
     auto lqnscts = SliceFromBegin(blk->qnscts, ldims);
     auto rqnscts = SliceFromEnd(blk->qnscts, rdims);
     auto lpartdiv = CalcDiv(lqnscts, SliceFromBegin(t.indexes, ldims));
@@ -849,15 +849,15 @@ SvdRes SvdWrapBlocks(
   auto s_index_in = Index(sblk_qnscts, IN);
   auto s_index_out = Index(sblk_qnscts, OUT);
   auto s = new GQTensor({s_index_in, s_index_out});
-  s->BlksRef() = sblocks;
+  s->blocks() = sblocks;
   auto u_indexes = SliceFromBegin(indexes, ldims);
   u_indexes.push_back(s_index_out);
   auto u = new GQTensor(u_indexes);
-  u->BlksRef() = ublocks;
+  u->blocks() = ublocks;
   auto v_indexes = SliceFromEnd(indexes, rdims);
   v_indexes.insert(v_indexes.begin(), s_index_in);
   auto v = new GQTensor(v_indexes);
-  v->BlksRef() = vblocks;
+  v->blocks() = vblocks;
   return SvdRes(
              u, s, v,
              truncated_blk_svd_data.trunc_err,

@@ -219,6 +219,8 @@ public:
 
   QNBlock(const QNBlock &);
   QNBlock &operator=(const QNBlock &);
+  
+  /* TODO: Moving constructor. */
 
   ~QNBlock(void) override;
   
@@ -255,12 +257,13 @@ std::ofstream &bfwrite(std::ofstream &, const QNBlock &);
 
 
 // Tensor with U1 symmetry.
-struct BlkCoorsAndBlkKey {
-  BlkCoorsAndBlkKey(
-      const std::vector<long> &blk_coors, const QNSectorSet &blk_key) :
-      blk_coors(blk_coors), blk_key(blk_key) {}
-  std::vector<long> blk_coors;
-  QNSectorSet blk_key;
+struct BlkInterOffsetsAndQNSS {     // QNSS: QNSectorSet.
+  BlkInterOffsetsAndQNSS(
+      const std::vector<long> &blk_inter_offsets, const QNSectorSet &blk_qnss) :
+      blk_inter_offsets(blk_inter_offsets), blk_qnss(blk_qnss) {}
+
+  std::vector<long> blk_inter_offsets;
+  QNSectorSet blk_qnss;
 };
 
 class GQTensor {
@@ -274,11 +277,17 @@ public:
   GQTensor(const GQTensor &);
   GQTensor &operator=(const GQTensor &);
 
+  /* TODO: Moving constructor. */
+
   ~GQTensor(void);
 
   // Element getter and setter.
   double Elem(const std::vector<long> &) const;
   double &operator()(const std::vector<long> &);
+
+  // Access to the blocks.
+  const std::vector<QNBlock *> &cblocks(void) const { return blocks_; }
+  std::vector<QNBlock *> &blocks(void) { return blocks_; }
 
   // Inplace operations.
   void Random(const QN &);
@@ -288,16 +297,11 @@ public:
 
   // Operators overload.
   GQTensor operator-(void) const;
-
   GQTensor operator+(const GQTensor &);
   GQTensor &operator+=(const GQTensor &);
 
   bool operator==(const GQTensor &) const;
   bool operator!=(const GQTensor &rhs) const { return !(*this == rhs); }
-
-  // Access to the blocks.
-  const std::vector<QNBlock *> &BlksConstRef(void) const { return blocks_; }
-  std::vector<QNBlock *> &BlksRef(void) { return blocks_; }
 
   // Iterators.
   // Return all the tensor coordinates. So heavy that you should not use it!
@@ -313,8 +317,9 @@ private:
 
   double Norm(void);
 
-  BlkCoorsAndBlkKey TargetBlkCoorsAndBlkKey(const std::vector<long> &) const;
-  std::vector<QNSectorSet> BlkKeysIter(void) const;
+  BlkInterOffsetsAndQNSS CalcTargetBlkInterOffsetsAndQNSS(
+      const std::vector<long> &) const;
+  std::vector<QNSectorSet> BlkQNSSsIter(void) const;
 };
 
 
@@ -397,7 +402,7 @@ QN CalcDiv(const QNSectorSet &, const std::vector<Index> &);
 
 QN CalcDiv(const std::vector<QNSector> &, const std::vector<Index> &);
 
-std::vector<long> CalcDataOffsets(const std::vector<long> &);
+std::vector<long> CalcMultiDimDataOffsets(const std::vector<long> &);
 
 long MulToEnd(const std::vector<long> &, int);
 
@@ -416,6 +421,7 @@ std::vector<std::vector<long>> GenAllCoors(const std::vector<long> &);
 
 
 // Some function templates.
+// Calculate Cartesian product.
 template<typename T>
 T CalcCartProd(T v) {
   T s = {{}};
@@ -434,7 +440,8 @@ T CalcCartProd(T v) {
 
 
 // Inline functions.
-inline long CalcOffset(
+// Calculate offset for the effective one dimension array.
+inline long CalcEffOneDimArrayOffset(
     const std::vector<long> &coors,
     const long ndim,
     const std::vector<long> &data_offsets) {
@@ -456,13 +463,13 @@ inline bool DoubleEq(const double a, const double b) {
 
 
 inline bool ArrayEq(
-    const double *aptr1, const size_t size1,
-    const double *aptr2, const size_t size2) {
+    const double *parray1, const size_t size1,
+    const double *parray2, const size_t size2) {
   if (size1 !=  size2) {
     return false;
   }
   for (size_t i = 0; i < size1; ++i) {
-    if (!DoubleEq(aptr1[i], aptr2[i])) {
+    if (!DoubleEq(parray1[i], parray2[i])) {
       return false;
     }
   }
