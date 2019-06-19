@@ -28,11 +28,11 @@ flags = [
     '-std=c++11',
     '-x',
     'c++',
-    '-I',
-    '.',
+    '-I.',
     '-I/usr/lib',
     '-I/usr/include',
     '-Iinclude',
+    '-Isrc',
     '-I${MKLROOT}/include',
     '-Iexternal/hptt/include',
 ]
