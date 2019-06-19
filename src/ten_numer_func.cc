@@ -184,8 +184,8 @@ std::vector<QNBlock *> BlksCtrctBatch(
                                    ta_blks[i], tb_blks[j],
                                    ctrct_axes_a, ctrct_axes_b);
         pnew_blks[blk_pair_cnt] = new QNBlock(pnew_blk_qnscts);
-        if (pnew_blks[blk_pair_cnt]->DataConstRef() == nullptr) {
-          pnew_blks[blk_pair_cnt]->DataRef() = new double[1];
+        if (pnew_blks[blk_pair_cnt]->cdata() == nullptr) {
+          pnew_blks[blk_pair_cnt]->data() = new double[1];
         }
 
         // Deal with ta block.
@@ -202,7 +202,7 @@ std::vector<QNBlock *> BlksCtrctBatch(
 #endif
 
             auto blk_data_transed_to_ctrct = TransposeData(
-                ta_blks[i]->DataConstRef(),
+                ta_blks[i]->cdata(),
                 ta_blks[i]->ndim,
                 ta_blks[i]->size,
                 ta_blks[i]->shape,
@@ -214,7 +214,7 @@ std::vector<QNBlock *> BlksCtrctBatch(
 
             ta_to_ctrct_blks[i] = blk_data_transed_to_ctrct;
           } else {
-            ta_to_ctrct_blks[i] = ta_blks[i]->DataConstRef();
+            ta_to_ctrct_blks[i] = ta_blks[i]->cdata();
           }
         }
         // Assign gemm_batch parameters.
@@ -236,7 +236,7 @@ std::vector<QNBlock *> BlksCtrctBatch(
 #endif
 
             auto blk_data_transed_to_ctrct = TransposeData(
-                tb_blks[j]->DataConstRef(),
+                tb_blks[j]->cdata(),
                 tb_blks[j]->ndim,
                 tb_blks[j]->size,
                 tb_blks[j]->shape,
@@ -248,13 +248,13 @@ std::vector<QNBlock *> BlksCtrctBatch(
 #endif
 
           } else {
-            tb_to_ctrct_blks[j] = tb_blks[j]->DataConstRef();
+            tb_to_ctrct_blks[j] = tb_blks[j]->cdata();
           }
         }
         // Assign gemm_batch parameters.
         gemm_batch_b_array[blk_pair_cnt] = tb_to_ctrct_blks[j];
         gemm_batch_n_array[blk_pair_cnt] = MKL_INT(tb_to_ctrct_blk_saved_dims[j]);
-        gemm_batch_c_array[blk_pair_cnt] = pnew_blks[blk_pair_cnt]->DataRef();
+        gemm_batch_c_array[blk_pair_cnt] = pnew_blks[blk_pair_cnt]->data();
 
 #ifdef GQTEN_CONTRACT_BLOCK_COUNTING
         std::cout << "[counting] blk_m_dim " << std::setw(10) << std::left << gemm_batch_m_array[blk_pair_cnt]
@@ -336,7 +336,7 @@ void WrapCtrctBlks(std::vector<QNBlock *> &pnew_blks, GQTensor *res_t) {
     } else {                          // Has matched block pair.
       double scalar = 0;
       for (auto &pnew_blk : pnew_blks) {
-        scalar += (pnew_blk->DataConstRef()[0]);
+        scalar += (pnew_blk->cdata()[0]);
         delete pnew_blk;
       }
       res_t->scalar = scalar;
@@ -373,8 +373,8 @@ std::vector<QNBlock *> MergeCtrctBlks(const std::vector<QNBlock *> &pblks) {
 
         cblas_daxpy(
             data_size,
-            1.0, pnew_blk->DataConstRef(), 1,
-            pmerged_blk->DataRef(), 1);
+            1.0, pnew_blk->cdata(), 1,
+            pmerged_blk->data(), 1);
 
 #ifdef GQTEN_TIMING_MODE
   blks_wrap_daxpy_timer.PrintElapsed(8);
@@ -468,8 +468,8 @@ void LinearCombineOneTerm(const double coef, const GQTensor *t, GQTensor *res) {
       if (res_blk->QNSectorSetHash() == blk->QNSectorSetHash()) {
         auto size = res_blk->size;
         assert(size == blk->size);
-        auto blk_data = blk->DataConstRef();
-        auto res_blk_data = res_blk->DataRef();
+        auto blk_data = blk->cdata();
+        auto res_blk_data = res_blk->data();
         cblas_daxpy(size, coef, blk_data, 1, res_blk_data, 1);
         has_blk = true;
         break;
@@ -478,7 +478,7 @@ void LinearCombineOneTerm(const double coef, const GQTensor *t, GQTensor *res) {
     if (!has_blk) {
       auto new_blk = new QNBlock(*blk);
       auto size = new_blk->size;
-      auto new_blk_data = new_blk->DataRef();
+      auto new_blk_data = new_blk->data();
       for (std::size_t i = 0; i < size; ++i) {
         new_blk_data[i] *= coef;
       }
@@ -570,7 +570,7 @@ PartDivsAndMergedBlk SvdMergeBlocks(
     auto lpartdiv = CalcDiv(lqnscts, SliceFromBegin(t.indexes, ldims));
     auto rpartdiv = CalcDiv(rqnscts, SliceFromEnd(t.indexes, rdims));
     auto partdivs = std::make_pair(lpartdiv, rpartdiv);
-    auto blk_data = BipartiteBlkData(lqnscts, rqnscts, blk->DataConstRef());
+    auto blk_data = BipartiteBlkData(lqnscts, rqnscts, blk->cdata());
     auto has_partdivs = false;
     for (auto &kv : tomerge_blkdatas) {
       if (partdivs_equaler(kv.first, partdivs)) {
@@ -813,7 +813,7 @@ SvdRes SvdWrapBlocks(
     auto sblk_qnsct = QNSector(sblk_qn, kv.second.sdim);
     sblk_qnscts.push_back(sblk_qnsct);
     auto sblock = new QNBlock({sblk_qnsct, sblk_qnsct});
-    GenDiagMat(kv.second.s, kv.second.sdim, sblock->DataRef());
+    GenDiagMat(kv.second.s, kv.second.sdim, sblock->data());
     delete [] kv.second.s; kv.second.s = nullptr;
     sblocks.push_back(sblock);
     // Create u block.
@@ -825,7 +825,7 @@ SvdRes SvdWrapBlocks(
       MatGetRows(
           kv.second.u, kv.second.uldim, kv.second.sdim,
           u_row_offset, u_row_dim,
-          ublock->DataRef());
+          ublock->data());
       ublocks.push_back(ublock);
       u_row_offset += u_row_dim;
     }
@@ -840,7 +840,7 @@ SvdRes SvdWrapBlocks(
       MatGetCols(
           kv.second.v, kv.second.sdim, kv.second.vrdim,
           v_col_offset, v_col_dim,
-          vblock->DataRef());
+          vblock->data());
       vblocks.push_back(vblock);
       v_col_offset += v_col_dim;
     }

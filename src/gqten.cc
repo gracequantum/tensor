@@ -240,9 +240,7 @@ QNBlock::QNBlock(const std::vector<QNSector> &init_qnscts) :
   }
   if (ndim != 0) {
     size = 1;       // Initialize the block size.
-    for (long i = 0; i < ndim; ++i) {
-      size *= shape[i];
-    }
+    for (long i = 0; i < ndim; ++i) { size *= shape[i]; }
     data_ = new double[size] ();    // Allocate memory and initialize to 0.
     data_offsets_ = CalcDataOffsets(shape);
     qnscts_hash_ = QNSectorSet::Hash();
@@ -275,7 +273,7 @@ QNBlock::QNBlock(const QNBlock &qnblk) :
     size(qnblk.size),
     data_offsets_(qnblk.data_offsets_),
     qnscts_hash_(qnblk.qnscts_hash_) {
-  data_ = new double[size] ();
+  data_ = new double[size];
   std::memcpy(data_, qnblk.data_, size * sizeof(double));
 }
 
@@ -303,8 +301,7 @@ QNBlock::~QNBlock(void) {
 
 
 // Block element getter.
-const double &
-QNBlock::operator()(const std::vector<long> &coors) const {
+const double &QNBlock::operator()(const std::vector<long> &coors) const {
   assert(coors.size() == ndim);
   auto offset = CalcOffset(coors, ndim, data_offsets_);
   return *(data_+offset);
@@ -312,8 +309,7 @@ QNBlock::operator()(const std::vector<long> &coors) const {
 
 
 // Block element setter.
-double &
-QNBlock::operator()(const std::vector<long> &coors) {
+double &QNBlock::operator()(const std::vector<long> &coors) {
   assert(coors.size() == ndim);
   auto offset = CalcOffset(coors, ndim, data_offsets_);
   return *(data_+offset);
@@ -332,9 +328,7 @@ size_t QNBlock::PartHash(const std::vector<long> &dims) const {
 
 // Inplace operation.
 void QNBlock::Random(void) {
-  for (int i = 0; i < size; ++i) {
-    data_[i] = double(rand()) / RAND_MAX;
-  }
+  for (int i = 0; i < size; ++i) { data_[i] = double(rand()) / RAND_MAX; }
 }
 
 
@@ -373,7 +367,6 @@ double *TransposeData(
   int outerSizeB[dim];
   for (int i = 0; i < dim; ++i) { outerSizeB[i] = old_shape[perm[i]]; }
   auto transed_data = new double[old_size];
-  /* TODO: Multi-threads for dTensorTranspose function. */
   dTensorTranspose(perm, dim,
       1.0, old_data, sizeA, sizeA,
       0.0, transed_data, outerSizeB,
@@ -387,7 +380,7 @@ int GQTenGetTensorTransposeNumThreads(void) {
 }
 
 
-void GQTenSetTensorTransposeNumThreads(int num_threads) {
+void GQTenSetTensorTransposeNumThreads(const int num_threads) {
   tensor_transpose_num_threads = num_threads;
 }
 
@@ -414,7 +407,6 @@ std::ifstream &bfread(std::ifstream &ifs, QNBlock &qnblk) {
     qnblk.data_ = new double[qnblk.size];
     ifs.read((char *) qnblk.data_, qnblk.size*sizeof(double));
   }
-
   return ifs;
 }
 
@@ -436,7 +428,6 @@ std::ofstream &bfwrite(std::ofstream &ofs, const QNBlock &qnblk) {
     ofs.write((char *) qnblk.data_, qnblk.size*sizeof(double));
   }
   ofs << std::endl;
-
   return ofs;
 }
 
@@ -553,7 +544,7 @@ double GQTensor::Normalize(void) {
   auto norm = Norm();
   //Normalize(norm);
   for (auto &blk : blocks_) {
-    auto data = blk->DataRef();
+    auto data = blk->data();
     for (long i = 0; i < blk->size; ++i) {
       data[i] = data[i] / norm;
     }
@@ -572,12 +563,12 @@ GQTensor GQTensor::operator+(const GQTensor &rhs) {
         assert(lhs_blk->size == rhs_blk->size);
         auto added_blk = new QNBlock(lhs_blk->qnscts);
         auto added_data = new double [lhs_blk->size];
-        auto lhs_blk_data = lhs_blk->DataConstRef();
-        auto rhs_blk_data = rhs_blk->DataConstRef();
+        auto lhs_blk_data = lhs_blk->cdata();
+        auto rhs_blk_data = rhs_blk->cdata();
         for (long i = 0; i < lhs_blk->size; ++i) {
           added_data[i] = lhs_blk_data[i] + rhs_blk_data[i];
         }
-        added_blk->DataRef() = added_data;
+        added_blk->data() = added_data;
         added_t.BlksRef().push_back(added_blk);
         has_blk = true;
         break;
@@ -616,8 +607,8 @@ GQTensor &GQTensor::operator+=(const GQTensor &rhs) {
     auto has_blk = false;
     for (auto &plhs_blk : blocks_) {
       if (plhs_blk->QNSectorSetHash() == prhs_blk->QNSectorSetHash()) {
-        auto lhs_blk_data = plhs_blk->DataRef();
-        auto rhs_blk_data = prhs_blk->DataConstRef();
+        auto lhs_blk_data = plhs_blk->data();
+        auto rhs_blk_data = prhs_blk->cdata();
         assert(plhs_blk->size == prhs_blk->size);
         for (long i = 0; i < prhs_blk->size; i++) {
           lhs_blk_data[i] += rhs_blk_data[i];
@@ -638,7 +629,7 @@ GQTensor &GQTensor::operator+=(const GQTensor &rhs) {
 GQTensor GQTensor::operator-(void) const {
   auto minus_t = GQTensor(*this);
   for (auto &blk : minus_t.BlksRef()) {
-    auto data = blk->DataRef();
+    auto data = blk->data();
     for (long i = 0; i < blk->size; ++i) {
       data[i] = -data[i];
     }
@@ -666,8 +657,8 @@ bool GQTensor::operator==(const GQTensor &rhs) const {
     for (auto &rhs_blk : rhs.blocks_) {
       if (rhs_blk->QNSectorSetHash() == lhs_blk->QNSectorSetHash()) {
         if (!ArrayEq(
-                 rhs_blk->DataConstRef(), rhs_blk->size,
-                 lhs_blk->DataConstRef(), lhs_blk->size)) {
+                 rhs_blk->cdata(), rhs_blk->size,
+                 lhs_blk->cdata(), lhs_blk->size)) {
           return false;
         } else {
           has_eq_blk = true;
@@ -722,7 +713,7 @@ double GQTensor::Norm(void) {
   double norm2 = 0.0; 
   for (auto &b : blocks_) {
     for (long i = 0; i < b->size; ++i) {
-      norm2 += std::pow(b->DataRef()[i], 2.0);
+      norm2 += std::pow(b->data()[i], 2.0);
     }
   }
   return std::sqrt(norm2);
@@ -773,7 +764,7 @@ GQTensor operator*(const GQTensor &t, const double &s) {
   }
   // For tensor case.
   for (auto &blk : muled_t.BlksRef()) {
-    auto data = blk->DataRef();
+    auto data = blk->data();
     for (long i = 0; i < blk->size; ++i) {
       data[i]  = data[i] * s;
     }

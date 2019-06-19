@@ -213,6 +213,8 @@ public:
   QNBlock(const std::vector<QNSector> &);
 
   // NOTE: For performance reason, this constructor will NOT initialize the data_ to 0!!!
+  // Be careful to use this!!!
+  /* TODO: As a private constructor and friend of tensor numerical function. */
   QNBlock(const std::vector<const QNSector *> &);
 
   QNBlock(const QNBlock &);
@@ -224,20 +226,22 @@ public:
   const double &operator()(const std::vector<long> &) const;
   double &operator()(const std::vector<long> &);
 
+  // Data access.
+  const double *cdata(void) const { return data_; }   // constant reference.
+  double * &data(void) { return data_; }              // non-constant reference.
+
+  // Hash methods.
   size_t PartHash(const std::vector<long> &) const;
   size_t QNSectorSetHash(void) const { return qnscts_hash_; }
-
-  // Data access.
-  const double *DataConstRef(void) const { return data_; }
-  double * &DataRef(void) { return data_; }
 
   // Inplace operations.
   void Random(void);
   void Transpose(const std::vector<long> &);
 
+  // Public data members.
   long ndim = 0;
   std::vector<long> shape;
-  long size = 0;
+  long size = 0;              // Total number of elements in this block.
 
 private:
   double *data_ = nullptr;    // Data in a 1D array.
@@ -406,7 +410,7 @@ double *TransposeData(
 
 int GQTenGetTensorTransposeNumThreads(void);
 
-void GQTenSetTensorTransposeNumThreads(int);
+void GQTenSetTensorTransposeNumThreads(const int);
 
 std::vector<std::vector<long>> GenAllCoors(const std::vector<long> &);
 

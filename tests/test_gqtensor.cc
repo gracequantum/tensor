@@ -57,8 +57,8 @@ TEST_F(TestGQTensor, Initialization) {
   EXPECT_EQ(vec_rand_up2.indexes, std::vector<Index>{tpb});
   EXPECT_NE(vec_rand_up2.BlksConstRef()[0], vec_rand_up.BlksConstRef()[0]);
   EXPECT_EQ(
-      vec_rand_up2.BlksConstRef()[0]->DataConstRef()[0],
-       vec_rand_up.BlksConstRef()[0]->DataConstRef()[0]);
+      vec_rand_up2.BlksConstRef()[0]->cdata()[0],
+       vec_rand_up.BlksConstRef()[0]->cdata()[0]);
 }
 
 
@@ -101,7 +101,7 @@ TEST_F(TestGQTensor, Random) {
   EXPECT_EQ(lt2.BlksConstRef()[0]->qnscts, qnscts);
   for (long i = 0; i < lt2.BlksConstRef()[0]->size; i++) {
     EXPECT_EQ(
-        lt2.BlksConstRef()[0]->DataConstRef()[i],
+        lt2.BlksConstRef()[0]->cdata()[i],
         double(rand())/RAND_MAX);
   }
   qnscts = {
@@ -111,7 +111,7 @@ TEST_F(TestGQTensor, Random) {
   EXPECT_EQ(lt2.BlksConstRef()[1]->qnscts, qnscts);
   for (long i = 0; i < lt2.BlksConstRef()[1]->size; i++) {
     EXPECT_EQ(
-        lt2.BlksConstRef()[1]->DataConstRef()[i],
+        lt2.BlksConstRef()[1]->cdata()[i],
         double(rand())/RAND_MAX);
   }
 }
@@ -168,7 +168,7 @@ void RunTestNormalizeCase(GQTensor &t, const QN &div) {
   auto norm = 0.0;
   for (auto &blk : t.BlksConstRef()) {
     for (long i = 0; i < blk->size; ++i) {
-      norm += std::pow(blk->DataConstRef()[i], 2.0);
+      norm += std::pow(blk->cdata()[i], 2.0);
     }
   }
   EXPECT_NEAR(norm, 1.0, kEpsilon);
@@ -234,8 +234,8 @@ TEST_F(TestGQTensor, TestMultiplication) {
   for (size_t i = 0; i < ten.BlksConstRef().size(); ++i) {
     for (long j = 0; j < ten.BlksConstRef()[i]->size; j++) {
         EXPECT_DOUBLE_EQ(
-          multed_ten.BlksConstRef()[i]->DataConstRef()[j],
-          2.33 * ten.BlksConstRef()[i]->DataConstRef()[j]);
+          multed_ten.BlksConstRef()[i]->cdata()[j],
+          2.33 * ten.BlksConstRef()[i]->cdata()[j]);
     }
   }
 }
