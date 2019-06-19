@@ -41,7 +41,7 @@ GQTensor *Contract(
     blks_ctrct_batch_timer.Restart();
 #endif
 
-    pnew_blks = BlksCtrctBatch(
+    pnew_blks = BlocksCtrctBatch(
         ctrct_axes_a, ctrct_axes_b,
         1.0, ta.cblocks(), tb.cblocks());
 
@@ -60,7 +60,7 @@ GQTensor *Contract(
 #endif
 
   // Wrap blocks.
-  WrapCtrctBlks(pnew_blks, res_t);
+  WrapCtrctBlocks(pnew_blks, res_t);
 
 #ifdef GQTEN_TIMING_MODE
   blks_wrap_timer.PrintElapsed();
@@ -70,29 +70,7 @@ GQTensor *Contract(
 }
 
 
-GQTensor *InitCtrctedTen(
-    const GQTensor &t1, const GQTensor &t2,
-    const std::vector<long> &t1_ctrct_idxs,
-    const std::vector<long> &t2_ctrct_idxs) {
-  std::vector<Index> saved_idxs;
-  const std::vector<Index> &t1_idxs  = t1.indexes;
-  const std::vector<Index> &t2_idxs  = t2.indexes;
-  for (size_t i = 0; i < t1_idxs.size(); ++i) {
-    if (std::find(t1_ctrct_idxs.begin(), t1_ctrct_idxs.end(), i) == t1_ctrct_idxs.end()) {
-      saved_idxs.push_back(t1.indexes[i]);
-    }
-  }
-  for (size_t i = 0; i < t2_idxs.size(); ++i) {
-    if (std::find(t2_ctrct_idxs.begin(), t2_ctrct_idxs.end(), i) == t2_ctrct_idxs.end()) {
-      saved_idxs.push_back(t2.indexes[i]);
-    }
-  }
-  auto pnew_ten = new GQTensor(saved_idxs);
-  return pnew_ten;
-}
-
-
-std::vector<QNBlock *> BlksCtrctBatch(
+std::vector<QNBlock *> BlocksCtrctBatch(
     const std::vector<long> &ctrct_axes_a,
     const std::vector<long> &ctrct_axes_b,
     const double alpha,
@@ -111,11 +89,11 @@ std::vector<QNBlock *> BlksCtrctBatch(
   assert(tb_blks_num > 0);
   // Check whether need transpose.
   std::vector<long> transed_axes_a, transed_axes_b;
-  bool ta_need_trans = CtrctTransCheck(
+  bool ta_need_trans = CtrctTransChecker(
                            ctrct_axes_a,
                            ta_blks[0]->ndim, 'a',
                            transed_axes_a);
-  bool tb_need_trans = CtrctTransCheck(
+  bool tb_need_trans = CtrctTransChecker(
                            ctrct_axes_b,
                            tb_blks[0]->ndim, 'b',
                            transed_axes_b);
@@ -145,14 +123,14 @@ std::vector<QNBlock *> BlksCtrctBatch(
   }
 
   // Initialize data.
-  // Data with size of tensor blocks.
+  // Data with size of number of blocks of tensor.
   auto ta_to_ctrct_blks = new const double *[ta_blks_num] ();
   auto tb_to_ctrct_blks = new const double *[tb_blks_num] ();
-  auto ta_to_ctrct_blk_saved_dims = new long[ta_blks_num] ();
-  auto tb_to_ctrct_blk_saved_dims = new long[tb_blks_num] ();
-  auto ta_to_ctrct_blk_ctrct_dims = new long[ta_blks_num] ();
-  auto tb_to_ctrct_blk_ctrct_dims = new long[tb_blks_num] ();
-  // Data with size of block pairs.
+  auto ta_to_ctrct_blk_saved_dims = new long[ta_blks_num];
+  auto tb_to_ctrct_blk_saved_dims = new long[tb_blks_num];
+  auto ta_to_ctrct_blk_ctrct_dims = new long[ta_blks_num];
+  auto tb_to_ctrct_blk_ctrct_dims = new long[tb_blks_num];
+  // Data with size of number of block pairs.
   auto gemm_batch_transa_array = new CBLAS_TRANSPOSE[blk_pairs];
   auto gemm_batch_transb_array = new CBLAS_TRANSPOSE[blk_pairs];
   for (long i = 0; i < blk_pairs; ++i) {
@@ -184,6 +162,7 @@ std::vector<QNBlock *> BlksCtrctBatch(
                                    ta_blks[i], tb_blks[j],
                                    ctrct_axes_a, ctrct_axes_b);
         pnew_blks[blk_pair_cnt] = new QNBlock(pnew_blk_qnscts);
+        // For contracting to scalar case.
         if (pnew_blks[blk_pair_cnt]->cdata() == nullptr) {
           pnew_blks[blk_pair_cnt]->data() = new double[1];
         }
@@ -191,7 +170,7 @@ std::vector<QNBlock *> BlksCtrctBatch(
         // Deal with ta block.
         if (ta_to_ctrct_blks[i] == nullptr) {
           // Calculate dimensions information.
-          CalcCtrctBlkDimInfo(
+          CalcBlkCtrctDimsInfo(
               i, ta_blks[i], ctrct_axes_a,
               ta_to_ctrct_blk_saved_dims, ta_to_ctrct_blk_ctrct_dims);
           // Generate contraction data.
@@ -225,7 +204,7 @@ std::vector<QNBlock *> BlksCtrctBatch(
         // Deal with tb block.
         if (tb_to_ctrct_blks[j] == nullptr) {
           // Calculate dimensions information.
-          CalcCtrctBlkDimInfo(
+          CalcBlkCtrctDimsInfo(
               j, tb_blks[j], ctrct_axes_b,
               tb_to_ctrct_blk_saved_dims, tb_to_ctrct_blk_ctrct_dims);
           // Generate contraction data.
@@ -298,7 +277,7 @@ std::vector<QNBlock *> BlksCtrctBatch(
   // Free temporary variables.
   if (ta_need_trans) {
     for (std::size_t i = 0; i < ta_blks_num; ++i) {
-      delete[] ta_to_ctrct_blks[i];
+      delete[] ta_to_ctrct_blks[i];     // Delete the data.
     }
   }
   if (tb_need_trans) {
@@ -306,7 +285,7 @@ std::vector<QNBlock *> BlksCtrctBatch(
       delete[] tb_to_ctrct_blks[i];
     }
   }
-  delete[] ta_to_ctrct_blks;
+  delete[] ta_to_ctrct_blks;            // Delete the pointers.
   delete[] tb_to_ctrct_blks;
   delete[] ta_to_ctrct_blk_saved_dims;
   delete[] tb_to_ctrct_blk_saved_dims;
@@ -329,19 +308,40 @@ std::vector<QNBlock *> BlksCtrctBatch(
 }
 
 
-void WrapCtrctBlks(std::vector<QNBlock *> &pnew_blks, GQTensor *res_t) {
-  auto nnew_blk = pnew_blks.size();   // nnew_blk: number of new blocks.
-  if (res_t->indexes.size() == 0) {   // Contract to scalar case.
-    if (nnew_blk == 0) {    // No matched block pair.
-    } else {                          // Has matched block pair.
-      double scalar = 0;
-      for (auto &pnew_blk : pnew_blks) {
-        scalar += (pnew_blk->cdata()[0]);
-        delete pnew_blk;
-      }
-      res_t->scalar = scalar;
+GQTensor *InitCtrctedTen(
+    const GQTensor &t1, const GQTensor &t2,
+    const std::vector<long> &t1_ctrct_axes,
+    const std::vector<long> &t2_ctrct_axes) {
+  std::vector<Index> saved_idxs;
+  const std::vector<Index> &t1_idxs  = t1.indexes;
+  const std::vector<Index> &t2_idxs  = t2.indexes;
+  for (size_t i = 0; i < t1_idxs.size(); ++i) {
+    if (std::find(t1_ctrct_axes.begin(), t1_ctrct_axes.end(), i) ==
+        t1_ctrct_axes.end()) {
+      saved_idxs.push_back(t1.indexes[i]);
     }
-  } else {                            // Contract to tensor case.
+  }
+  for (size_t i = 0; i < t2_idxs.size(); ++i) {
+    if (std::find(t2_ctrct_axes.begin(), t2_ctrct_axes.end(), i) ==
+        t2_ctrct_axes.end()) {
+      saved_idxs.push_back(t2.indexes[i]);
+    }
+  }
+  auto pnew_ten = new GQTensor(saved_idxs);
+  return pnew_ten;
+}
+
+
+void WrapCtrctBlocks(std::vector<QNBlock *> &pnew_blks, GQTensor *res_t) {
+  auto nnew_blk = pnew_blks.size();   // nnew_blk: number of new blocks.
+  if (res_t->indexes.size() == 0 && nnew_blk != 0) {  // Contract to scalar case.
+    double scalar = 0;
+    for (auto &pnew_blk : pnew_blks) {
+      scalar += (pnew_blk->cdata()[0]);
+      delete pnew_blk;
+    }
+    res_t->scalar = scalar;
+  } else {                                            // Contract to tensor case.
     auto merged_blks = MergeCtrctBlks(pnew_blks);
     res_t->blocks() = merged_blks;
   }
@@ -357,18 +357,18 @@ std::vector<QNBlock *> MergeCtrctBlks(const std::vector<QNBlock *> &pblks) {
   std::vector<QNBlock *> merged_blks;
 
 #ifdef GQTEN_TIMING_MODE
-  Timer blks_wrap_daxpy_timer("blks_wrap_daxpy");
+  Timer daxpy_timer("daxpy");
 #endif
 
   for (auto &pnew_blk : pblks) {
     auto has_blk = false;  
     for (auto &pmerged_blk : merged_blks) {
-      if (pnew_blk->QNSectorSetHash() == pmerged_blk->QNSectorSetHash()) {
+      if (pmerged_blk->QNSectorSetHash() == pnew_blk->QNSectorSetHash()) {
         auto data_size = pnew_blk->size;
         assert(data_size == pmerged_blk->size);
 
 #ifdef GQTEN_TIMING_MODE
-  blks_wrap_daxpy_timer.Restart();
+  daxpy_timer.Restart();
 #endif
 
         cblas_daxpy(
@@ -377,7 +377,7 @@ std::vector<QNBlock *> MergeCtrctBlks(const std::vector<QNBlock *> &pblks) {
             pmerged_blk->data(), 1);
 
 #ifdef GQTEN_TIMING_MODE
-  blks_wrap_daxpy_timer.PrintElapsed(8);
+  daxpy_timer.PrintElapsed(8);
 #endif
 
         delete pnew_blk;
@@ -393,8 +393,8 @@ std::vector<QNBlock *> MergeCtrctBlks(const std::vector<QNBlock *> &pblks) {
 }
 
 
-void CalcCtrctBlkDimInfo(
-    const std::size_t blk_idx, const QNBlock *pblk,
+void CalcBlkCtrctDimsInfo(
+    const std::size_t blk_idx_in_ten, const QNBlock *pblk,
     const std::vector<long> &ctrct_axes,
     long *saved_dims, long *ctrct_dims) {
   long ctrct_dim = 1;
@@ -407,8 +407,8 @@ void CalcCtrctBlkDimInfo(
       saved_dim *= pblk->qnscts[i].dim;
     }
   } 
-  saved_dims[blk_idx] = saved_dim;
-  ctrct_dims[blk_idx] = ctrct_dim;
+  saved_dims[blk_idx_in_ten] = saved_dim;
+  ctrct_dims[blk_idx_in_ten] = ctrct_dim;
 }
 
 
@@ -462,6 +462,11 @@ void LinearCombine(
 
 
 void LinearCombineOneTerm(const double coef, const GQTensor *t, GQTensor *res) {
+
+#ifdef GQTEN_TIMING_MODE
+  Timer daxpy_timer("daxpy");
+#endif
+
   for (auto &blk : t->cblocks()) {
     auto has_blk = false;
     for (auto &res_blk : res->blocks()) {
@@ -470,7 +475,17 @@ void LinearCombineOneTerm(const double coef, const GQTensor *t, GQTensor *res) {
         assert(size == blk->size);
         auto blk_data = blk->cdata();
         auto res_blk_data = res_blk->data();
+
+#ifdef GQTEN_TIMING_MODE
+        daxpy_timer.Restart();
+#endif
+
         cblas_daxpy(size, coef, blk_data, 1, res_blk_data, 1);
+
+#ifdef GQTEN_TIMING_MODE
+        daxpy_timer.PrintElapsed(8);
+#endif
+
         has_blk = true;
         break;
       }
@@ -479,7 +494,7 @@ void LinearCombineOneTerm(const double coef, const GQTensor *t, GQTensor *res) {
       auto new_blk = new QNBlock(*blk);
       auto size = new_blk->size;
       auto new_blk_data = new_blk->data();
-      for (std::size_t i = 0; i < size; ++i) {
+      for (long i = 0; i < size; ++i) {
         new_blk_data[i] *= coef;
       }
       res->blocks().push_back(new_blk);
@@ -491,9 +506,9 @@ void LinearCombineOneTerm(const double coef, const GQTensor *t, GQTensor *res) {
 // Tensor SVD.
 SvdRes Svd(
     const GQTensor &t,
-    const long &ldims, const long &rdims,
+    const long ldims, const long rdims,
     const QN &ldiv, const QN &rdiv,
-    const double &cutoff, const long &Dmin, const long &Dmax) {
+    const double cutoff, const long Dmin, const long Dmax) {
   assert((ldims + rdims) == t.indexes.size());
 
 #ifdef GQTEN_TIMING_MODE
@@ -952,7 +967,7 @@ double *MatGetCols(
 
 
 // Tensor contraction helpers.
-bool CtrctTransCheck(
+bool CtrctTransChecker(
     const std::vector<long> &ctrct_axes,
     const long ndim,
     const char position,

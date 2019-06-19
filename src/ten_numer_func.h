@@ -18,7 +18,6 @@
 #include <cstring>
 #include <cmath>
 
-
 #include "mkl.h"
 
 #ifdef GQTEN_USE_OMP_GEMM_BATCH
@@ -30,16 +29,16 @@ namespace gqten {
 
 
 // Tensor contraction.
-GQTensor *InitCtrctedTen(
-    const GQTensor &, const GQTensor &,
-    const std::vector<long> &, const std::vector<long> &);
-
-std::vector<QNBlock *> BlksCtrctBatch(
+std::vector<QNBlock *> BlocksCtrctBatch(
     const std::vector<long> &, const std::vector<long> &,
     const double,
     const std::vector<QNBlock *> &, const std::vector<QNBlock *> &);
 
-void WrapCtrctBlks(std::vector<QNBlock *> &, GQTensor *);
+GQTensor *InitCtrctedTen(
+    const GQTensor &, const GQTensor &,
+    const std::vector<long> &, const std::vector<long> &);
+
+void WrapCtrctBlocks(std::vector<QNBlock *> &, GQTensor *);
 
 std::vector<QNBlock *> MergeCtrctBlks(const std::vector<QNBlock *> &);
 
@@ -138,7 +137,7 @@ inline void GemmBatch(
 #endif
 }
 
-void CalcCtrctBlkDimInfo(
+void CalcBlkCtrctDimsInfo(
     const std::size_t, const QNBlock *, const std::vector<long> &,
     long *, long *);
 
@@ -371,7 +370,7 @@ inline std::vector<double> NormVec(const std::vector<double> &v) {
 }
 
 // Tensor contraction helpers.
-bool CtrctTransCheck(
+bool CtrctTransChecker(
     const std::vector<long> &, const long, const char, std::vector<long> &);
 
 std::vector<std::size_t> GenBlksPartHashTable(

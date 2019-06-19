@@ -392,9 +392,9 @@ SvdRes Svd(
 
 SvdRes Svd(
     const GQTensor &,
-    const long &, const long &,
+    const long, const long,
     const QN &, const QN &,
-    const double &, const long &, const long &);
+    const double, const long, const long);
 
 
 // Helper functions.
