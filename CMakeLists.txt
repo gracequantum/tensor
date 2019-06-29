@@ -23,9 +23,16 @@ endif()
 
 
 # Advanced options.
+option(GQTEN_BUILD_UNITTEST "Build unittests for GraceQ/tensor." OFF)
+
 option(GQTEN_USE_MKL_GEMM_BATCH "Use MKL's cblas_dgemm_batch function." OFF)
 if(GQTEN_USE_MKL_GEMM_BATCH)
   add_definitions(-DGQTEN_USE_MKL_GEMM_BATCH)
+endif()
+
+option(GQTEN_MPI_PARALLEL "Build MPI support." OFF)
+if(GQTEN_MPI_PARALLEL)
+  add_definitions(-DGQTEN_MPI_PARALLEL)
 endif()
 
 option(GQTEN_TIMING_MODE "Timing mode." OFF)
@@ -38,7 +45,10 @@ if(GQTEN_CONTRACT_BLOCK_COUNTING)
   add_definitions(-DGQTEN_CONTRACT_BLOCK_COUNTING)
 endif()
 
-option(GQTEN_BUILD_UNITTEST "Build unittests for GraceQ/tensor." OFF)
+option(GQTEN_OMP_DEV_MODE "Print more OpenMP information." OFF)
+if(GQTEN_OMP_DEV_MODE)
+  add_definitions(-DGQTEN_OMP_DEV_MODE)
+endif(GQTEN_OMP_DEV_MODE)
 
 
 # Compilation and linking control.
@@ -80,16 +90,20 @@ if (OPENMP_FOUND)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-option(GQTEN_OMP_DEV_MODE "Print more information in this mode." OFF)
-if(GQTEN_OMP_DEV_MODE)
-  add_definitions(-DGQTEN_OMP_DEV_MODE)
-endif(GQTEN_OMP_DEV_MODE)
+# Find MPI
+if(GQTEN_MPI_PARALLEL)
+  find_package(MPI REQUIRED)
+endif()
 
 
 # Subdirectories.
 add_subdirectory(external)
+
 add_subdirectory(src lib)
 
+if(GQTEN_MPI_PARALLEL)
+  add_subdirectory(app bin)
+endif()
 
 # Unittests
 if(GQTEN_BUILD_UNITTEST)

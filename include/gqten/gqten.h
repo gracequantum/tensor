@@ -15,6 +15,10 @@
 
 #include <cmath>
 
+#ifdef GQTEN_MPI_PARALLEL
+#include "mpi.h"
+#endif
+
 
 namespace gqten {
 
@@ -346,6 +350,23 @@ std::ofstream &bfwrite(std::ofstream &, const GQTensor &);
 GQTensor *Contract(
     const GQTensor &, const GQTensor &,
     const std::vector<std::vector<long>> &);
+
+#ifdef GQTEN_MPI_PARALLEL
+const char kGemmWorkerStatCont = 'c';
+const char kGemmWorkerStatStop = 's';
+
+
+GQTensor *GQTEN_MPI_Contract(
+    const GQTensor &, const GQTensor &,
+    const std::vector<std::vector<long>> &,
+    MPI_Comm, const int);
+
+
+inline void MPI_SendGemmWorkerStat(
+    const char stat, const int worker, MPI_Comm comm) {
+  MPI_Send(&stat, 1, MPI_CHAR, worker, 5, comm);
+}
+#endif
 
 // Tensors linear combination.
 /* TODO: For scalar tensor case. */

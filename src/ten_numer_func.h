@@ -40,15 +40,15 @@ std::vector<QNBlock *> MergeCtrctBlks(const std::vector<QNBlock *> &);
 
 inline void GemmBatch(
     const CBLAS_LAYOUT Layout,
-    const CBLAS_TRANSPOSE* transa_array, const CBLAS_TRANSPOSE* transb_array,
-    const MKL_INT* m_array, const MKL_INT* n_array, const MKL_INT* k_array,
-    const double* alpha_array,
-    const double **a_array, const MKL_INT* lda_array,
-    const double **b_array, const MKL_INT* ldb_array,
-    const double* beta_array,
-    double **c_array, const MKL_INT* ldc_array,
+    const CBLAS_TRANSPOSE *transa_array, const CBLAS_TRANSPOSE *transb_array,
+    const MKL_INT *m_array, const MKL_INT *n_array, const MKL_INT *k_array,
+    const double *alpha_array,
+    const double **a_array, const MKL_INT *lda_array,
+    const double **b_array, const MKL_INT *ldb_array,
+    const double *beta_array,
+    double **c_array, const MKL_INT *ldc_array,
     const MKL_INT group_count,
-    const MKL_INT* group_size) {
+    const MKL_INT *group_size) {
 
 #ifdef GQTEN_USE_MKL_GEMM_BATCH
 
