@@ -42,8 +42,13 @@ macro(add_unittest
         NAME ${TEST_NAME}
         COMMAND "${TEST_NAME}")
   else()
-    add_test(${TEST_NAME}
-        mpirun --host localhost:4 -np 1 ${TEST_NAME} : --host localhost:4 -np 3 ../bin/gqten_mpi_gemm_batch_worker)
+    if(APPLE)
+      add_test(${TEST_NAME}
+          mpirun --host localhost:4 -np 1 ${TEST_NAME} : --host localhost:4 -np 3 ../bin/gqten_mpi_gemm_batch_worker)
+    else()
+      add_test(${TEST_NAME}
+          mpirun -np 1 ./${TEST_NAME} : -np 3 ../bin/gqten_mpi_gemm_batch_worker)
+    endif()
   endif()
 
   set_target_properties(${TEST_NAME} PROPERTIES FOLDER tests)
@@ -79,6 +84,6 @@ if(GQTEN_MPI_PARALLEL)
   add_unittest(test_mpi_numer_func
       test_mpi_numer_func.cc
       "${MPI_CXX_INCLUDE_PATH} ${MPI_CXX_COMPILE_FLAGS} ${MATH_LIB_COMPILE_FLAGS}"
-      gqten "${MPI_CXX_LINK_FLAGS}${MATH_LIB_LINK_FLAGS}"
+      gqten "${MPI_CXX_LINK_FLAGS} ${MATH_LIB_LINK_FLAGS}"
       "MPI_TEST")
 endif()
