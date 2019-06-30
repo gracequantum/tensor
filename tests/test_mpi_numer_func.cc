@@ -25,27 +25,91 @@ void RunTestDistributedContraction(
 }
 
 
-TEST(TestDistributedContraction, 2DCase) {
-  long d = 30;
-  Index idx = Index({
+struct TestDistributedContraction : public testing::Test {
+  long d = 5;
+  Index idx_out = Index({
       QNSector(QN({QNNameVal("Sz", -2)}), d),
       QNSector(QN({QNNameVal("Sz", -1)}), d),
       QNSector(QN({QNNameVal("Sz",  0)}), d),
       QNSector(QN({QNNameVal("Sz",  1)}), d),
-      QNSector(QN({QNNameVal("Sz",  2)}), d)});
-  auto ten = GQTensor({idx, idx});
+      QNSector(QN({QNNameVal("Sz",  2)}), d)}, OUT);
+  Index idx_in = InverseIndex(idx_out);
+};
+
+
+TEST_F(TestDistributedContraction, 2DCase) {
+  auto ten = GQTensor({idx_in, idx_out});
   srand(0);
   ten.Random(QN({QNNameVal("Sz", 0)}));
   RunTestDistributedContraction(ten, {{1}, {0}}, 1);
+  RunTestDistributedContraction(ten, {{1}, {0}}, 2);
+  RunTestDistributedContraction(ten, {{1}, {0}}, 3);
+
   RunTestDistributedContraction(ten, {{0, 1}, {1, 0}}, 1);
+  RunTestDistributedContraction(ten, {{0, 1}, {1, 0}}, 2);
+  RunTestDistributedContraction(ten, {{0, 1}, {1, 0}}, 3);
+
+  ten.Random(QN({QNNameVal("Sz", 1)}));
+  RunTestDistributedContraction(ten, {{1}, {0}}, 1);
+  RunTestDistributedContraction(ten, {{1}, {0}}, 2);
+  RunTestDistributedContraction(ten, {{1}, {0}}, 3);
+
+  RunTestDistributedContraction(ten, {{0, 1}, {1, 0}}, 1);
+  RunTestDistributedContraction(ten, {{0, 1}, {1, 0}}, 2);
+  RunTestDistributedContraction(ten, {{0, 1}, {1, 0}}, 3);
 
   ten.Random(QN({QNNameVal("Sz", 2)}));
   RunTestDistributedContraction(ten, {{1}, {0}}, 1);
-  RunTestDistributedContraction(ten, {{0, 1}, {1, 0}}, 1);
+  RunTestDistributedContraction(ten, {{1}, {0}}, 2);
+  RunTestDistributedContraction(ten, {{1}, {0}}, 3);
 
-  ten.Random(QN({QNNameVal("Sz", 3)}));
-  RunTestDistributedContraction(ten, {{1}, {0}}, 1);
   RunTestDistributedContraction(ten, {{0, 1}, {1, 0}}, 1);
+  RunTestDistributedContraction(ten, {{0, 1}, {1, 0}}, 2);
+  RunTestDistributedContraction(ten, {{0, 1}, {1, 0}}, 3);
+}
+
+
+TEST_F(TestDistributedContraction, 3DCase) {
+  auto ten = GQTensor({idx_in, idx_out, idx_out});
+  srand(0);
+  ten.Random(QN({QNNameVal("Sz", 0)}));
+  RunTestDistributedContraction(ten, {{2}, {0}}, 1);
+  RunTestDistributedContraction(ten, {{2}, {0}}, 2);
+  RunTestDistributedContraction(ten, {{2}, {0}}, 3);
+
+  RunTestDistributedContraction(ten, {{1, 2}, {0, 1}}, 1);
+  RunTestDistributedContraction(ten, {{1, 2}, {0, 1}}, 2);
+  RunTestDistributedContraction(ten, {{1, 2}, {0, 1}}, 3);
+
+  RunTestDistributedContraction(ten, {{0, 1, 2}, {0, 1, 2}}, 1);
+  RunTestDistributedContraction(ten, {{0, 1, 2}, {0, 1, 2}}, 2);
+  RunTestDistributedContraction(ten, {{0, 1, 2}, {0, 1, 2}}, 3);
+
+  ten.Random(QN({QNNameVal("Sz", 1)}));
+  RunTestDistributedContraction(ten, {{2}, {0}}, 1);
+  RunTestDistributedContraction(ten, {{2}, {0}}, 2);
+  RunTestDistributedContraction(ten, {{2}, {0}}, 3);
+
+  RunTestDistributedContraction(ten, {{1, 2}, {0, 1}}, 1);
+  RunTestDistributedContraction(ten, {{1, 2}, {0, 1}}, 2);
+  RunTestDistributedContraction(ten, {{1, 2}, {0, 1}}, 3);
+
+  RunTestDistributedContraction(ten, {{0, 1, 2}, {0, 1, 2}}, 1);
+  RunTestDistributedContraction(ten, {{0, 1, 2}, {0, 1, 2}}, 2);
+  RunTestDistributedContraction(ten, {{0, 1, 2}, {0, 1, 2}}, 3);
+
+  ten.Random(QN({QNNameVal("Sz", 2)}));
+  RunTestDistributedContraction(ten, {{2}, {0}}, 1);
+  RunTestDistributedContraction(ten, {{2}, {0}}, 2);
+  RunTestDistributedContraction(ten, {{2}, {0}}, 3);
+
+  RunTestDistributedContraction(ten, {{1, 2}, {0, 1}}, 1);
+  RunTestDistributedContraction(ten, {{1, 2}, {0, 1}}, 2);
+  RunTestDistributedContraction(ten, {{1, 2}, {0, 1}}, 3);
+
+  RunTestDistributedContraction(ten, {{0, 1, 2}, {0, 1, 2}}, 1);
+  RunTestDistributedContraction(ten, {{0, 1, 2}, {0, 1, 2}}, 2);
+  RunTestDistributedContraction(ten, {{0, 1, 2}, {0, 1, 2}}, 3);
 }
 
 
@@ -54,7 +118,10 @@ int main(int argc, char *argv[]) {
   testing::InitGoogleTest(&argc, argv); 
   MPI_Init(&argc, &argv);
   result = RUN_ALL_TESTS();
-  MPI_SendGemmWorkerStat(kGemmWorkerStatStop, 1, MPI_COMM_WORLD);
+  for (int i = 1; i <= 3; ++i) {
+    MPI_SendGemmWorkerStat(kGemmWorkerStatStop, i, MPI_COMM_WORLD);
+  }
+  MPI_Barrier(MPI_COMM_WORLD);
   MPI_Finalize();
   return result;
 }

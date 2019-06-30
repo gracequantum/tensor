@@ -6,19 +6,46 @@
 #  Description: GraceQ/tensor project. CMake file to control unittest.
 # 
 macro(add_unittest
-    TEST_NAME TEST_SRC CFLAGS LINK_LIBS LINK_LIB_FLAGS INPUT_ARGS)
+    TEST_NAME TEST_SRC CFLAGS LINK_LIBS LINK_LIB_FLAGS MPI_TEST)
   add_executable(${TEST_NAME}
       ${TEST_SRC})
-  target_include_directories(${TEST_NAME} PUBLIC
-      "${PROJECT_SOURCE_DIR}/include"
-      "${PROJECT_SOURCE_DIR}/src"
-      "/usr/local/include"
-      ${CFLAGS})
-  target_link_libraries(${TEST_NAME}
-      "-L/usr/local/lib"
-      gtest gtest_main
-      "${LINK_LIBS}" "${LINK_LIB_FLAGS}")
-  add_test(NAME ${TEST_NAME} COMMAND "${TEST_NAME}" "${INPUT_ARGS}")
+
+  if(GQTEN_MPI_PARALLEL)
+    target_include_directories(${TEST_NAME}
+        PUBLIC "${PROJECT_SOURCE_DIR}/include"
+        PUBLIC "${PROJECT_SOURCE_DIR}/src"
+        PUBLIC "/usr/local/include"
+        PRIVATE ${MPI_CXX_INCLUDE_PATH}
+        PRIVATE ${CFLAGS})
+    target_compile_options(${TEST_NAME}
+      PRIVATE ${MATH_LIB_COMPILE_FLAGS}
+      PRIVATE ${MPI_CXX_COMPILE_FLAGS})
+    target_link_libraries(${TEST_NAME}
+        "-L/usr/local/lib"
+        gtest gtest_main
+        ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS}
+        "${LINK_LIBS}" "${LINK_LIB_FLAGS}")
+  else()
+    target_include_directories(${TEST_NAME}
+        PUBLIC "${PROJECT_SOURCE_DIR}/include"
+        PUBLIC "${PROJECT_SOURCE_DIR}/src"
+        PUBLIC "/usr/local/include"
+        PRIVATE ${CFLAGS})
+    target_link_libraries(${TEST_NAME}
+        "-L/usr/local/lib"
+        gtest gtest_main
+        "${LINK_LIBS}" "${LINK_LIB_FLAGS}")
+  endif()
+
+  if("${MPI_TEST}" STREQUAL "")
+    add_test(
+        NAME ${TEST_NAME}
+        COMMAND "${TEST_NAME}")
+  else()
+    add_test(${TEST_NAME}
+        mpirun --host localhost:4 -np 1 ${TEST_NAME} : --host localhost:4 -np 3 ../bin/gqten_mpi_gemm_batch_worker)
+  endif()
+
   set_target_properties(${TEST_NAME} PROPERTIES FOLDER tests)
 endmacro()
 
@@ -48,9 +75,10 @@ add_unittest(test_numer_func
     "")
 
 # Test Distributed tensor numerical functions.
-add_unittest(test_mpi_numer_func
-    test_mpi_numer_func.cc
-    "${MPI_CXX_INCLUDE_PATH} ${MPI_CXX_COMPILE_FLAGS} ${MATH_LIB_COMPILE_FLAGS}"
-    #"gqten ${MPI_CXX_LIBRARIES}"
-    gqten
-    "${MPI_CXX_LINK_FLAGS} ${MATH_LIB_LINK_FLAGS}" "")
+if(GQTEN_MPI_PARALLEL)
+  add_unittest(test_mpi_numer_func
+      test_mpi_numer_func.cc
+      "${MPI_CXX_INCLUDE_PATH} ${MPI_CXX_COMPILE_FLAGS} ${MATH_LIB_COMPILE_FLAGS}"
+      gqten "${MPI_CXX_LINK_FLAGS}${MATH_LIB_LINK_FLAGS}"
+      "MPI_TEST")
+endif()

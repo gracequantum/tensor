@@ -13,18 +13,22 @@ const char kGemmWorkerStatCont = 'c';
 const char kGemmWorkerStatStop = 's';
 
 
-inline void MPI_RecvGemmData(long *pm, long *pn, long *pk, double *a, double *b) {
+inline void MPI_RecvGemmData(
+    long *pm, long *pn, long *pk,
+    double * &a, double * &b, double * &c) {
   long gemm_info[3];
   MPI_Recv(gemm_info, 3, MPI_LONG, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
   *pm = gemm_info[0];
   *pn = gemm_info[1];
   *pk = gemm_info[2];
   auto a_size = (*pm) * (*pk);
-  auto b_size = (*pk) * (*pn);
   a = new double[a_size];
-  b = new double[b_size];
   MPI_Recv(a, a_size, MPI_DOUBLE, 0, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+  auto b_size = (*pk) * (*pn);
+  b = new double[b_size];
   MPI_Recv(b, b_size, MPI_DOUBLE, 0, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+  auto c_size = (*pm) * (*pn);
+  c = new double[c_size];
 }
 
 
@@ -67,7 +71,9 @@ int main(int argc, char *argv[]) {
           &local_gemm_batch_m_array[i],
           &local_gemm_batch_n_array[i],
           &local_gemm_batch_k_array[i],
-          local_gemm_batch_a_array[i], local_gemm_batch_b_array[i]);  
+          local_gemm_batch_a_array[i],
+          local_gemm_batch_b_array[i],
+          local_gemm_batch_c_array[i]);
     }
 
     for (long i = 0; i < local_batch_size; ++i) {
@@ -92,6 +98,7 @@ int main(int argc, char *argv[]) {
       delete[] local_gemm_batch_b_array[i];
       delete[] local_gemm_batch_c_array[i];
     }
+
     delete[] local_gemm_batch_m_array;
     delete[] local_gemm_batch_n_array;
     delete[] local_gemm_batch_k_array;
