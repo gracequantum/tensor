@@ -11,6 +11,7 @@
 
 #include "mkl.h"
 #include "mpi.h"
+#include "omp.h"
 
 #ifdef Release
   #define NDEBUG
@@ -288,6 +289,7 @@ void GQTEN_MPI_GemmBatch(     // Manager.
   auto local_batch_sizes = CalcLocalBatchSizes(batch_size, workers);
   auto task_offsets = CalcTaskOffsets(local_batch_sizes, workers);
 
+#pragma omp parallel for num_threads(workers) schedule(static,1)
   for (int i = 0; i < workers; ++i) {
     MPI_SendGemmWorkerStat(kGemmWorkerStatCont, i+1, comm);
     long local_batch_size = local_batch_sizes[i];

@@ -116,7 +116,8 @@ TEST_F(TestDistributedContraction, 3DCase) {
 int main(int argc, char *argv[]) {
   int result = 0;
   testing::InitGoogleTest(&argc, argv); 
-  MPI_Init(&argc, &argv);
+  int provided;
+  MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
   result = RUN_ALL_TESTS();
   for (int i = 1; i <= 3; ++i) {
     MPI_SendGemmWorkerStat(kGemmWorkerStatStop, i, MPI_COMM_WORLD);
