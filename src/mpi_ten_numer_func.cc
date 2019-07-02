@@ -240,8 +240,8 @@ std::vector<QNBlock *> GQTEN_MPI_BlocksCtrctBatch(
 
   // Call gemm batch function.
 #ifdef GQTEN_TIMING_MODE
-  Timer dgemm_batch_timer("gemm_batch");
-  dgemm_batch_timer.Restart();
+  Timer dgemm_batch_p_timer("gemm_batch_p");
+  dgemm_batch_p_timer.Restart();
 #endif
 
   GQTEN_MPI_GemmBatch(
@@ -251,7 +251,7 @@ std::vector<QNBlock *> GQTEN_MPI_BlocksCtrctBatch(
       comm, workers); 
 
 #ifdef GQTEN_TIMING_MODE
-  dgemm_batch_timer.PrintElapsed();
+  dgemm_batch_p_timer.PrintElapsed();
 #endif
 
   // Free temporary variables.
