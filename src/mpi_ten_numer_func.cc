@@ -286,34 +286,87 @@ void GQTEN_MPI_GemmBatch(     // Manager.
     const double **a_array, const double **b_array, double **c_array,
     const long batch_size,
     MPI_Comm comm, const int workers) {
-  auto local_batch_sizes = CalcLocalBatchSizes(batch_size, workers);
-  auto task_offsets = CalcTaskOffsets(local_batch_sizes, workers);
+  auto tasks = TaskScheduler(workers, batch_size, m_array, k_array, n_array);
+  auto local_batch_sizes = CalcLocalBatchSizes(tasks);
 
 #pragma omp parallel for num_threads(workers) schedule(static,1)
-  for (int i = 0; i < workers; ++i) {
-    MPI_SendGemmWorkerStat(kGemmWorkerStatCont, i+1, comm);
+  for (int i = 1; i <= workers; ++i) {
+    MPI_SendGemmWorkerStat(kGemmWorkerStatCont, i, comm);
     long local_batch_size = local_batch_sizes[i];
-    MPI_Send(&local_batch_size, 1, MPI_LONG, i+1, 0, comm);
-
-    int local_task_base_offset = task_offsets[i];
-    for (long j = 0; j < local_batch_size; ++j) {
-      long local_task_offset = local_task_base_offset + j;
+    MPI_Send(&local_batch_size, 1, MPI_LONG, i, 0, comm);
+    for (auto &task_idx : tasks[i]) {
       MPI_SendGemmData(
-          m_array[local_task_offset],
-          n_array[local_task_offset],
-          k_array[local_task_offset],
-          a_array[local_task_offset], b_array[local_task_offset],
-          i+1, comm);
+          m_array[task_idx], n_array[task_idx], k_array[task_idx],
+          a_array[task_idx], b_array[task_idx],
+          i, comm);
     }
-
-    for (long j = 0; j < local_batch_size; ++j) {
-      long local_task_offset = local_task_base_offset + j;
-      MPI_RecvGemmRes(
-          c_array[local_task_offset],
-          m_array[local_task_offset], n_array[local_task_offset],
-          i+1, comm);
-    }
-
   }
+
+  for (auto &task_idx : tasks[0]) {
+    cblas_dgemm(
+        CblasRowMajor,
+        CblasNoTrans, CblasNoTrans,
+        m_array[task_idx], n_array[task_idx], k_array[task_idx],
+        1.0,
+        a_array[task_idx], k_array[task_idx],
+        b_array[task_idx], n_array[task_idx],
+        0.0,
+        c_array[task_idx], n_array[task_idx]);
+  }
+
+#pragma omp parallel for num_threads(workers) schedule(static,1)
+  for (int i = 1; i <= workers; ++i) {
+    for (auto &task_idx : tasks[i]) {
+      MPI_RecvGemmRes(
+          c_array[task_idx], m_array[task_idx], n_array[task_idx],
+          i, comm);
+    }
+  }
+}
+
+
+bool sortbysecdesc(
+    const std::pair<long, long> &a,
+    const std::pair<long, long> &b) {
+  return (a.second > b.second);
+}
+
+
+std::vector<std::vector<long>> TaskScheduler(
+    const int workers, const long batch_size,
+    const long *m_array, const long  *k_array, const long *n_array) {
+  long cost;
+  long cost_tot = 0;
+  auto costs = std::vector<std::pair<long, long>>(batch_size);
+  for (long i = 0; i < batch_size; ++i) {
+    cost = m_array[i] * k_array[i] * n_array[i];
+    costs[i] = std::make_pair(i, cost);
+    cost_tot += cost;
+  }
+  std::sort(costs.begin(), costs.end(), sortbysecdesc);
+  int labours = workers + 1;    // Labours include manager and workers.
+  long cost_avg = cost_tot / labours;
+  auto tasks = std::vector<std::vector<long>>(labours);
+  long cost_temp = 0;
+  int labour = 0;
+  long tail_task;
+  for (long i = 0; i < batch_size; ++i) {
+    cost_temp += costs[i].second;
+    if (cost_temp > cost_avg) {
+      labour++;
+      if (labour == labours) {
+        tail_task = i;
+        break;
+      }
+      tasks[labour].push_back(costs[i].first);
+      cost_temp = costs[i].second;
+    } else {
+      tasks[labour].push_back(costs[i].first);
+    }
+  }
+  for (long i = tail_task; i < batch_size; ++i) {
+    tasks[labours-1].push_back(costs[i].first);
+  }
+  return tasks;
 }
 } /* gqten */ 

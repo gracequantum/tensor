@@ -31,29 +31,19 @@ void GQTEN_MPI_GemmBatch(
     MPI_Comm, const int);
 
 
+std::vector<std::vector<long>> TaskScheduler(
+    const int, const long,
+    const long *, const long  *, const long *);
+
+
 // Inline functions.
 inline std::vector<long>
-CalcLocalBatchSizes(const long batch_size, const int workers) {
-  long remainder = batch_size % workers;
-  long local_batch_size = (batch_size - remainder) / workers;
-  std::vector<long> local_batch_sizes(workers);
-  for (int i = 0; i < workers-1; ++i) {
-    local_batch_sizes[i] = local_batch_size;
+CalcLocalBatchSizes(const std::vector<std::vector<long>> &tasks) {
+  auto local_batch_sizes = std::vector<long>(tasks.size());
+  for (std::size_t i = 0; i < tasks.size(); ++i) {
+    local_batch_sizes[i] = tasks[i].size();
   }
-  local_batch_sizes[workers-1] = local_batch_size + remainder;
   return local_batch_sizes;
-}
-
-
-inline std::vector<long>
-CalcTaskOffsets(const std::vector<long> &local_batch_sizes, const int workers) {
-  std::vector<long> task_offsets(workers);
-  long offset = 0;
-  for (int i = 0; i < workers; ++i) {
-    task_offsets[i] = offset;
-    offset += local_batch_sizes[i];
-  }
-  return task_offsets;
 }
 
 
