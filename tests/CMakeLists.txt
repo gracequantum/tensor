@@ -83,7 +83,7 @@ add_unittest(test_numer_func
 if(GQTEN_MPI_PARALLEL)
   add_unittest(test_mpi_numer_func
       test_mpi_numer_func.cc
-      "${MPI_CXX_INCLUDE_PATH} ${MPI_CXX_COMPILE_FLAGS} ${MATH_LIB_COMPILE_FLAGS}"
-      gqten "${MPI_CXX_LINK_FLAGS} ${MATH_LIB_LINK_FLAGS}"
+      "${MATH_LIB_COMPILE_FLAGS}"
+      gqten "${MATH_LIB_LINK_FLAGS}"
       "MPI_TEST")
 endif()
