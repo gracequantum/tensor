@@ -288,8 +288,18 @@ void GQTEN_MPI_GemmBatch(     // Manager.
     const double **a_array, const double **b_array, double **c_array,
     const long batch_size,
     MPI_Comm comm, const int workers) {
+
+#ifdef GQTEN_TIMING_MODE
+  Timer gemm_batch_task_allocation_timer("gemm_batch_task_allocation");
+  gemm_batch_task_allocation_timer.Restart();
+#endif
+
   auto tasks = TaskScheduler(workers, batch_size, m_array, k_array, n_array);
   auto local_batch_sizes = CalcLocalBatchSizes(tasks);
+
+#ifdef GQTEN_TIMING_MODE
+  gemm_batch_task_allocation_timer.PrintElapsed();
+#endif
 
 #pragma omp parallel for num_threads(workers) schedule(static,1)
   for (int i = 1; i <= workers; ++i) {
