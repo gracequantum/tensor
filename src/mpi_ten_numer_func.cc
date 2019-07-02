@@ -9,6 +9,8 @@
 #include "ten_numer_func.h"
 #include "gqten/gqten.h"
 
+#include <algorithm>
+
 #include "mkl.h"
 #include "mpi.h"
 #include "omp.h"
