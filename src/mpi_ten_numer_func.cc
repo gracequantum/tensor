@@ -299,32 +299,61 @@ void GQTEN_MPI_GemmBatch(     // Manager.
 
 #ifdef GQTEN_TIMING_MODE
   gemm_batch_task_allocation_timer.PrintElapsed();
+#endif
 
+#pragma omp parallel
+{
+#pragma omp single nowait
+{
+
+#ifdef GQTEN_TIMING_MODE
   Timer gemm_batch_task_send_timer("gemm_batch_task_send");
   gemm_batch_task_send_timer.Restart();
 #endif
 
-#pragma omp parallel for num_threads(workers) schedule(static,1)
-  for (int i = 1; i <= workers; ++i) {
-    MPI_SendGemmWorkerStat(kGemmWorkerStatCont, i, comm);
-    long local_batch_size = local_batch_sizes[i];
-    MPI_Send(&local_batch_size, 1, MPI_LONG, i, 0, comm);
-    for (auto &task_idx : tasks[i]) {
-      MPI_SendGemmData(
-          m_array[task_idx], n_array[task_idx], k_array[task_idx],
-          a_array[task_idx], b_array[task_idx],
-          i, comm);
+  for (int i = 0; i < workers; ++i) {
+    if (tasks[i].size() > 0) {
+      MPI_SendGemmWorkerStat(kGemmWorkerStatCont, i+1, comm);
+      long local_batch_size = local_batch_sizes[i];
+      MPI_Send(&local_batch_size, 1, MPI_LONG, i+1, 0, comm);
+      for (auto &task_idx : tasks[i]) {
+        MPI_SendGemmData(
+            m_array[task_idx], n_array[task_idx], k_array[task_idx],
+            a_array[task_idx], b_array[task_idx],
+            i+1, comm);
+      }
     }
   }
 
 #ifdef GQTEN_TIMING_MODE
   gemm_batch_task_send_timer.PrintElapsed();
+  Timer gemm_batch_task_recv_timer("gemm_batch_task_recv");
+  gemm_batch_task_recv_timer.Restart();
+#endif
 
+  for (int i = 0; i < workers; ++i) {
+    if (tasks[i].size() > 0) {
+      for (auto &task_idx : tasks[i]) {
+        MPI_RecvGemmRes(
+            c_array[task_idx], m_array[task_idx], n_array[task_idx],
+            i+1, comm);
+      }
+    }
+  }
+
+#ifdef GQTEN_TIMING_MODE
+  gemm_batch_task_recv_timer.PrintElapsed();
+#endif
+}
+
+#pragma omp single nowait
+{
+#ifdef GQTEN_TIMING_MODE
   Timer gemm_batch_p0_timer("gemm_batch_p0");
   gemm_batch_p0_timer.Restart();
 #endif
 
-  for (auto &task_idx : tasks[0]) {
+  for (auto &task_idx : tasks.back()) {
     cblas_dgemm(
         CblasRowMajor,
         CblasNoTrans, CblasNoTrans,
@@ -338,23 +367,9 @@ void GQTEN_MPI_GemmBatch(     // Manager.
 
 #ifdef GQTEN_TIMING_MODE
   gemm_batch_p0_timer.PrintElapsed();
-
-  Timer gemm_batch_task_recv_timer("gemm_batch_task_recv");
-  gemm_batch_task_recv_timer.Restart();
 #endif
-
-#pragma omp parallel for num_threads(workers) schedule(static,1)
-  for (int i = 1; i <= workers; ++i) {
-    for (auto &task_idx : tasks[i]) {
-      MPI_RecvGemmRes(
-          c_array[task_idx], m_array[task_idx], n_array[task_idx],
-          i, comm);
-    }
-  }
-
-#ifdef GQTEN_TIMING_MODE
-  gemm_batch_task_recv_timer.PrintElapsed();
-#endif
+}
+}
 }
 
 
