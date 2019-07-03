@@ -45,11 +45,10 @@ if(GQTEN_CONTRACT_BLOCK_COUNTING)
   add_definitions(-DGQTEN_CONTRACT_BLOCK_COUNTING)
 endif()
 
-option(GQTEN_OMP_DEV_MODE "Print more OpenMP information." OFF)
-if(GQTEN_OMP_DEV_MODE)
-  add_definitions(-DGQTEN_OMP_DEV_MODE)
-endif(GQTEN_OMP_DEV_MODE)
-
+option(GQTEN_MPI_DEV_MODE "Print more informations for distributed parallelization." OFF)
+if(GQTEN_MPI_DEV_MODE)
+  add_definitions(-DGQTEN_MPI_DEV_MODE)
+endif()
 
 # Compilation and linking control.
 set(CMAKE_CXX_STANDARD 11)

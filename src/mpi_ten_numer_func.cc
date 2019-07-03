@@ -379,6 +379,12 @@ std::vector<std::vector<long>> TaskScheduler(
   std::sort(costs.begin(), costs.end(), sortbysecdesc);
   int labours = workers + 1;    // Labours include manager and workers.
   long cost_avg = cost_tot / labours;
+
+#ifdef GQTEN_MPI_DEV_MODE
+  std::cout << "[mpi dev] " << cost_tot << " " << cost_avg << " " << labours << " ";
+  long cost_per_labour = 0;
+#endif
+
   auto tasks = std::vector<std::vector<long>>(labours);
   long cost_temp = 0;
   int labour = 0;
@@ -391,15 +397,36 @@ std::vector<std::vector<long>> TaskScheduler(
         tail_task = i;
         break;
       }
+
+#ifdef GQTEN_MPI_DEV_MODE
+      std::cout << cost_per_labour << " ";
+      cost_per_labour = costs[i].second;
+#endif
+
       tasks[labour].push_back(costs[i].first);
       cost_temp = costs[i].second;
     } else {
+
+#ifdef GQTEN_MPI_DEV_MODE
+      cost_per_labour += costs[i].second;
+#endif
+
       tasks[labour].push_back(costs[i].first);
     }
   }
   for (long i = tail_task; i < batch_size; ++i) {
     tasks[labours-1].push_back(costs[i].first);
+
+#ifdef GQTEN_MPI_DEV_MODE
+    cost_per_labour += costs[i].second;
+#endif
+
   }
+
+#ifdef GQTEN_MPI_DEV_MODE
+  std::cout << cost_per_labour << std::endl;
+#endif
+
   return tasks;
 }
 } /* gqten */ 
