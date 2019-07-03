@@ -290,7 +290,7 @@ void GQTEN_MPI_GemmBatch(     // Manager.
     MPI_Comm comm, const int workers) {
 
 #ifdef GQTEN_TIMING_MODE
-  Timer gemm_batch_task_allocation_timer("gemm_batch_task_allocation");
+  Timer gemm_batch_task_allocation_timer("gemm_batch_task_alloc");
   gemm_batch_task_allocation_timer.Restart();
 #endif
 
@@ -299,6 +299,9 @@ void GQTEN_MPI_GemmBatch(     // Manager.
 
 #ifdef GQTEN_TIMING_MODE
   gemm_batch_task_allocation_timer.PrintElapsed();
+
+  Timer gemm_batch_task_send_timer("gemm_batch_task_send");
+  gemm_batch_task_send_timer.Restart();
 #endif
 
 #pragma omp parallel for num_threads(workers) schedule(static,1)
@@ -315,8 +318,10 @@ void GQTEN_MPI_GemmBatch(     // Manager.
   }
 
 #ifdef GQTEN_TIMING_MODE
+  gemm_batch_task_send_timer.PrintElapsed();
+
   Timer gemm_batch_p0_timer("gemm_batch_p0");
-    gemm_batch_p0_timer.Restart();
+  gemm_batch_p0_timer.Restart();
 #endif
 
   for (auto &task_idx : tasks[0]) {
@@ -333,6 +338,9 @@ void GQTEN_MPI_GemmBatch(     // Manager.
 
 #ifdef GQTEN_TIMING_MODE
   gemm_batch_p0_timer.PrintElapsed();
+
+  Timer gemm_batch_task_recv_timer("gemm_batch_task_recv");
+  gemm_batch_task_recv_timer.Restart();
 #endif
 
 #pragma omp parallel for num_threads(workers) schedule(static,1)
@@ -343,6 +351,10 @@ void GQTEN_MPI_GemmBatch(     // Manager.
           i, comm);
     }
   }
+
+#ifdef GQTEN_TIMING_MODE
+  gemm_batch_task_recv_timer.PrintElapsed();
+#endif
 }
 
 
