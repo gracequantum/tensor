@@ -301,78 +301,110 @@ void GQTEN_MPI_GemmBatch(     // Manager.
   gemm_batch_task_allocation_timer.PrintElapsed();
 #endif
 
-  int tid;
-  omp_set_nested(1);
-  int omp_num_threads = omp_get_num_threads();
-#pragma omp parallel num_threads(2) private(tid)
-{
-  tid = omp_get_thread_num();
-  if (tid == 0) {
-
+  // Non-blocking tasks send and receive.
 #ifdef GQTEN_TIMING_MODE
-    Timer gemm_batch_task_send_timer("gemm_batch_task_send");
-    gemm_batch_task_send_timer.Restart();
+  Timer gemm_batch_non_blk_send_recv_timer("gemm_batch_non_blk_send_recv");
+  gemm_batch_non_blk_send_recv_timer.Restart();
 #endif
 
-    for (int i = 0; i < workers; ++i) {
-      if (tasks[i].size() > 0) {
-        MPI_SendGemmWorkerStat(kGemmWorkerStatCont, i+1, comm);
-        long local_batch_size = local_batch_sizes[i];
-        MPI_Send(&local_batch_size, 1, MPI_LONG, i+1, 0, comm);
-        for (auto &task_idx : tasks[i]) {
-          MPI_SendGemmData(
-              m_array[task_idx], n_array[task_idx], k_array[task_idx],
-              a_array[task_idx], b_array[task_idx],
-              i+1, comm);
-        }
+  // Prepare worker status and non-blocking requests and status.
+  MPI_Request **psend_reqs = nullptr;
+  MPI_Request **precv_reqs = nullptr;
+  MPI_Status  **precv_stats = nullptr;
+  if (workers > 0) {
+    psend_reqs = new MPI_Request *[workers];
+    precv_reqs = new MPI_Request *[workers];
+    precv_stats = new MPI_Status *[workers];
+  }
+  for (int i = 0; i < workers; ++i) {
+    auto worker_tasks_size = tasks[i].size();
+    if (worker_tasks_size > 0) {
+      MPI_SendGemmWorkerStat(kGemmWorkerStatCont, i+1, comm);
+      MPI_Send(&local_batch_sizes[i], 1, MPI_LONG, i+1, 0, comm);
+      psend_reqs[i] = new MPI_Request [worker_tasks_size *
+                                       kMpiGemmDataSenderCallMpiSendFuncNum];
+      precv_reqs[i] = new MPI_Request [worker_tasks_size];
+      precv_stats[i] = new MPI_Status [worker_tasks_size];
+    }
+  }
+  // Non-blocking send tasks.
+  for (int i = 0; i < workers; ++i) {
+    auto worker_tasks_size = tasks[i].size();
+    if (worker_tasks_size > 0) {
+      long task_idx;
+      for (int j = 0; j < worker_tasks_size; ++j) {
+        task_idx = tasks[i][j];
+        MPI_IsendGemmData(
+            m_array[task_idx], n_array[task_idx], k_array[task_idx],
+            a_array[task_idx], b_array[task_idx],
+            i+1, comm, &psend_reqs[i][j*kMpiGemmDataSenderCallMpiSendFuncNum]);
       }
     }
-
-#ifdef GQTEN_TIMING_MODE
-    gemm_batch_task_send_timer.PrintElapsed();
-    Timer gemm_batch_task_recv_timer("gemm_batch_task_recv");
-    gemm_batch_task_recv_timer.Restart();
-#endif
-
-    for (int i = 0; i < workers; ++i) {
-      if (tasks[i].size() > 0) {
-        for (auto &task_idx : tasks[i]) {
-          MPI_RecvGemmRes(
-              c_array[task_idx], m_array[task_idx], n_array[task_idx],
-              i+1, comm);
-        }
+  }
+  // Non-blocking receive tasks.
+  for (int i = 0; i < workers; ++i) {
+    auto worker_tasks_size = tasks[i].size();
+    if (worker_tasks_size > 0) {
+      long task_idx;
+      for (int j = 0; j < worker_tasks_size; ++j) {
+        task_idx = tasks[i][j];
+        MPI_IrecvGemmRes(
+            c_array[task_idx], m_array[task_idx], n_array[task_idx],
+            i+1, comm, &precv_reqs[i][j]);
       }
     }
+  }
 
 #ifdef GQTEN_TIMING_MODE
-    gemm_batch_task_recv_timer.PrintElapsed();
+  gemm_batch_non_blk_send_recv_timer.PrintElapsed();
 #endif
 
-  } else {
 #ifdef GQTEN_TIMING_MODE
     Timer gemm_batch_p0_timer("gemm_batch_p0");
     gemm_batch_p0_timer.Restart();
 #endif
 
-    mkl_set_num_threads_local(omp_num_threads-1);
-    for (auto &task_idx : tasks.back()) {
-      cblas_dgemm(
-          CblasRowMajor,
-          CblasNoTrans, CblasNoTrans,
-          m_array[task_idx], n_array[task_idx], k_array[task_idx],
-          1.0,
-          a_array[task_idx], k_array[task_idx],
-          b_array[task_idx], n_array[task_idx],
-          0.0,
-          c_array[task_idx], n_array[task_idx]);
-    }
+  // Do tasks for manager.
+  for (auto &task_idx : tasks.back()) {
+    cblas_dgemm(
+        CblasRowMajor,
+        CblasNoTrans, CblasNoTrans,
+        m_array[task_idx], n_array[task_idx], k_array[task_idx],
+        1.0,
+        a_array[task_idx], k_array[task_idx],
+        b_array[task_idx], n_array[task_idx],
+        0.0,
+        c_array[task_idx], n_array[task_idx]);
+  }
 
 #ifdef GQTEN_TIMING_MODE
     gemm_batch_p0_timer.PrintElapsed();
 #endif
 
+  // Block for data transformation finish and delete MPI requests/status.
+#ifdef GQTEN_TIMING_MODE
+  Timer gemm_batch_recv_blk_timer("gemm_batch_recv_blk");
+  gemm_batch_recv_blk_timer.Restart();
+#endif
+
+  for (int i = 0; i < workers; ++i) {
+    long worker_tasks_size = tasks[i].size();
+    if (worker_tasks_size > 0) {
+      MPI_Waitall(worker_tasks_size, precv_reqs[i], precv_stats[i]);
+      delete [] psend_reqs[i];
+      delete [] precv_reqs[i];
+      delete [] precv_stats[i];
+    }
   }
-}
+  if (workers > 0) {
+    delete [] psend_reqs;
+    delete [] precv_reqs;
+    delete [] precv_stats;
+  }
+
+#ifdef GQTEN_TIMING_MODE
+    gemm_batch_recv_blk_timer.PrintElapsed();
+#endif
 }
 
 

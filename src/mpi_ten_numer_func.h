@@ -18,6 +18,9 @@
 namespace gqten {
 
 
+const int kMpiGemmDataSenderCallMpiSendFuncNum = 3;
+
+
 std::vector<QNBlock *> GQTEN_MPI_BlocksCtrctBatch(
     const std::vector<long> &, const std::vector<long> &,
     const double,
@@ -61,11 +64,35 @@ inline void MPI_SendGemmData(
 }
 
 
+inline void MPI_IsendGemmData(
+    const long m, const long n, const long k,
+    const double *a, const double *b,
+    const int worker,
+    MPI_Comm comm, MPI_Request *reqs) {
+  long gemm_info[3];
+  gemm_info[0] = m;
+  gemm_info[1] = n;
+  gemm_info[2] = k;
+  MPI_Isend(gemm_info, 3, MPI_LONG, worker, 1, comm, reqs);
+  MPI_Isend(a, m*k, MPI_DOUBLE, worker, 2, comm, reqs+1);
+  MPI_Isend(b, k*n, MPI_DOUBLE, worker, 3, comm, reqs+2);
+}
+
+
 inline void MPI_RecvGemmRes(
     double *c,
     const long m, const long n, 
     const int worker, MPI_Comm comm) {
   MPI_Recv(c, m*n, MPI_DOUBLE, worker, 4, comm, MPI_STATUS_IGNORE); 
+}
+
+
+inline void MPI_IrecvGemmRes(
+    double *c,
+    const long m, const long n,
+    const int worker,
+    MPI_Comm comm, MPI_Request *req) {
+  MPI_Irecv(c, m*n, MPI_DOUBLE, worker, 4, comm, req);
 }
 } /* gqten */ 
 #endif /* ifndef GQTEN_MPI_TEN_NUMER_FUNC_H */

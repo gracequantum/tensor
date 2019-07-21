@@ -5,13 +5,8 @@
 * 
 * Description: GraceQ/tensor project. Parallel GEMM batch worker.
 */
-#include <string>
-#include <fstream>
-#include <iomanip>
-
 #include "mkl.h"
 #include "mpi.h"
-#include "omp.h"
 
 
 const char kGemmWorkerStatCont = 'c';
@@ -61,13 +56,6 @@ int main(int argc, char *argv[]) {
   int my_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
-#ifdef GQTEN_TIMING_MODE
-  auto timing_file = "gemm_batch_timing_p" + std::to_string(my_rank) + ".log";
-  auto timing_notes = "gemm_batch_p" + std::to_string(my_rank);
-  std::ofstream ofs(timing_file);
-  double start_time;
-#endif
-
   long local_batch_size;
   while (CheckWorkStat() != kGemmWorkerStatStop) {
     MPI_Recv(
@@ -90,9 +78,6 @@ int main(int argc, char *argv[]) {
           local_gemm_batch_c_array[i]);
     }
 
-#ifdef GQTEN_TIMING_MODE
-    start_time = omp_get_wtime();
-#endif
 
     for (long i = 0; i < local_batch_size; ++i) {
       cblas_dgemm(
@@ -107,13 +92,6 @@ int main(int argc, char *argv[]) {
           0.0,
           local_gemm_batch_c_array[i], local_gemm_batch_n_array[i]);
     }
-
-#ifdef GQTEN_TIMING_MODE
-    ofs << "[timing] "
-        << timing_notes << "\t"
-        << std::setw(9) << std::setprecision(6) << std::fixed
-        << omp_get_wtime() - start_time << std::endl;
-#endif
 
 
     for (long i = 0; i < local_batch_size; ++i) {
@@ -133,9 +111,6 @@ int main(int argc, char *argv[]) {
     delete[] local_gemm_batch_c_array;
   }
 
-#ifdef GQTEN_TIMING_MODE
-  ofs.close();
-#endif
 
   MPI_Barrier(MPI_COMM_WORLD);
   MPI_Finalize();
