@@ -65,6 +65,7 @@ inline void MPI_SendGemmData(
 
 
 inline void MPI_IsendGemmData(
+    const long idx, const long worker_tasks_size,
     const long m, const long n, const long k,
     const double *a, const double *b,
     const int worker,
@@ -73,9 +74,9 @@ inline void MPI_IsendGemmData(
   gemm_info[0] = m;
   gemm_info[1] = n;
   gemm_info[2] = k;
-  MPI_Isend(gemm_info, 3, MPI_LONG, worker, 1, comm, reqs);
-  MPI_Isend(a, m*k, MPI_DOUBLE, worker, 2, comm, reqs+1);
-  MPI_Isend(b, k*n, MPI_DOUBLE, worker, 3, comm, reqs+2);
+  MPI_Isend(gemm_info, 3, MPI_LONG, worker, idx, comm, reqs);
+  MPI_Isend(a, m*k, MPI_DOUBLE, worker, idx+worker_tasks_size, comm, reqs+1);
+  MPI_Isend(b, k*n, MPI_DOUBLE, worker, idx+2*worker_tasks_size, comm, reqs+2);
 }
 
 
@@ -88,11 +89,12 @@ inline void MPI_RecvGemmRes(
 
 
 inline void MPI_IrecvGemmRes(
+    const long idx,
     double *c,
     const long m, const long n,
     const int worker,
     MPI_Comm comm, MPI_Request *req) {
-  MPI_Irecv(c, m*n, MPI_DOUBLE, worker, 4, comm, req);
+  MPI_Irecv(c, m*n, MPI_DOUBLE, worker, idx, comm, req);
 }
 } /* gqten */ 
 #endif /* ifndef GQTEN_MPI_TEN_NUMER_FUNC_H */

@@ -335,6 +335,7 @@ void GQTEN_MPI_GemmBatch(     // Manager.
       for (int j = 0; j < worker_tasks_size; ++j) {
         task_idx = tasks[i][j];
         MPI_IsendGemmData(
+            j, worker_tasks_size,
             m_array[task_idx], n_array[task_idx], k_array[task_idx],
             a_array[task_idx], b_array[task_idx],
             i+1, comm, &psend_reqs[i][j*kMpiGemmDataSenderCallMpiSendFuncNum]);
@@ -349,6 +350,7 @@ void GQTEN_MPI_GemmBatch(     // Manager.
       for (int j = 0; j < worker_tasks_size; ++j) {
         task_idx = tasks[i][j];
         MPI_IrecvGemmRes(
+            j,
             c_array[task_idx], m_array[task_idx], n_array[task_idx],
             i+1, comm, &precv_reqs[i][j]);
       }
