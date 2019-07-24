@@ -311,18 +311,24 @@ void GQTEN_MPI_GemmBatch(     // Manager.
   MPI_Request **psend_reqs = nullptr;
   MPI_Request **precv_reqs = nullptr;
   MPI_Status  **precv_stats = nullptr;
+  long **pgemm_infos = nullptr;
   if (workers > 0) {
     psend_reqs = new MPI_Request *[workers];
     precv_reqs = new MPI_Request *[workers];
     precv_stats = new MPI_Status *[workers];
+    pgemm_infos = new long *[workers];
   }
   for (int i = 0; i < workers; ++i) {
     auto worker_tasks_size = tasks[i].size();
     if (worker_tasks_size > 0) {
+      // Send start work signal.
       MPI_SendGemmWorkerStat(kGemmWorkerStatCont, i+1, comm);
+      // Send tasks size.
       MPI_Send(&local_batch_sizes[i], 1, MPI_LONG, i+1, 0, comm);
       psend_reqs[i] = new MPI_Request [worker_tasks_size *
                                        kMpiGemmDataSenderCallMpiSendFuncNum];
+      pgemm_infos[i] = new long [worker_tasks_size *
+                                 kMpiGemmDataSenderCallMpiSendFuncNum];
       precv_reqs[i] = new MPI_Request [worker_tasks_size];
       precv_stats[i] = new MPI_Status [worker_tasks_size];
     }
@@ -332,13 +338,30 @@ void GQTEN_MPI_GemmBatch(     // Manager.
     auto worker_tasks_size = tasks[i].size();
     if (worker_tasks_size > 0) {
       long task_idx;
+      // Send task info.
       for (int j = 0; j < worker_tasks_size; ++j) {
         task_idx = tasks[i][j];
-        MPI_IsendGemmData(
-            j, worker_tasks_size,
-            m_array[task_idx], n_array[task_idx], k_array[task_idx],
-            a_array[task_idx], b_array[task_idx],
-            i+1, comm, &psend_reqs[i][j*kMpiGemmDataSenderCallMpiSendFuncNum]);
+        auto offset = 3 * j;
+        pgemm_infos[i][offset] = m_array[task_idx];
+        pgemm_infos[i][offset+1] = n_array[task_idx];
+        pgemm_infos[i][offset+2] = k_array[task_idx];
+        MPI_Isend(
+            &pgemm_infos[i][offset], 3, MPI_LONG,
+            i+1, j, comm,
+            &psend_reqs[i][offset]);
+      }
+      // Send gemm task data.
+      for (int j = 0; j < worker_tasks_size; ++j) {
+        task_idx = tasks[i][j];
+        auto offset = 3 * j;
+        MPI_Isend(
+            a_array[task_idx], m_array[task_idx]*k_array[task_idx], MPI_DOUBLE,
+            i+1, j+worker_tasks_size, comm,
+            &psend_reqs[i][offset+1]);
+        MPI_Isend(
+            b_array[task_idx], k_array[task_idx]*n_array[task_idx], MPI_DOUBLE,
+            i+1, j+2*worker_tasks_size, comm,
+            &psend_reqs[i][offset+2]);
       }
     }
   }
@@ -396,12 +419,14 @@ void GQTEN_MPI_GemmBatch(     // Manager.
       delete [] psend_reqs[i];
       delete [] precv_reqs[i];
       delete [] precv_stats[i];
+      delete [] pgemm_infos[i];
     }
   }
   if (workers > 0) {
     delete [] psend_reqs;
     delete [] precv_reqs;
     delete [] precv_stats;
+    delete [] pgemm_infos;
   }
 
 #ifdef GQTEN_TIMING_MODE
