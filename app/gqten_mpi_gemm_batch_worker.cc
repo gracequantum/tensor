@@ -36,10 +36,6 @@ int main(int argc, char *argv[]) {
   long local_batch_size;
 
   long *pgemm_infos = nullptr;
-  MPI_Request *precv_reqs = nullptr;
-  MPI_Request *psend_reqs = nullptr;
-  MPI_Status *precv_stats = nullptr;
-  MPI_Status *psend_stats = nullptr;
   double **local_gemm_batch_a_array = nullptr;
   double **local_gemm_batch_b_array = nullptr;
   double **local_gemm_batch_c_array = nullptr;
@@ -57,25 +53,16 @@ int main(int argc, char *argv[]) {
     local_gemm_batch_m_array = new long[local_batch_size];
     local_gemm_batch_n_array = new long[local_batch_size];
     local_gemm_batch_k_array = new long[local_batch_size];
-    precv_reqs = new MPI_Request [local_batch_size *
-                                  kMpiGemmDataRecverCallMpiRecvFuncNum];
-    precv_stats = new MPI_Status [local_batch_size *
-                                  kMpiGemmDataRecverCallMpiRecvFuncNum];
-    psend_reqs = new MPI_Request [local_batch_size];
-    psend_stats = new MPI_Status [local_batch_size];
     pgemm_infos = new long [local_batch_size *
                             kMpiGemmDataRecverCallMpiRecvFuncNum];
 
-    // Non-blocking receive gemm data informations.
-    for (long i = 0; i < local_batch_size; ++i) {
-      MPI_Irecv(
-          &pgemm_infos[i*kMpiGemmDataRecverCallMpiRecvFuncNum],
-          3, MPI_LONG, 0, i, MPI_COMM_WORLD, &precv_reqs[i]); 
-    }
+    // Blocking receive gemm data informations.
+    MPI_Recv(
+        pgemm_infos, local_batch_size*3, MPI_LONG,
+        0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-    // Non-blocking receive gemm data a and b matrices.
+    // Blocking receive gemm data a and b matrices.
     for (long i = 0; i < local_batch_size; ++i) {
-      MPI_Wait(&precv_reqs[i], &precv_stats[i]);
 
       auto gemm_infos_offset = i * kMpiGemmDataRecverCallMpiRecvFuncNum;
       local_gemm_batch_m_array[i] = pgemm_infos[gemm_infos_offset + 0];
@@ -86,22 +73,16 @@ int main(int argc, char *argv[]) {
       local_gemm_batch_a_array[i] = new double [a_size];
       local_gemm_batch_b_array[i] = new double [b_size];
 
-      MPI_Irecv(
+      MPI_Recv(
           local_gemm_batch_a_array[i], a_size, MPI_DOUBLE,
-          0, i+local_batch_size, MPI_COMM_WORLD,
-          &precv_reqs[local_batch_size + 2*i]);
-      MPI_Irecv(
+          0, i, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+      MPI_Recv(
           local_gemm_batch_b_array[i], b_size, MPI_DOUBLE,
-          0, i+2*local_batch_size, MPI_COMM_WORLD,
-          &precv_reqs[local_batch_size + 2*i + 1]);
+          0, i+local_batch_size, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
 
-    // Gemm and non-blocking result send.
+    // Gemm batch.
     for (long i = 0; i < local_batch_size; ++i) {
-      MPI_Waitall(
-          2,
-          &precv_reqs[local_batch_size + 2*i],
-          &precv_stats[local_batch_size + 2*i]);
       auto c_size = local_gemm_batch_m_array[i] * local_gemm_batch_n_array[i];
       local_gemm_batch_c_array[i] = new double [c_size];
       cblas_dgemm(
@@ -115,24 +96,22 @@ int main(int argc, char *argv[]) {
           local_gemm_batch_b_array[i], local_gemm_batch_n_array[i],
           0.0,
           local_gemm_batch_c_array[i], local_gemm_batch_n_array[i]);
-      MPI_Isend(
-          local_gemm_batch_c_array[i], c_size, MPI_DOUBLE,
-          0, i, MPI_COMM_WORLD,
-          &psend_reqs[i]);
     }
 
-    // Wait send finish and delete temporary data.
-    MPI_Waitall(local_batch_size, psend_reqs, psend_stats);
-    delete [] precv_reqs;
-    delete [] precv_stats;
-    delete [] psend_reqs;
-    delete [] psend_stats;
-    delete [] pgemm_infos;
+    // Blocking send gemm data.
+    for (long i = 0; i < local_batch_size; ++i) {
+      auto c_size = local_gemm_batch_m_array[i] * local_gemm_batch_n_array[i];
+      MPI_Send(
+          local_gemm_batch_c_array[i], c_size, MPI_DOUBLE,
+          0, i, MPI_COMM_WORLD);
+    }
+
     for (long i = 0; i < local_batch_size; ++i) {
       delete [] local_gemm_batch_a_array[i];
       delete [] local_gemm_batch_b_array[i];
       delete [] local_gemm_batch_c_array[i];
     }
+
     delete [] local_gemm_batch_a_array;
     delete [] local_gemm_batch_b_array;
     delete [] local_gemm_batch_c_array;
