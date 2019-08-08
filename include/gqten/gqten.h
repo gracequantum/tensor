@@ -27,9 +27,9 @@ namespace gqten {
 const std::string kGQTenFileSuffix = "gqten";
 // Double numerical error.
 const double kDoubleEpsilon = 1.0E-15;
-// Tensor transpose threads number.
+// Default tensor transpose threads number.
 const int kTensorTransposeDefaultNumThreads = 4;
-// Constants for OpenMP gemm batch method.
+
 
 // Quantum number.
 struct QNNameVal {
@@ -64,13 +64,13 @@ private:
   std::size_t CalcHash(void) const;
 };
 
-bool operator==(const QN &, const QN &);
-
-bool operator!=(const QN &, const QN &);
-
 QN operator+(const QN &, const QN &);
 
 QN operator-(const QN &, const QN &);
+
+bool operator==(const QN &, const QN &);
+
+bool operator!=(const QN &, const QN &);
 
 std::ifstream &bfread(std::ifstream &, QN &);
 
@@ -83,7 +83,7 @@ friend std::ifstream &bfread(std::ifstream &, QNSector &);
 friend std::ofstream &bfwrite(std::ofstream &, const QNSector &);
 
 public:
-  QNSector(const QN &qn, const long &dim) : qn(qn), dim(dim) {
+  QNSector(const QN &qn, const long dim) : qn(qn), dim(dim) {
     hash_ = CalcHash();
   }
   QNSector(void) : QNSector(QN(), 0) {}
@@ -149,6 +149,7 @@ friend std::ofstream &bfwrite(std::ofstream &, const Index &);
 
 public:
   Index(void) : QNSectorSet(), dim(0), dir(NDIR), tag("") {}
+
   Index(
       const std::vector<QNSector> &qnscts,
       const std::string &dir,
@@ -241,8 +242,8 @@ public:
   void Transpose(const std::vector<long> &);
 
   // Public data members.
-  long ndim = 0;
-  std::vector<long> shape;
+  long ndim = 0;              // Number of dimensions.
+  std::vector<long> shape;    // Shape of the block.
   long size = 0;              // Total number of elements in this block.
 
 private:
@@ -282,17 +283,26 @@ public:
   ~GQTensor(void);
 
   // Element getter and setter.
-  double Elem(const std::vector<long> &) const;
-  double &operator()(const std::vector<long> &);
+  double Elem(const std::vector<long> &) const;     // Getter.
+  double &operator()(const std::vector<long> &);    // Setter.
 
   // Access to the blocks.
   const std::vector<QNBlock *> &cblocks(void) const { return blocks_; }
   std::vector<QNBlock *> &blocks(void) { return blocks_; }
 
   // Inplace operations.
+
+  // Random set tensor elements with given quantum number divergence.
+  // Any original blocks will be destroyed.
   void Random(const QN &);
+
+  // Tensor transpose.
   void Transpose(const std::vector<long> &);
+
+  // Normalize the GQTensor and return its norm.
   double Normalize(void);
+
+  // Switch the direction of the indexes, complex conjugate of the element in the future.
   void Dag(void) { for (auto &index : indexes) { index.Dag(); } }
 
   // Operators overload.
@@ -406,84 +416,10 @@ SvdRes Svd(
     const double, const long, const long);
 
 
-// Helper functions.
-QN CalcDiv(const QNSectorSet &, const std::vector<Index> &);
-
-QN CalcDiv(const std::vector<QNSector> &, const std::vector<Index> &);
-
-std::vector<long> CalcMultiDimDataOffsets(const std::vector<long> &);
-
-long MulToEnd(const std::vector<long> &, int);
-
-double *TransposeData(
-    const double *,
-    const long &,
-    const long &,
-    const std::vector<long> &,
-    const std::vector<long> &);
-
+// Tensor transpose function multi-thread controller.
 int GQTenGetTensorTransposeNumThreads(void);
 
 void GQTenSetTensorTransposeNumThreads(const int);
-
-std::vector<std::vector<long>> GenAllCoors(const std::vector<long> &);
-
-
-// Some function templates.
-// Calculate Cartesian product.
-template<typename T>
-T CalcCartProd(T v) {
-  T s = {{}};
-  for (const auto &u : v) {
-    T r;
-    for (const auto &x : s) {
-      for (const auto y : u) {
-        r.push_back(x);
-        r.back().push_back(y);
-      }
-    }
-    s = std::move(r);
-  }
-  return s;
-}
-
-
-// Inline functions.
-// Calculate offset for the effective one dimension array.
-inline long CalcEffOneDimArrayOffset(
-    const std::vector<long> &coors,
-    const long ndim,
-    const std::vector<long> &data_offsets) {
-  long offset = 0;
-  for (long i = 0; i < ndim; ++i) {
-    offset += coors[i] * data_offsets[i];
-  }
-  return offset;
-}
-
-
-inline bool DoubleEq(const double a, const double b) {
-  if (std::abs(a-b) < kDoubleEpsilon) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-
-inline bool ArrayEq(
-    const double *parray1, const size_t size1,
-    const double *parray2, const size_t size2) {
-  if (size1 !=  size2) {
-    return false;
-  }
-  for (size_t i = 0; i < size1; ++i) {
-    if (!DoubleEq(parray1[i], parray2[i])) {
-      return false;
-    }
-  }
-  return true;
-}
 
 
 // Timer.

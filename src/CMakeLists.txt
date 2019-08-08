@@ -6,13 +6,18 @@
 #  Description: GraceQ/tensor project. CMake file to control the library source
 #               code.
 # 
-
-
 if(GQTEN_MPI_PARALLEL)
   add_library(gqten
+    utils.cc
+    timer.cc
+    ten_trans.cc
+    qn.cc
+    qnsector.cc
+    index.cc
+    qnblock.cc
+    gqtensor.cc
     ten_numer_func.cc
-    mpi_ten_numer_func.cc
-    gqten.cc)
+    mpi_ten_numer_func.cc)
 
   target_include_directories(gqten
     PUBLIC "${PROJECT_SOURCE_DIR}/include"
@@ -29,8 +34,15 @@ if(GQTEN_MPI_PARALLEL)
     ${MATH_LIB_LINK_FLAGS})
 else()
   add_library(gqten
-    ten_numer_func.cc
-    gqten.cc)
+    utils.cc
+    timer.cc
+    ten_trans.cc
+    qn.cc
+    qnsector.cc
+    index.cc
+    qnblock.cc
+    gqtensor.cc
+    ten_numer_func.cc)
 
   target_include_directories(gqten
     PUBLIC "${PROJECT_SOURCE_DIR}/include"

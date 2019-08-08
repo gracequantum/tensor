@@ -1,0 +1,50 @@
+// SPDX-License-Identifier: LGPL-3.0-only
+/*
+* Author: Rongyang Sun <sun-rongyang@outlook.com>
+* Creation Date: 2019-08-08 19:10
+* 
+* Description: GraceQ/tensor project. Implement dense tensor transpose using hptt library.
+*/
+#include "gqten/gqten.h"
+#include "ten_trans.h"
+
+#include <vector>
+
+#include "hptt.h"
+
+
+namespace gqten {
+
+
+int tensor_transpose_num_threads = kTensorTransposeDefaultNumThreads;
+
+
+int GQTenGetTensorTransposeNumThreads(void) {
+  return tensor_transpose_num_threads;
+}
+
+
+void GQTenSetTensorTransposeNumThreads(const int num_threads) {
+  tensor_transpose_num_threads = num_threads;
+}
+
+
+double *DenseTensorTranspose(
+    const double *old_data,
+    const long old_ndim,
+    const long old_size,
+    const std::vector<long> &old_shape,
+    const std::vector<long> &transed_axes) {
+  int dim = old_ndim;
+  int perm[dim];  for (int i = 0; i < dim; ++i) { perm[i] = transed_axes[i]; }
+  int sizeA[dim]; for (int i = 0; i < dim; ++i) { sizeA[i] = old_shape[i]; }
+  int outerSizeB[dim];
+  for (int i = 0; i < dim; ++i) { outerSizeB[i] = old_shape[perm[i]]; }
+  auto transed_data = new double[old_size];
+  dTensorTranspose(perm, dim,
+      1.0, old_data, sizeA, sizeA,
+      0.0, transed_data, outerSizeB,
+      tensor_transpose_num_threads, 1);
+  return transed_data;
+}
+} /* gqten */ 

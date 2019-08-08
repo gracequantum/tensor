@@ -5,9 +5,10 @@
 * 
 * Description: GraceQ/tensor project. Distributed numerical function for GQTensor, src file.
 */
+#include "gqten/gqten.h"
 #include "mpi_ten_numer_func.h"
 #include "ten_numer_func.h"
-#include "gqten/gqten.h"
+#include "ten_trans.h"
 
 #include <algorithm>
 
@@ -168,7 +169,7 @@ std::vector<QNBlock *> GQTEN_MPI_BlocksCtrctBatch(
             blk_match_ten_trans_timer.Restart();
 #endif
 
-            auto blk_data_transed_to_ctrct = TransposeData(
+            auto blk_data_transed_to_ctrct = DenseTensorTranspose(
                 ta_blks[i]->cdata(),
                 ta_blks[i]->ndim,
                 ta_blks[i]->size,
@@ -202,7 +203,7 @@ std::vector<QNBlock *> GQTEN_MPI_BlocksCtrctBatch(
             blk_match_ten_trans_timer.Restart();
 #endif
 
-            auto blk_data_transed_to_ctrct = TransposeData(
+            auto blk_data_transed_to_ctrct = DenseTensorTranspose(
                 tb_blks[j]->cdata(),
                 tb_blks[j]->ndim,
                 tb_blks[j]->size,

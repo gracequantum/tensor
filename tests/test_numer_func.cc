@@ -7,6 +7,7 @@
 */
 #include "gtest/gtest.h"
 #include "gqten/gqten.h"
+#include "utils.h"
 
 #include <cmath>
 #include <iostream>
