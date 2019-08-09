@@ -5,6 +5,8 @@
 * 
 * Description: GraceQ/tensor project. Parallel GEMM batch worker.
 */
+#include <iostream>
+
 #include "mkl.h"
 #include "mpi.h"
 
@@ -29,7 +31,12 @@ inline char CheckWorkStat(void) {
 int main(int argc, char *argv[]) {
   int provided; 
   MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
-  /* TODO: provided check */
+  if (provided < MPI_THREAD_MULTIPLE) {
+    std::cout << " MPI thread level is not provided."
+              << " The current thread level is " << provided
+              << " Exit!" << std::endl;
+    exit(1);
+  }
   int my_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
