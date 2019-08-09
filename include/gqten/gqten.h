@@ -206,18 +206,26 @@ std::ofstream &bfwrite(std::ofstream &, const Index &);
 
 // Dense block labeled by the quantum number.
 class QNBlock : public QNSectorSet {
+// Binary I/O.
 friend std::ifstream &bfread(std::ifstream &, QNBlock &);
 friend std::ofstream &bfwrite(std::ofstream &, const QNBlock &);
+// Some functions called by tensor numerical functions to use the private constructor.
+friend std::vector<QNBlock *> BlocksCtrctBatch(
+    const std::vector<long> &, const std::vector<long> &,
+    const double,
+    const std::vector<QNBlock *> &, const std::vector<QNBlock *> &);
+#ifdef GQTEN_MPI_PARALLEL
+friend std::vector<QNBlock *> GQTEN_MPI_BlocksCtrctBatch(
+    const std::vector<long> &, const std::vector<long> &,
+    const double,
+    const std::vector<QNBlock *> &, const std::vector<QNBlock *> &,
+    MPI_Comm, const int);
+#endif
+
 
 public:
   QNBlock(void) = default;
   QNBlock(const std::vector<QNSector> &);
-
-  // NOTE: For performance reason, this constructor will NOT initialize the data_ to 0!!!
-  // Be careful to use this!!!
-  /* TODO: As a private constructor and friend of tensor numerical function. */
-  QNBlock(const std::vector<const QNSector *> &);
-
   QNBlock(const QNBlock &);
   QNBlock &operator=(const QNBlock &);
   
@@ -247,6 +255,10 @@ public:
   long size = 0;              // Total number of elements in this block.
 
 private:
+  // NOTE: For performance reason, this constructor will NOT initialize the data_ to 0!!!
+  // It should only be intra-used.
+  QNBlock(const std::vector<const QNSector *> &);
+
   double *data_ = nullptr;    // Data in a 1D array.
   std::vector<long> data_offsets_;
   std::size_t qnscts_hash_ = 0;

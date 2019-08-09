@@ -21,16 +21,12 @@ struct TestQNBlock : public testing::Test {
   QNBlock qnblock_sz0sct1_1d = QNBlock({sz0_sct1});
   QNBlock qnblock_sz0sct1_2d = QNBlock({sz0_sct1, sz0_sct1});
   QNBlock qnblock_sz1sct2_2d = QNBlock({sz1_sct2, sz1_sct2});
-
-  std::vector<const QNSector *> psz0_sct_vec = {&sz0_sct1};
-  QNBlock qnblock_sz0sct_1d_from_ptr = QNBlock(psz0_sct_vec);
 };
 
 
 TEST_F(TestQNBlock, TestNdim) {
   EXPECT_EQ(qnblock_default.ndim, 0);
   EXPECT_EQ(qnblock_sz0sct1_1d.ndim, 1);
-  EXPECT_EQ(qnblock_sz0sct_1d_from_ptr.ndim, 1);
   EXPECT_EQ(qnblock_sz0sct1_2d.ndim, 2);
 }
 
@@ -40,7 +36,6 @@ TEST_F(TestQNBlock, TestShape) {
   EXPECT_EQ(qnblock_default.shape, lvec0);
   std::vector<long> lvec1 = {1};
   EXPECT_EQ(qnblock_sz0sct1_1d.shape, lvec1);
-  EXPECT_EQ(qnblock_sz0sct_1d_from_ptr.shape, lvec1);
   std::vector<long> lvec11 = {1, 1};
   EXPECT_EQ(qnblock_sz0sct1_2d.shape, lvec11);
   std::vector<long> lvec22 = {2, 2};
@@ -51,9 +46,6 @@ TEST_F(TestQNBlock, TestShape) {
 TEST_F(TestQNBlock, TestElemAssignment) {
   qnblock_sz0sct1_1d({0}) = 1;
   EXPECT_EQ(qnblock_sz0sct1_1d({0}), 1);
-
-  qnblock_sz0sct_1d_from_ptr({0}) = 1;
-  EXPECT_EQ(qnblock_sz0sct_1d_from_ptr({0}), 1);
 
   qnblock_sz0sct1_2d({0, 0}) = 1;
   EXPECT_EQ(qnblock_sz0sct1_2d({0, 0}), 1);
