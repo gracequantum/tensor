@@ -379,6 +379,7 @@ inline void MPI_SendGemmWorkerStat(
 #endif
 
 // Tensors linear combination.
+// Do the operation: res += (coefs[0]*ts[0] + coefs[1]*ts[1] + ...).
 /* TODO: For scalar tensor case. */
 void LinearCombine(
     const std::vector<double> &,

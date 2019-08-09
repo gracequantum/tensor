@@ -35,6 +35,7 @@ option(GQTEN_OPENMP_PARALLEL "Build OpenMP support." OFF)
 option(GQTEN_MPI_PARALLEL "Build MPI support." OFF)
 if(GQTEN_MPI_PARALLEL)
   add_definitions(-DGQTEN_MPI_PARALLEL)
+  set(GQTEN_OPENMP_PARALLEL ON)
 endif()
 
 option(GQTEN_MPI_DEV_MODE "Print more informations for distributed parallelization." OFF)

@@ -3,10 +3,10 @@
 * Author: Rongyang Sun <sun-rongyang@outlook.com>
 * Creation Date: 2019-06-28 09:29
 * 
-* Description: GraceQ/tensor project. Distributed numerical function for GQTensor, head file.
+* Description: GraceQ/tensor project. Intra-used functions for distributed tensor contraction.
 */
-#ifndef GQTEN_MPI_TEN_NUMER_FUNC_H
-#define GQTEN_MPI_TEN_NUMER_FUNC_H
+#ifndef GQTEN_MPI_TEN_CTRCT_H
+#define GQTEN_MPI_TEN_CTRCT_H
 
 
 #include "gqten/gqten.h"
@@ -97,4 +97,4 @@ inline void MPI_IrecvGemmRes(
   MPI_Irecv(c, m*n, MPI_DOUBLE, worker, idx, comm, req);
 }
 } /* gqten */ 
-#endif /* ifndef GQTEN_MPI_TEN_NUMER_FUNC_H */
+#endif /* ifndef GQTEN_MPI_TEN_CTRCT_H */

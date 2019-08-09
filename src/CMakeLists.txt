@@ -3,8 +3,7 @@
 #  Author: Rongyang Sun <sun-rongyang@outlook.com>
 #  Creation Date: 2019-04-24 22:54
 #  
-#  Description: GraceQ/tensor project. CMake file to control the library source
-#               code.
+#  Description: GraceQ/tensor project. CMake file to control the library source code.
 # 
 if(GQTEN_MPI_PARALLEL)
   add_library(gqten
@@ -16,8 +15,10 @@ if(GQTEN_MPI_PARALLEL)
     index.cc
     qnblock.cc
     gqtensor.cc
-    ten_numer_func.cc
-    mpi_ten_numer_func.cc)
+    ten_ctrct.cc
+    ten_lincmb.cc
+    ten_svd.cc
+    mpi_ten_ctrct.cc)
 
   target_include_directories(gqten
     PUBLIC "${PROJECT_SOURCE_DIR}/include"
@@ -42,7 +43,9 @@ else()
     index.cc
     qnblock.cc
     gqtensor.cc
-    ten_numer_func.cc)
+    ten_ctrct.cc
+    ten_lincmb.cc
+    ten_svd.cc)
 
   target_include_directories(gqten
     PUBLIC "${PROJECT_SOURCE_DIR}/include"

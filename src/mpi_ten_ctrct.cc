@@ -3,14 +3,16 @@
 * Author: Rongyang Sun <sun-rongyang@outlook.com>
 * Creation Date: 2019-06-28 09:34
 * 
-* Description: GraceQ/tensor project. Distributed numerical function for GQTensor, src file.
+* Description: GraceQ/tensor project. Implementation details about distributed tensor contraction.
 */
 #include "gqten/gqten.h"
-#include "mpi_ten_numer_func.h"
-#include "ten_numer_func.h"
+#include "mpi_ten_ctrct.h"
+#include "ten_ctrct.h"
 #include "ten_trans.h"
 
 #include <algorithm>
+
+#include <assert.h>
 
 #include "mkl.h"
 #include "mpi.h"
@@ -19,7 +21,6 @@
 #ifdef Release
   #define NDEBUG
 #endif
-#include <assert.h>
 
 
 namespace gqten {
@@ -116,7 +117,8 @@ std::vector<QNBlock *> GQTEN_MPI_BlocksCtrctBatch(
   std::cout << "[counting] "
             << "ta # of blks " << std::setw(10) << std::left << ta_blks_num
             << "tb # of blks " << std::setw(10) << std::left << tb_blks_num
-            << "matched pair " << std::setw(10) << std::left << blk_pairs << std::endl;
+            << "matched pair " << std::setw(10) << std::left << blk_pairs
+            << std::endl;
 #endif
 
   // No match, return empty vector.
@@ -225,9 +227,15 @@ std::vector<QNBlock *> GQTEN_MPI_BlocksCtrctBatch(
         gemm_batch_c_array[blk_pair_cnt] = pnew_blks[blk_pair_cnt]->data();
 
 #ifdef GQTEN_CONTRACT_BLOCK_COUNTING
-        std::cout << "[counting] blk_m_dim " << std::setw(10) << std::left << gemm_batch_m_array[blk_pair_cnt]
-                  << "blk_k_dim " << std::setw(10) << std::left << gemm_batch_k_array[blk_pair_cnt]
-                  << "blk_n_dim " << std::setw(10) << std::left << gemm_batch_n_array[blk_pair_cnt] << std::endl;
+        std::cout << "[counting] blk_m_dim "
+                  << std::setw(10) << std::left
+                  << gemm_batch_m_array[blk_pair_cnt]
+                  << "blk_k_dim "
+                  << std::setw(10) << std::left
+                  << gemm_batch_k_array[blk_pair_cnt]
+                  << "blk_n_dim "
+                  << std::setw(10) << std::left
+                  << gemm_batch_n_array[blk_pair_cnt] << std::endl;
 #endif
 
         ++blk_pair_cnt;
@@ -454,7 +462,8 @@ std::vector<std::vector<long>> TaskScheduler(
   long cost_avg = cost_tot / labours;
 
 #ifdef GQTEN_MPI_DEV_MODE
-  std::cout << "[mpi dev] " << cost_tot << " " << cost_avg << " " << labours << " ";
+  std::cout << "[mpi dev] "
+            << cost_tot << " " << cost_avg << " " << labours << " ";
   long cost_per_labour = 0;
 #endif
 
