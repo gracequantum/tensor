@@ -189,7 +189,10 @@ GQTensor GQTensor::operator+(const GQTensor &rhs) {
       added_t.blocks().push_back(added_blk);
     }
   }
-  return added_t;     /* TODO: MEMORY LEAK!!! Moving constructor needed!!! */
+  return std::move(added_t);      // Although the "copy elision" will make sure
+                                  // that no copy/move happened here, Use the
+                                  // explicit move function to tell others be
+                                  // careful about that.
 }
 
 
@@ -219,7 +222,7 @@ GQTensor &GQTensor::operator+=(const GQTensor &rhs) {
       blocks_.push_back(pnew_blk);
     }
   }
-  return *this;       /* TODO: MEMORY LEAK!!! Moving constructor needed!!! */
+  return *this;
 }
 
 
@@ -231,7 +234,7 @@ GQTensor GQTensor::operator-(void) const {
       data[i] = -data[i];
     }
   }
-  return minus_t;     /* TODO: MEMORY LEAK!!! Moving constructor needed!!! */
+  return std::move(minus_t);
 }
 
 
@@ -323,7 +326,7 @@ Index InverseIndex(const Index &idx) {
 GQTensor Dag(const GQTensor &t) {
   GQTensor dag_t(t);
   dag_t.Dag();
-  return dag_t;       /* TODO: MEMORY LEAK!!! Moving constructor needed!!! */
+  return std::move(dag_t);
 }
 
 
@@ -360,12 +363,12 @@ GQTensor operator*(const GQTensor &t, const double &s) {
       data[i]  = data[i] * s;
     }
   }
-  return muled_t;     /* TODO: MEMORY LEAK!!! Moving constructor needed!!! */
+  return std::move(muled_t);
 }
 
 
 GQTensor operator*(const double &s, const GQTensor &t) {
-  return t * s;       /* TODO: MEMORY LEAK!!! Moving constructor needed!!! */
+  return std::move(t * s);
 }
 
 
