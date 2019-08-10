@@ -78,6 +78,35 @@ QNBlock &QNBlock::operator=(const QNBlock &rhs) {
   delete [] data_;
   data_ = new_data;
   // Copy other members.
+  qnscts = rhs.qnscts;    // For the base class.
+  ndim = rhs.ndim;
+  shape = rhs.shape;
+  size = rhs.size;
+  data_offsets_ = rhs.data_offsets_;
+  qnscts_hash_ = rhs.qnscts_hash_;
+  return *this;
+}
+
+
+QNBlock::QNBlock(QNBlock &&qnblk) noexcept :
+    QNSectorSet(qnblk),
+    ndim(qnblk.ndim),
+    shape(qnblk.shape),
+    size(qnblk.size),
+    data_offsets_(qnblk.data_offsets_),
+    qnscts_hash_(qnblk.qnscts_hash_),
+    data_(qnblk.data_) {
+  qnblk.data_ = nullptr;
+}
+
+
+QNBlock &QNBlock::operator=(QNBlock &&rhs) noexcept {
+  // Move data.
+  delete [] data_;
+  data_ = rhs.data_;
+  rhs.data_ = nullptr;
+  // Copy other members.
+  qnscts = rhs.qnscts;    // For the base class.
   ndim = rhs.ndim;
   shape = rhs.shape;
   size = rhs.size;

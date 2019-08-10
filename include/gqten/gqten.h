@@ -226,10 +226,12 @@ friend std::vector<QNBlock *> GQTEN_MPI_BlocksCtrctBatch(
 public:
   QNBlock(void) = default;
   QNBlock(const std::vector<QNSector> &);
+
   QNBlock(const QNBlock &);
   QNBlock &operator=(const QNBlock &);
   
-  /* TODO: Moving constructor. */
+  QNBlock(QNBlock &&) noexcept;
+  QNBlock &operator=(QNBlock &&) noexcept;
 
   ~QNBlock(void) override;
   
