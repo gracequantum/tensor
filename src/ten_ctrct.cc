@@ -25,15 +25,17 @@
 namespace gqten {
 
 
-GQTensor *Contract(
-    const GQTensor &ta, const GQTensor &tb,
-    const std::vector<std::vector<long>> &axes_set) {
+void Contract(
+    const GQTensor *pta, const GQTensor *ptb,
+    const std::vector<std::vector<long>> &axes_set,
+    GQTensor *ptc) {
+  assert(ptc != nullptr);
   auto ctrct_axes_a = axes_set[0];
   auto ctrct_axes_b = axes_set[1];
 
   // Blocks contraction batch.
   std::vector<QNBlock *> pnew_blks;
-  if (ta.cblocks().size() > 0 && tb.cblocks().size() > 0) {
+  if (pta->cblocks().size() > 0 && ptb->cblocks().size() > 0) {
 
 #ifdef GQTEN_TIMING_MODE
     Timer blks_ctrct_batch_timer("blks_ctrct_batch");
@@ -42,7 +44,7 @@ GQTensor *Contract(
 
     pnew_blks = BlocksCtrctBatch(
         ctrct_axes_a, ctrct_axes_b,
-        1.0, ta.cblocks(), tb.cblocks());
+        1.0, pta->cblocks(), ptb->cblocks());
 
 #ifdef GQTEN_TIMING_MODE
     blks_ctrct_batch_timer.PrintElapsed();
@@ -51,7 +53,7 @@ GQTensor *Contract(
   }
 
   // Initialize contracted tensor.
-  auto res_t  = InitCtrctedTen(ta, tb, ctrct_axes_a, ctrct_axes_b);
+  InitCtrctedTen(pta, ptb, ctrct_axes_a, ctrct_axes_b, ptc);
 
 #ifdef GQTEN_TIMING_MODE
   Timer blks_wrap_timer("blks_wrap");
@@ -59,12 +61,19 @@ GQTensor *Contract(
 #endif
 
   // Wrap blocks.
-  WrapCtrctBlocks(pnew_blks, res_t);
+  WrapCtrctBlocks(pnew_blks, ptc);
 
 #ifdef GQTEN_TIMING_MODE
   blks_wrap_timer.PrintElapsed();
 #endif
+}
 
+
+GQTensor *Contract(
+    const GQTensor &ta, const GQTensor &tb,
+    const std::vector<std::vector<long>> &axes_set) {
+  auto res_t = new GQTensor();
+  Contract(&ta, &tb, axes_set, res_t);
   return res_t;
 }
 
@@ -317,27 +326,27 @@ std::vector<QNBlock *> BlocksCtrctBatch(
 }
 
 
-GQTensor *InitCtrctedTen(
-    const GQTensor &t1, const GQTensor &t2,
-    const std::vector<long> &t1_ctrct_axes,
-    const std::vector<long> &t2_ctrct_axes) {
+void InitCtrctedTen(
+    const GQTensor *pta, const GQTensor *ptb,
+    const std::vector<long> &ta_ctrct_axes,
+    const std::vector<long> &tb_ctrct_axes,
+    GQTensor *ptc) {
   std::vector<Index> saved_idxs;
-  const std::vector<Index> &t1_idxs  = t1.indexes;
-  const std::vector<Index> &t2_idxs  = t2.indexes;
-  for (size_t i = 0; i < t1_idxs.size(); ++i) {
-    if (std::find(t1_ctrct_axes.begin(), t1_ctrct_axes.end(), i) ==
-        t1_ctrct_axes.end()) {
-      saved_idxs.push_back(t1.indexes[i]);
+  const std::vector<Index> &ta_idxs  = pta->indexes;
+  const std::vector<Index> &tb_idxs  = ptb->indexes;
+  for (size_t i = 0; i < ta_idxs.size(); ++i) {
+    if (std::find(ta_ctrct_axes.begin(), ta_ctrct_axes.end(), i) ==
+        ta_ctrct_axes.end()) {
+      saved_idxs.push_back(pta->indexes[i]);
     }
   }
-  for (size_t i = 0; i < t2_idxs.size(); ++i) {
-    if (std::find(t2_ctrct_axes.begin(), t2_ctrct_axes.end(), i) ==
-        t2_ctrct_axes.end()) {
-      saved_idxs.push_back(t2.indexes[i]);
+  for (size_t i = 0; i < tb_idxs.size(); ++i) {
+    if (std::find(tb_ctrct_axes.begin(), tb_ctrct_axes.end(), i) ==
+        tb_ctrct_axes.end()) {
+      saved_idxs.push_back(ptb->indexes[i]);
     }
   }
-  auto pnew_ten = new GQTensor(saved_idxs);
-  return pnew_ten;
+  *ptc = GQTensor(saved_idxs);
 }
 
 

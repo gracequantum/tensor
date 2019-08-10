@@ -372,15 +372,28 @@ std::ofstream &bfwrite(std::ofstream &, const GQTensor &);
 
 // Tensor numerical functions.
 // Tensors contraction.
+void Contract(
+    const GQTensor *, const GQTensor *,
+    const std::vector<std::vector<long>> &,
+    GQTensor *);
+
+// This API just for forward compatibility, it will be deleted soon.
 GQTensor *Contract(
     const GQTensor &, const GQTensor &,
     const std::vector<std::vector<long>> &);
 
 #ifdef GQTEN_MPI_PARALLEL
 const char kGemmWorkerStatCont = 'c';
+
 const char kGemmWorkerStatStop = 's';
 
+void GQTEN_MPI_Contract(
+    const GQTensor *, const GQTensor *,
+    const std::vector<std::vector<long>> &,
+    GQTensor *,
+    MPI_Comm, const int);
 
+// This API just for forward compatibility, it will be deleted soon.
 GQTensor *GQTEN_MPI_Contract(
     const GQTensor &, const GQTensor &,
     const std::vector<std::vector<long>> &,

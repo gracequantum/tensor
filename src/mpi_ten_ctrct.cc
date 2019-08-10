@@ -26,16 +26,17 @@
 namespace gqten {
 
 
-GQTensor *GQTEN_MPI_Contract(
-    const GQTensor &ta, const GQTensor &tb,
+void GQTEN_MPI_Contract(
+    const GQTensor *pta, const GQTensor *ptb,
     const std::vector<std::vector<long>> &axes_set,
+    GQTensor *ptc,
     MPI_Comm comm, const int workers) {
   auto ctrct_axes_a = axes_set[0];
   auto ctrct_axes_b = axes_set[1];
 
   // Blocks contraction batch.
   std::vector<QNBlock *> pnew_blks;
-  if (ta.cblocks().size() > 0 && tb.cblocks().size() > 0) {
+  if (pta->cblocks().size() > 0 && ptb->cblocks().size() > 0) {
 
 #ifdef GQTEN_TIMING_MODE
     Timer blks_ctrct_batch_timer("blks_ctrct_batch");
@@ -44,7 +45,7 @@ GQTensor *GQTEN_MPI_Contract(
 
     pnew_blks = GQTEN_MPI_BlocksCtrctBatch(
         ctrct_axes_a, ctrct_axes_b,
-        1.0, ta.cblocks(), tb.cblocks(),
+        1.0, pta->cblocks(), ptb->cblocks(),
         comm, workers);
 
 #ifdef GQTEN_TIMING_MODE
@@ -54,7 +55,7 @@ GQTensor *GQTEN_MPI_Contract(
   }
 
   // Initialize contracted tensor.
-  auto res_t  = InitCtrctedTen(ta, tb, ctrct_axes_a, ctrct_axes_b);
+  InitCtrctedTen(pta, ptb, ctrct_axes_a, ctrct_axes_b, ptc);
 
 #ifdef GQTEN_TIMING_MODE
   Timer blks_wrap_timer("blks_wrap");
@@ -62,12 +63,20 @@ GQTensor *GQTEN_MPI_Contract(
 #endif
 
   // Wrap blocks.
-  WrapCtrctBlocks(pnew_blks, res_t);
+  WrapCtrctBlocks(pnew_blks, ptc);
 
 #ifdef GQTEN_TIMING_MODE
   blks_wrap_timer.PrintElapsed();
 #endif
+}
 
+
+GQTensor *GQTEN_MPI_Contract(
+    const GQTensor &ta, const GQTensor &tb,
+    const std::vector<std::vector<long>> &axes_set,
+    MPI_Comm comm, const int workers) {
+  auto res_t = new GQTensor();
+  GQTEN_MPI_Contract(&ta, &tb, axes_set, res_t, comm, workers);
   return res_t;
 }
 

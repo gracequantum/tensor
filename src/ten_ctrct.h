@@ -28,6 +28,11 @@ GQTensor *InitCtrctedTen(
     const GQTensor &, const GQTensor &,
     const std::vector<long> &, const std::vector<long> &);
 
+void InitCtrctedTen(
+    const GQTensor *, const GQTensor *,
+    const std::vector<long> &, const std::vector<long> &,
+    GQTensor *);
+
 void WrapCtrctBlocks(std::vector<QNBlock *> &, GQTensor *);
 
 std::vector<QNBlock *> MergeCtrctBlks(const std::vector<QNBlock *> &);

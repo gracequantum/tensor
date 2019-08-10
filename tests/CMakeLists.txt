@@ -73,7 +73,13 @@ add_unittest(test_qnblock test_qnblock.cc "" gqten "" "")
 # Test tensor with U1 symmetry, GQTensor.
 add_unittest(test_gqtensor test_gqtensor.cc "" gqten "" "")
 
-# Test tensor numerical functions.
+# Test tensor contraction functions.
+add_unittest(test_ten_ctrct
+    test_ten_ctrct.cc "${MATH_LIB_COMPILE_FLAGS}"
+    gqten "${MATH_LIB_LINK_FLAGS}"
+    "")
+
+# Test other tensor numerical functions.
 add_unittest(test_numer_func
     test_numer_func.cc "${MATH_LIB_COMPILE_FLAGS}"
     gqten "${MATH_LIB_LINK_FLAGS}"
