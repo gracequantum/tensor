@@ -292,7 +292,8 @@ public:
   GQTensor(const GQTensor &);
   GQTensor &operator=(const GQTensor &);
 
-  /* TODO: Moving constructor. */
+  GQTensor(GQTensor &&) noexcept;
+  GQTensor &operator=(GQTensor &&) noexcept;
 
   ~GQTensor(void);
 

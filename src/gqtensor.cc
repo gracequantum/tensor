@@ -11,6 +11,7 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <utility>
 
 #include <cmath>
 #include <assert.h>
@@ -53,6 +54,23 @@ GQTensor &GQTensor::operator=(const GQTensor &rhs) {
   }
   blocks_ = new_blks;
   scalar  = rhs.scalar;
+  indexes = rhs.indexes;
+  shape = rhs.shape;
+  return *this;
+}
+
+
+GQTensor::GQTensor(GQTensor &&gqtensor) noexcept :
+    indexes(gqtensor.indexes),
+    scalar(gqtensor.scalar),
+    shape(gqtensor.shape),
+    blocks_(std::move(gqtensor.blocks_)) {}
+
+
+GQTensor &GQTensor::operator=(GQTensor &&rhs) noexcept {
+  for (auto pblk : blocks_) { delete pblk; }
+  blocks_ = std::move(rhs.blocks_);
+  scalar = rhs.scalar;
   indexes = rhs.indexes;
   shape = rhs.shape;
   return *this;

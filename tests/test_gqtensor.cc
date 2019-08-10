@@ -9,6 +9,7 @@
 #include "gtest/gtest.h"
 #include "gqten/gqten.h"
 
+#include <utility>
 #include <cmath>
 #include <cstdio>
 
@@ -59,6 +60,30 @@ TEST_F(TestGQTensor, Initialization) {
   EXPECT_EQ(
       vec_rand_up_cpy.cblocks()[0]->cdata()[0],
       vec_rand_up.cblocks()[0]->cdata()[0]);
+
+  auto vec_rand_up_cpy2 = vec_rand_up;
+  EXPECT_EQ(vec_rand_up_cpy2.indexes, std::vector<Index>{tpb});
+  EXPECT_NE(vec_rand_up_cpy2.cblocks()[0], vec_rand_up.cblocks()[0]);
+  EXPECT_EQ(
+      vec_rand_up_cpy2.cblocks()[0]->cdata()[0],
+      vec_rand_up.cblocks()[0]->cdata()[0]);
+
+  // Test move constructor.
+  GQTensor vec_rand_up_tomove(vec_rand_up);
+  GQTensor vec_rand_up_moved(std::move(vec_rand_up_tomove));
+  EXPECT_EQ(vec_rand_up_moved.indexes, std::vector<Index>{tpb});
+  EXPECT_EQ(
+      vec_rand_up_moved.cblocks()[0]->cdata()[0],
+      vec_rand_up.cblocks()[0]->cdata()[0]);
+  EXPECT_EQ(vec_rand_up_tomove.cblocks(), std::vector<QNBlock *>{});
+
+  GQTensor vec_rand_up_tomove2(vec_rand_up);
+  auto vec_rand_up_moved2 = std::move(vec_rand_up_tomove2);
+  EXPECT_EQ(vec_rand_up_moved2.indexes, std::vector<Index>{tpb});
+  EXPECT_EQ(
+      vec_rand_up_moved2.cblocks()[0]->cdata()[0],
+      vec_rand_up.cblocks()[0]->cdata()[0]);
+  EXPECT_EQ(vec_rand_up_tomove2.cblocks(), std::vector<QNBlock *>{});
 }
 
 
