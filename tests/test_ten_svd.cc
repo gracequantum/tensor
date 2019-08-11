@@ -48,12 +48,16 @@ void RunTestSvdCase(
     srand(0);
     t.Random(*random_div);
   }
-  auto svd_res = Svd(
-      t,
-      ldims,
-      rdims,
+  GQTensor u, s, vt;
+  double trunc_err;
+  long D;
+  Svd(
+      &t,
+      ldims, rdims,
       qn0, qn0,
-      cutoff, dmin, dmax);
+      cutoff, dmin, dmax,
+      &u, &s, &vt,
+      &trunc_err, &D);
 
   auto ndim = ldims + rdims;
   long rows = 1, cols = 1;
@@ -111,8 +115,8 @@ void RunTestSvdCase(
   if (dmax > dense_svs.size()) { begit = dense_svs.cbegin(); }
   auto saved_dense_svs = std::vector<double>(begit, endit);
   std::vector<double> qn_svs;
-  for (long i = 0; i < svd_res.s->shape[0]; i++) {
-    qn_svs.push_back(svd_res.s->Elem({i, i}));
+  for (long i = 0; i < s.shape[0]; i++) {
+    qn_svs.push_back(s.Elem({i, i}));
   }
   std::sort(qn_svs.begin(), qn_svs.end());
   EXPECT_EQ(qn_svs.size(), saved_dense_svs.size());
@@ -129,13 +133,14 @@ void RunTestSvdCase(
     saved_square_sum += ssv * ssv;
   }
   auto dense_trunc_err = 1 - saved_square_sum / total_square_sum;
-  EXPECT_NEAR(svd_res.trunc_err, dense_trunc_err, kEpsilon);
+  EXPECT_NEAR(trunc_err, dense_trunc_err, kEpsilon);
 
-  if (svd_res.trunc_err < 1.0E-10) {
-    auto t_restored = Contract(*svd_res.u, *svd_res.s, {{ldims}, {0}});
-    t_restored = Contract(*t_restored, *svd_res.v, {{ldims}, {0}});
+  if (trunc_err < 1.0E-10) {
+    GQTensor t_restored_tmp,  t_restored;
+    Contract(&u, &s, {{ldims}, {0}}, &t_restored_tmp);
+    Contract(&t_restored_tmp, &vt, {{ldims}, {0}}, &t_restored);
     for (auto &coors : GenAllCoors(t.shape)) {
-      EXPECT_NEAR(t_restored->Elem(coors), t.Elem(coors), kEpsilon);
+      EXPECT_NEAR(t_restored.Elem(coors), t.Elem(coors), kEpsilon);
     }
   }
 
