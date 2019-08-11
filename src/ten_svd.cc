@@ -279,12 +279,11 @@ TruncBlkSvdData TruncatedBlockSvd(
   double next_trunc_err;
   while (true) {
     next_kept_dim = kept_dim + 1;
+    if (next_kept_dim > total_dim) { break; }
     next_trunc_err = trunc_err -
                      normalized_sv_squares[total_dim-(kept_dim+1)];
     if (DoubleEq(next_trunc_err, 0)) { next_trunc_err = 0; }
-    if (next_kept_dim > total_dim ||
-        next_kept_dim > dmax ||
-        next_trunc_err < cutoff) {
+    if (next_kept_dim > dmax || next_trunc_err < cutoff) {
       break;
     } else {
       kept_dim = next_kept_dim;
