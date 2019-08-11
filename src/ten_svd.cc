@@ -23,19 +23,21 @@
 namespace gqten {
 
 
-SvdRes Svd(
-    const GQTensor &t,
+void Svd(
+    const GQTensor *pt,
     const long ldims, const long rdims,
     const QN &ldiv, const QN &rdiv,
-    const double cutoff, const long Dmin, const long Dmax) {
-  assert((ldims + rdims) == t.indexes.size());
+    const double cutoff, const long Dmin, const long Dmax,
+    GQTensor *pu, GQTensor *ps, GQTensor *pvt,
+    double *ptrunc_err, long *pD) {
+  assert((ldims + rdims) == pt->indexes.size());
 
 #ifdef GQTEN_TIMING_MODE
   Timer svd_merge_blks_timer("svd_merge_blks");
   svd_merge_blks_timer.Restart();
 #endif
 
-  auto merged_blocks = SvdMergeBlocks(t, ldims, rdims);
+  auto merged_blocks = SvdMergeBlocks(*pt, ldims, rdims);
 
 #ifdef GQTEN_TIMING_MODE
   svd_merge_blks_timer.PrintElapsed();
@@ -57,17 +59,35 @@ SvdRes Svd(
   svd_wrap_blks.Restart();
 #endif
 
-  auto res = SvdWrapBlocks(
-                 trunc_blk_svd_res,
-                 ldiv, rdiv,
-                 t.indexes,
-                 ldims, rdims);
+  SvdWrapBlocks(
+      trunc_blk_svd_res,
+      ldiv, rdiv, pt->indexes, ldims, rdims,
+      pu, ps, pvt, ptrunc_err, pD);
 
 #ifdef GQTEN_TIMING_MODE
   svd_wrap_blks.PrintElapsed();
 #endif
+}
 
-  return res;
+
+SvdRes Svd(
+    const GQTensor &t,
+    const long ldims, const long rdims,
+    const QN &ldiv, const QN &rdiv,
+    const double cutoff, const long Dmin, const long Dmax) {
+  auto pu = new GQTensor();
+  auto ps = new GQTensor();
+  auto pvt = new GQTensor();
+  double trunc_err;
+  long D;
+  Svd(
+      &t,
+      ldims, rdims,
+      ldiv, rdiv,
+      cutoff, Dmin, Dmax,
+      pu, ps, pvt,
+      &trunc_err, &D);
+  return SvdRes(pu, ps, pvt,trunc_err, D);
 }
 
 
@@ -334,11 +354,13 @@ void SvdTruncteBlks(
 }
 
 
-SvdRes SvdWrapBlocks(
+void SvdWrapBlocks(
     TruncBlkSvdData &truncated_blk_svd_data,
     const QN &ldiv, const QN &rdiv,
     const std::vector<Index> &indexes,
-    const long &ldims, const long &rdims) {
+    const long &ldims, const long &rdims,
+    GQTensor *pu, GQTensor *ps, GQTensor *pvt,
+    double *ptrunc_err, long *pD) {
   std::vector<QNBlock *> ublocks, sblocks, vblocks;
   std::vector<QNSector> sblk_qnscts;
   for (auto &kv : truncated_blk_svd_data.trunc_blks) {
@@ -380,22 +402,27 @@ SvdRes SvdWrapBlocks(
     }
     delete [] kv.second.v; kv.second.v = nullptr;
   }
+
   auto s_index_in = Index(sblk_qnscts, IN);
   auto s_index_out = Index(sblk_qnscts, OUT);
-  auto s = new GQTensor({s_index_in, s_index_out});
-  s->blocks() = sblocks;
+  assert(ps != nullptr);
+  GQTenFree(ps);
+  *ps = GQTensor({s_index_in, s_index_out});
+  ps->blocks() = sblocks;
+  assert(pu != nullptr);
   auto u_indexes = SliceFromBegin(indexes, ldims);
   u_indexes.push_back(s_index_out);
-  auto u = new GQTensor(u_indexes);
-  u->blocks() = ublocks;
+  GQTenFree(pu);
+  *pu = GQTensor(u_indexes);
+  pu->blocks() = ublocks;
+  assert(pvt != nullptr);
+  GQTenFree(pvt);
   auto v_indexes = SliceFromEnd(indexes, rdims);
   v_indexes.insert(v_indexes.begin(), s_index_in);
-  auto v = new GQTensor(v_indexes);
-  v->blocks() = vblocks;
-  return SvdRes(
-             u, s, v,
-             truncated_blk_svd_data.trunc_err,
-             truncated_blk_svd_data.kept_dim);
+  *pvt = GQTensor(v_indexes);
+  pvt->blocks() = vblocks;
+  *ptrunc_err = truncated_blk_svd_data.trunc_err;
+  *pD = truncated_blk_svd_data.kept_dim;
 }
 
 

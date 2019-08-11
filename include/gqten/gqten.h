@@ -378,6 +378,7 @@ void Contract(
     GQTensor *);
 
 // This API just for forward compatibility, it will be deleted soon.
+/* TODO: Remove this API. */
 GQTensor *Contract(
     const GQTensor &, const GQTensor &,
     const std::vector<std::vector<long>> &);
@@ -394,6 +395,7 @@ void GQTEN_MPI_Contract(
     MPI_Comm, const int);
 
 // This API just for forward compatibility, it will be deleted soon.
+/* TODO: Remove this API. */
 GQTensor *GQTEN_MPI_Contract(
     const GQTensor &, const GQTensor &,
     const std::vector<std::vector<long>> &,
@@ -408,7 +410,7 @@ inline void MPI_SendGemmWorkerStat(
 
 // Tensors linear combination.
 // Do the operation: res += (coefs[0]*ts[0] + coefs[1]*ts[1] + ...).
-/* TODO: For scalar tensor case. */
+/* TODO: Support scalar (rank 0) tensor case. */
 void LinearCombine(
     const std::vector<double> &,
     const std::vector<GQTensor *> &,
@@ -421,6 +423,15 @@ void LinearCombine(
     GQTensor *);
 
 // Tensor SVD.
+void Svd(
+    const GQTensor *,
+    const long, const long,
+    const QN &, const QN &,
+    const double, const long, const long,
+    GQTensor *, GQTensor *, GQTensor *,
+    double *, long *);
+
+
 struct SvdRes {
   SvdRes(
       GQTensor *u, GQTensor *s, GQTensor *v,
@@ -433,11 +444,15 @@ struct SvdRes {
   const long D;
 };
 
+// This API just for forward compatibility, it will be deleted soon.
+/* TODO: Remove this API. */
 SvdRes Svd(
     const GQTensor &,
     const long, const long,
     const QN &, const QN &);
 
+// This API just for forward compatibility, it will be deleted soon.
+/* TODO: Remove this API. */
 SvdRes Svd(
     const GQTensor &,
     const long, const long,

@@ -153,6 +153,14 @@ SvdRes SvdWrapBlocks(
     const std::vector<Index> &,
     const long &, const long &);
 
+void SvdWrapBlocks(
+    TruncBlkSvdData &,
+    const QN &, const QN &,
+    const std::vector<Index> &,
+    const long &, const long &,
+    GQTensor *, GQTensor *, GQTensor *,
+    double *, long *);
+
 
 // Operations for matrix.
 RawSvdRes MatSvd(double *, const long &, const long &);

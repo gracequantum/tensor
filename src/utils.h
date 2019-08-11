@@ -46,6 +46,12 @@ T CalcCartProd(T v) {
 
 
 // Inline functions.
+// Free the resources of a GQTensor.
+inline void GQTenFree(GQTensor *pt) {
+  for (auto &pblk : pt->blocks()) { delete pblk; }
+}
+
+
 // Calculate offset for the effective one dimension array.
 inline long CalcEffOneDimArrayOffset(
     const std::vector<long> &coors,
@@ -81,7 +87,5 @@ inline bool ArrayEq(
   }
   return true;
 }
-
-
 } /* gqten */ 
 #endif /* ifndef GQTEN_UTILS_H */
