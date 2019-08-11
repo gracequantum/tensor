@@ -3,7 +3,7 @@
 * Author: Rongyang Sun <sun-rongyang@outlook.com>
 * Creation Date: 2019-06-28 19:44
 * 
-* Description: GraceQ/tensor project. Unittests for distributed tensor numerical functions.
+* Description: GraceQ/tensor project. Unittests for distributed tensor contrction functions.
 */
 #include "gtest/gtest.h"
 #include "gqten/gqten.h"
@@ -13,16 +13,6 @@
 
 
 using namespace gqten;
-
-
-void RunTestDistributedContraction(
-    GQTensor &t,
-    const std::vector<std::vector<long>> &axes_set,
-    const int workers) {
-  auto res = GQTEN_MPI_Contract(t, t, axes_set, MPI_COMM_WORLD, workers);
-  auto res0 = Contract(t, t, axes_set);
-  EXPECT_EQ(*res, *res0);
-}
 
 
 struct TestDistributedContraction : public testing::Test {
@@ -35,6 +25,18 @@ struct TestDistributedContraction : public testing::Test {
       QNSector(QN({QNNameVal("Sz",  2)}), d)}, OUT);
   Index idx_in = InverseIndex(idx_out);
 };
+
+
+void RunTestDistributedContraction(
+    GQTensor &t,
+    const std::vector<std::vector<long>> &axes_set,
+    const int workers) {
+  GQTensor res;
+  GQTEN_MPI_Contract(&t, &t, axes_set, &res, MPI_COMM_WORLD, workers);
+  GQTensor res0;
+  Contract(&t, &t, axes_set, &res0);
+  EXPECT_EQ(res, res0);
+}
 
 
 TEST_F(TestDistributedContraction, 2DCase) {
