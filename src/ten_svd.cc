@@ -10,6 +10,8 @@
 #include "utils.h"
 
 #include <iostream>
+#include <algorithm>
+#include <cstring>
 
 #include <assert.h>
 

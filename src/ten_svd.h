@@ -14,6 +14,7 @@
 #include <vector>
 #include <unordered_map>
 #include <numeric>
+#include <cstring>
 
 
 namespace gqten {
