@@ -45,6 +45,7 @@ TEST_F(TestContraction, 1DCase) {
   double res0 = 0;
   for (long i = 0; i < idx_size; ++i) { res0 += std::pow(dense_ten[i], 2.0); }
   EXPECT_NEAR(res.scalar, res0, kEpsilon);
+  delete [] dense_ten;
 }
 
 
