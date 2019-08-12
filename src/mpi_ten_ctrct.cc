@@ -10,6 +10,7 @@
 #include "ten_ctrct.h"
 #include "ten_trans.h"
 
+#include <iostream>
 #include <algorithm>
 
 #include <assert.h>
