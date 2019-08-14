@@ -69,7 +69,7 @@ using namespace gqten
 
 ### Sparse tensor object with U1 quantum number
 
-As an example, we will create  ![](https://latex.codecogs.com/svg.latex?%5Cinline%20S%5Ez) operator living in a two-dimensional spin 1/2 Hilbert space.
+As an example, we will create  ![S^z](https://latex.codecogs.com/svg.latex?S%5Ez) operator living in a two-dimensional spin 1/2 Hilbert space.
 
 First, we define the quantum numbers.
 ```cpp
@@ -84,13 +84,13 @@ auto qnsct_up = QNSector(qn_up, 1);         // qnsct_up: Quantum number sector w
 auto qnsct_dn = QNSector(qn_dn, 1);         // qnsct_dn: quantum number sector with down spin
 ```
 
-We know that physical operator like ![S^z](https://latex.codecogs.com/svg.latex?%5Cinline%20S%5Ez) can be represented as a tensor with two legs. Now we define the leg which is called `Index` in GraceQ/tensor.
+We know that physical operator like ![S^z](https://latex.codecogs.com/svg.latex?S%5Ez) can be represented as a tensor with two legs. Now we define the leg which is called `Index` in GraceQ/tensor.
 ```cpp
 auto idx_in  = Index({qnsct_up, qnsct_dn}, IN);       // idx_in: Index with in-direction quantum number flow.
 auto idx_out = Index({qnsct_up, qnsct_dn}, OUT);      // idx_out: Index with out-direction quantum number flow.
 ```
 
-Once we have the legs with quantum number informations, we can create the tensor object to represent the ![S^z](https://latex.codecogs.com/svg.latex?%5Cinline%20S%5Ez) operator and set the non-zero elements.
+Once we have the legs with quantum number informations, we can create the tensor object to represent the ![S^z](https://latex.codecogs.com/svg.latex?S%5Ez) operator and set the non-zero elements.
 ```cpp
 auto sz_op = GQTensor({idx_in, idx_out});       // Create GraceQ/tensor sparse tensor object.
 sz_op({0, 0}) =  0.5;                           // Set the spin up element.
@@ -101,7 +101,7 @@ sz_op({1, 1}) = -0.5;                           // Set the spin down element.
 
 #### Contraction
 
-Tensor contraction is implemented as a _numpy-like_ API in GraceQ/tensor. The following example performs $C = A \cdot B$ matrices dot product using the tensor contraction.
+Tensor contraction is implemented as a _numpy-like_ API in GraceQ/tensor. The following example performs ![C=AcdotB](https://latex.codecogs.com/svg.latex?C%20%3D%20A%20%5Ccdot%20B) matrices dot product using the tensor contraction.
 ```cpp
 // Treat ta and tb ...
 
@@ -117,9 +117,9 @@ Contract(
 #### Linear combination
 
 Tensor linear combination is defined as
-$$
-T_{res} = T_{res} + a \cdot A + b \cdot B + c \cdot C + \cdots
-$$
+
+![T_{res}=T_{res}+acdotA+bcdotB+ccdotC+cdots](https://latex.codecogs.com/svg.latex?T_%7Bres%7D%20%3D%20T_%7Bres%7D%20&plus;%20a%20%5Ccdot%20A%20&plus;%20b%20%5Ccdot%20B%20&plus;%20c%20%5Ccdot%20C%20&plus;%20%5Ccdots)
+
 where all the treated tensors must have the same shape.
 ```cpp
 GQTensor tres, ta, tb, tc;
