@@ -164,7 +164,7 @@ Svd(                // Perform T = Ucut * Scut * VTcut with singular value spect
 The singular value spectrum cutoff policies are
 - If the raw number of singular values of the effective matrix is smaller than the `Dmin`, keep all the spectrum.
 - If the spectrum touches the `cutoff` first but its number is smaller than the `Dmin`, keep `Dmin` number of singular values.
-- If the spectrum touches the `cutoff` first and its number is larger than the `Dmin` but smaller than the `Dmax`, keep the spectrum just `cutoff` satisfied.
+- If the spectrum touches the `cutoff` first and its number is larger than the `Dmin` but smaller than the `Dmax`, keep number of singular values which satisfies the `cutoff`.
 - If the spectrum touches the `Dmax` first but `cutoff` not satisfied, keep `Dmax` number of singular values.
 
 ## TODO list
