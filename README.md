@@ -69,9 +69,7 @@ using namespace gqten
 
 ### Sparse tensor object with U1 quantum number
 
-As an example, we will create <img https://latex.codecogs.com/png.latex?S^z /> $S^z$ ![](https://latex.codecogs.com/png.latex?%5Cinline%20S%5Ez) operator living in a two-dimensional spin 1/2 Hilbert space.
-
-<img https://latex.codecogs.com/png.latex?S^z />
+As an example, we will create  ![](https://latex.codecogs.com/svg.latex?%5Cinline%20S%5Ez) operator living in a two-dimensional spin 1/2 Hilbert space.
 
 First, we define the quantum numbers.
 ```cpp
@@ -86,13 +84,13 @@ auto qnsct_up = QNSector(qn_up, 1);         // qnsct_up: Quantum number sector w
 auto qnsct_dn = QNSector(qn_dn, 1);         // qnsct_dn: quantum number sector with down spin
 ```
 
-We know that physical operator like $S^z$ can be represented as a tensor with two legs. Now we define the leg which is called `Index` in GraceQ/tensor.
+We know that physical operator like ![S^z](https://latex.codecogs.com/svg.latex?%5Cinline%20S%5Ez) can be represented as a tensor with two legs. Now we define the leg which is called `Index` in GraceQ/tensor.
 ```cpp
 auto idx_in  = Index({qnsct_up, qnsct_dn}, IN);       // idx_in: Index with in-direction quantum number flow.
 auto idx_out = Index({qnsct_up, qnsct_dn}, OUT);      // idx_out: Index with out-direction quantum number flow.
 ```
 
-Once we have the legs with quantum number informations, we can create the tensor object to represent the $S^z$ operator and set the non-zero elements.
+Once we have the legs with quantum number informations, we can create the tensor object to represent the ![S^z](https://latex.codecogs.com/svg.latex?%5Cinline%20S%5Ez) operator and set the non-zero elements.
 ```cpp
 auto sz_op = GQTensor({idx_in, idx_out});       // Create GraceQ/tensor sparse tensor object.
 sz_op({0, 0}) =  0.5;                           // Set the spin up element.
