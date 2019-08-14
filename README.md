@@ -69,7 +69,9 @@ using namespace gqten
 
 ### Sparse tensor object with U1 quantum number
 
-As an example, we will create $S^z$ operator living in a two-dimensional spin 1/2 Hilbert space.
+As an example, we will create <img https://latex.codecogs.com/png.latex?S^z /> $S^z$ ![](https://latex.codecogs.com/png.latex?%5Cinline%20S%5Ez) operator living in a two-dimensional spin 1/2 Hilbert space.
+
+<img https://latex.codecogs.com/png.latex?S^z />
 
 First, we define the quantum numbers.
 ```cpp
@@ -189,8 +191,8 @@ Cite GraceQ/tensor as
 
 ## Acknowledgments
 
-The author(s) highly acknowledge the following people and organization(s) (sorted in alphabetical order):
+The author(s) highly acknowledge the following people, project(s) and organization(s) (sorted in alphabetical order):
 
-Cheng Peng, Chunyu Sun, D. N. Sheng, Grace Song, Hong-Chen Jiang, itensor.org, Le Zhao, Shuo Yang, Thomas P. Devereaux, Wayne Zheng, Xiaoyu Dong, Yifan Jiang, Zheng-Yu Weng
+ALPS project, Cheng Peng, Chunyu Sun, D. N. Sheng, Grace Song, Hong-Chen Jiang, itensor.org, Le Zhao, Shuo Yang, Thomas P. Devereaux, Wayne Zheng, Xiaoyu Dong, Yifan Jiang, Zheng-Yu Weng
 
 You can not meet this library without anyone of them.
