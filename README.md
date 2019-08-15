@@ -64,7 +64,7 @@ It is easy to use the GraceQ/tensor.
 
 ```cpp
 #include "gqten/gqten.h"
-using namespace gqten
+using namespace gqten;
 ```
 
 ### Sparse tensor object with U1 quantum number
