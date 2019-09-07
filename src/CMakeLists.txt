@@ -5,6 +5,11 @@
 #  
 #  Description: GraceQ/tensor project. CMake file to control the library source code.
 # 
+if(NOT GQTEN_USE_EXTERNAL_HPTT_LIB)
+  set(hptt_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/external/hptt/include")
+endif()
+
+
 if(GQTEN_MPI_PARALLEL)
   add_library(gqten
     utils.cc
@@ -21,8 +26,8 @@ if(GQTEN_MPI_PARALLEL)
     mpi_ten_ctrct.cc)
 
   target_include_directories(gqten
-    PUBLIC "${PROJECT_SOURCE_DIR}/include"
-    PUBLIC "${PROJECT_SOURCE_DIR}/external/hptt/include"
+    PRIVATE "${PROJECT_SOURCE_DIR}/include"
+    PRIVATE ${hptt_INCLUDE_DIR}
     PRIVATE ${MPI_CXX_INCLUDE_PATH})
 
   target_compile_options(gqten
@@ -48,8 +53,8 @@ else()
     ten_svd.cc)
 
   target_include_directories(gqten
-    PUBLIC "${PROJECT_SOURCE_DIR}/include"
-    PUBLIC "${PROJECT_SOURCE_DIR}/external/hptt/include")
+    PRIVATE "${PROJECT_SOURCE_DIR}/include"
+    PRIVATE ${hptt_INCLUDE_DIR})
 
   target_compile_options(gqten
     PUBLIC ${MATH_LIB_COMPILE_FLAGS})

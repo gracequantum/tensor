@@ -5,7 +5,10 @@
 #  
 #  Description: GraceQ/tensor project. Main CMake file.
 # 
+
+# CMake basic setting
 cmake_minimum_required(VERSION 3.12)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 project("GraceQ/tensor"
   DESCRIPTION "Low level sparse tensor library with U1 symmetry."
@@ -52,6 +55,9 @@ option(GQTEN_CONTRACT_BLOCK_COUNTING "Count the number of blocks when contractin
 if(GQTEN_CONTRACT_BLOCK_COUNTING)
   add_definitions(-DGQTEN_CONTRACT_BLOCK_COUNTING)
 endif()
+
+option(GQTEN_USE_EXTERNAL_HPTT_LIB "Use external hptt library" OFF)
+
 
 # Compilation and linking control.
 set(CMAKE_CXX_STANDARD 11)
@@ -121,6 +127,7 @@ add_subdirectory(src lib)
 if(GQTEN_MPI_PARALLEL)
   add_subdirectory(app bin)
 endif()
+
 
 # Unittests
 if(GQTEN_BUILD_UNITTEST)

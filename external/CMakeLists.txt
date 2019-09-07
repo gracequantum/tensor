@@ -8,4 +8,8 @@
 
 
 # hptt
-add_subdirectory(hptt)
+if(GQTEN_USE_EXTERNAL_HPTT_LIB)
+  find_package(hptt REQUIRED)
+else()
+  add_subdirectory(hptt)
+endif()
