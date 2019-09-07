@@ -17,7 +17,7 @@ _"If it isn't fast, it isn't graceful"_
 GraceQ/tensor library depends [hptt](https://github.com/springer13/hptt) to perform dense tensor transpose on shared memory computing system. And it has been integrated as a git submodule. So you can use the `--recurse-submodules` option to clone it recursively.
 
 ```
-git clone git clone --recurse-submodules https://github.com/gracequantum/tensor.git gqten
+git clone --recurse-submodules https://github.com/gracequantum/tensor.git gqten
 ```
 
 Then you can use the CMake tool to build the library.
@@ -36,6 +36,8 @@ Finally, you can get the library file `libgqten.a` at `./lib/libgqten.a` and the
 GraceQ/tensor uses [Google Test](https://github.com/google/googletest) as its unittest framework. You should install the Google Test first and then turn on the `GQTEN_BUILD_UNITTEST` option.
 
 ```
+cd gqten
+mkdir build && cd build
 cmake .. -DGQTEN_BUILD_UNITTEST=ON
 make
 ```
