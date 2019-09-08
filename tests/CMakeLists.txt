@@ -8,46 +8,44 @@
 macro(add_unittest
     TEST_NAME TEST_SRC CFLAGS LINK_LIBS LINK_LIB_FLAGS MPI_TEST)
   add_executable(${TEST_NAME}
-      ${TEST_SRC})
+    ${TEST_SRC})
 
   if(GQTEN_MPI_PARALLEL)
     target_include_directories(${TEST_NAME}
-        PUBLIC "${PROJECT_SOURCE_DIR}/include"
-        PUBLIC "${PROJECT_SOURCE_DIR}/src"
-        PUBLIC "/usr/local/include"
-        PRIVATE ${MPI_CXX_INCLUDE_PATH}
-        PRIVATE ${CFLAGS})
+      PRIVATE "${PROJECT_SOURCE_DIR}/include"
+      PRIVATE "${PROJECT_SOURCE_DIR}/src"
+      PRIVATE ${MPI_CXX_INCLUDE_PATH}
+      PRIVATE ${CFLAGS})
     target_compile_options(${TEST_NAME}
       PRIVATE ${MATH_LIB_COMPILE_FLAGS}
       PRIVATE ${MPI_CXX_COMPILE_FLAGS})
     target_link_libraries(${TEST_NAME}
-        "-L/usr/local/lib"
-        gtest gtest_main
-        ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS}
-        "${LINK_LIBS}" "${LINK_LIB_FLAGS}")
+      GTest::GTest GTest::Main
+      ${hptt_LIBRARY}
+      ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS}
+      "${LINK_LIBS}" "${LINK_LIB_FLAGS}")
   else()
     target_include_directories(${TEST_NAME}
-        PUBLIC "${PROJECT_SOURCE_DIR}/include"
-        PUBLIC "${PROJECT_SOURCE_DIR}/src"
-        PUBLIC "/usr/local/include"
-        PRIVATE ${CFLAGS})
+      PRIVATE "${PROJECT_SOURCE_DIR}/include"
+      PRIVATE "${PROJECT_SOURCE_DIR}/src"
+      PRIVATE ${CFLAGS})
     target_link_libraries(${TEST_NAME}
-        "-L/usr/local/lib"
-        gtest gtest_main
-        "${LINK_LIBS}" "${LINK_LIB_FLAGS}")
+      GTest::GTest GTest::Main
+      ${hptt_LIBRARY}
+      "${LINK_LIBS}" "${LINK_LIB_FLAGS}")
   endif()
 
   if("${MPI_TEST}" STREQUAL "")
     add_test(
-        NAME ${TEST_NAME}
-        COMMAND "${TEST_NAME}")
+      NAME ${TEST_NAME}
+      COMMAND "${TEST_NAME}")
   else()
     if(APPLE)
       add_test(${TEST_NAME}
-          mpirun --host localhost:4 -np 1 ${TEST_NAME} : --host localhost:4 -np 3 ../bin/gqten_mpi_gemm_batch_worker)
+        mpirun --host localhost:4 -np 1 ${TEST_NAME} : --host localhost:4 -np 3 ../bin/gqten_mpi_gemm_batch_worker)
     else()
       add_test(${TEST_NAME}
-          mpirun -np 1 ./${TEST_NAME} : -np 3 ../bin/gqten_mpi_gemm_batch_worker)
+        mpirun -np 1 ./${TEST_NAME} : -np 3 ../bin/gqten_mpi_gemm_batch_worker)
     endif()
   endif()
 
@@ -76,27 +74,27 @@ add_unittest(test_gqtensor test_gqtensor.cc "" gqten "" "")
 # Test tensor numerical functions.
 # Test tensor contraction.
 add_unittest(test_ten_ctrct
-    test_ten_ctrct.cc "${MATH_LIB_COMPILE_FLAGS}"
-    gqten "${MATH_LIB_LINK_FLAGS}"
-    "")
+  test_ten_ctrct.cc "${MATH_LIB_COMPILE_FLAGS}"
+  gqten "${MATH_LIB_LINK_FLAGS}"
+  "")
 # Test tensor linear combination.
 add_unittest(test_ten_lincmb
-    test_ten_lincmb.cc "${MATH_LIB_COMPILE_FLAGS}"
-    gqten "${MATH_LIB_LINK_FLAGS}"
-    "")
+  test_ten_lincmb.cc "${MATH_LIB_COMPILE_FLAGS}"
+  gqten "${MATH_LIB_LINK_FLAGS}"
+  "")
 
 # Test tensor SVD.
 add_unittest(test_ten_svd
-    test_ten_svd.cc "${MATH_LIB_COMPILE_FLAGS}"
-    gqten "${MATH_LIB_LINK_FLAGS}"
-    "")
+  test_ten_svd.cc "${MATH_LIB_COMPILE_FLAGS}"
+  gqten "${MATH_LIB_LINK_FLAGS}"
+  "")
 
 # Test Distributed tensor numerical functions.
 # Test distributed tensor contraction.
 if(GQTEN_MPI_PARALLEL)
   add_unittest(test_mpi_ten_ctrct
-      test_mpi_ten_ctrct.cc
-      "${MATH_LIB_COMPILE_FLAGS}"
-      gqten "${MATH_LIB_LINK_FLAGS}"
-      "MPI_TEST")
+    test_mpi_ten_ctrct.cc
+    "${MATH_LIB_COMPILE_FLAGS}"
+    gqten "${MATH_LIB_LINK_FLAGS}"
+    "MPI_TEST")
 endif()

@@ -132,5 +132,6 @@ endif()
 # Unittests
 if(GQTEN_BUILD_UNITTEST)
   enable_testing()
+  find_package(GTest REQUIRED)
   add_subdirectory(tests tests)
 endif()

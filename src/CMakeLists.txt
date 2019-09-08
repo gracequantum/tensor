@@ -33,11 +33,6 @@ if(GQTEN_MPI_PARALLEL)
   target_compile_options(gqten
     PRIVATE ${MATH_LIB_COMPILE_FLAGS}
     PRIVATE ${MPI_CXX_COMPILE_FLAGS})
-
-  target_link_libraries(gqten
-    hptt
-    ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS}
-    ${MATH_LIB_LINK_FLAGS})
 else()
   add_library(gqten
     utils.cc
@@ -57,9 +52,5 @@ else()
     PRIVATE ${hptt_INCLUDE_DIR})
 
   target_compile_options(gqten
-    PUBLIC ${MATH_LIB_COMPILE_FLAGS})
-
-  target_link_libraries(gqten
-    hptt
-    "${MATH_LIB_LINK_FLAGS}")
+    PRIVATE ${MATH_LIB_COMPILE_FLAGS})
 endif()
