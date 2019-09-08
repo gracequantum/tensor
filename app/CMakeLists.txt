@@ -20,4 +20,9 @@ if(GQTEN_MPI_PARALLEL)
   target_link_libraries(gqten_mpi_gemm_batch_worker
     ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS}
     ${MATH_LIB_LINK_FLAGS})
+
+
+  install(
+    TARGETS gqten_mpi_gemm_batch_worker
+    DESTINATION "${GQTEN_BIN_DEST}")
 endif()

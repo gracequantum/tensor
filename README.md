@@ -25,24 +25,16 @@ Then you can use the CMake tool to build the library.
 ```
 cd gqten
 mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake .. -DCMAKE_INSTALL_PREFIX=<your_gqten_installation_root>
 make
+make install
 ```
 
-Finally, you can get the library file `libgqten.a` at `./lib/libgqten.a` and the dependence `hptt` library file `libhptt.a` at `./external/hptt/libhptt.a`.
+GraceQ/tensor build and install hptt library using the same CMake setting by default. If you want to use external hptt library, set `GQTEN_USE_EXTERNAL_HPTT_LIB=ON`.
 
 ### Build unittests
 
-GraceQ/tensor uses [Google Test](https://github.com/google/googletest) as its unittest framework. You should install the Google Test first and then turn on the `GQTEN_BUILD_UNITTEST` option.
-
-```
-cd gqten
-mkdir build && cd build
-cmake .. -DGQTEN_BUILD_UNITTEST=ON
-make
-```
-
-Run the unittests using
+GraceQ/tensor uses [Google Test](https://github.com/google/googletest) as its unittest framework. You should install the Google Test first and then turn on the `GQTEN_BUILD_UNITTEST` option. After the building process, run the unittests by
 
 ```
 make test
@@ -67,6 +59,12 @@ It is easy to use the GraceQ/tensor.
 ```cpp
 #include "gqten/gqten.h"
 using namespace gqten;
+```
+
+GraceQ/tensor needs hptt and MKL during linking process. So you should use the following statements when you link the library.
+
+```
+<your_gqten_installation_root>/lib/libgqten.a <your_hptt_installation_root>/lib/libhptt.a <your_mkl_linking_flags>
 ```
 
 ### Sparse tensor object with U1 quantum number

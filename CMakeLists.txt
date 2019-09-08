@@ -5,7 +5,10 @@
 #  
 #  Description: GraceQ/tensor project. Main CMake file.
 # 
+
+# CMake basic setting
 cmake_minimum_required(VERSION 3.12)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 project("GraceQ/tensor"
   DESCRIPTION "Low level sparse tensor library with U1 symmetry."
@@ -14,7 +17,7 @@ project("GraceQ/tensor"
 
 # Build type.
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug)
+  set(CMAKE_BUILD_TYPE Release)
 endif()
 
 if(${CMAKE_BUILD_TYPE} MATCHES Debug)
@@ -52,6 +55,9 @@ option(GQTEN_CONTRACT_BLOCK_COUNTING "Count the number of blocks when contractin
 if(GQTEN_CONTRACT_BLOCK_COUNTING)
   add_definitions(-DGQTEN_CONTRACT_BLOCK_COUNTING)
 endif()
+
+option(GQTEN_USE_EXTERNAL_HPTT_LIB "Use external hptt library" OFF)
+
 
 # Compilation and linking control.
 set(CMAKE_CXX_STANDARD 11)
@@ -113,6 +119,12 @@ if(GQTEN_MPI_PARALLEL)
 endif()
 
 
+# Installation path
+set(GQTEN_BIN_DEST "${CMAKE_INSTALL_PREFIX}/bin")
+set(GQTEN_INCLUDE_DEST "${CMAKE_INSTALL_PREFIX}/include/gqten")
+set(GQTEN_LIB_DEST "${CMAKE_INSTALL_PREFIX}/lib")
+
+
 # Subdirectories.
 add_subdirectory(external)
 
@@ -122,8 +134,10 @@ if(GQTEN_MPI_PARALLEL)
   add_subdirectory(app bin)
 endif()
 
+
 # Unittests
 if(GQTEN_BUILD_UNITTEST)
   enable_testing()
+  find_package(GTest REQUIRED)
   add_subdirectory(tests tests)
 endif()
