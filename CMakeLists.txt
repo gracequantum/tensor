@@ -119,6 +119,12 @@ if(GQTEN_MPI_PARALLEL)
 endif()
 
 
+# Installation path
+set(GQTEN_BIN_DEST "${CMAKE_INSTALL_PREFIX}/bin")
+set(GQTEN_INCLUDE_DEST "${CMAKE_INSTALL_PREFIX}/include/gqten")
+set(GQTEN_LIB_DEST "${CMAKE_INSTALL_PREFIX}/lib")
+
+
 # Subdirectories.
 add_subdirectory(external)
 
