@@ -64,8 +64,10 @@ using namespace gqten;
 GraceQ/tensor needs hptt and MKL during linking process. So you should use the following statements when you link the library.
 
 ```
-<your_gqten_installation_root>/lib/libgqten.a <your_hptt_installation_root>/lib/libhptt.a <your_mkl_linking_flags>
+-lgqten -lhptt <your_mkl_linking_flags>
 ```
+
+We highly recommend that you use [MKL Link Line Advisor](https://software.intel.com/en-us/articles/intel-mkl-link-line-advisor/) to set `<your_mkl_linking_flags>`.
 
 ### Sparse tensor object with U1 quantum number
 
