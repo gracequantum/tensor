@@ -10,7 +10,6 @@ if(NOT GQTEN_USE_EXTERNAL_HPTT_LIB)
 endif()
 
 
-set(GQTEN_HEADER_PATH "${PROJECT_SOURCE_DIR}/include")
 set(GQTEN_HEADERS ${GQTEN_HEADER_PATH}/gqten/gqten.h)
 set(GQTEN_BASIC_SRC
   utils.cc

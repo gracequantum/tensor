@@ -11,7 +11,7 @@ cmake_minimum_required(VERSION 3.12)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 project("GraceQ/tensor"
-  DESCRIPTION "Low level sparse tensor library with U1 symmetry."
+  DESCRIPTION "A high-performance tensor library for the quantum physics community"
   LANGUAGES CXX)
 
 
@@ -62,6 +62,8 @@ option(GQTEN_USE_EXTERNAL_HPTT_LIB "Use external hptt library" OFF)
 # Compilation and linking control.
 set(CMAKE_CXX_STANDARD 11)
 add_definitions("-g")
+
+
 # Set MKL compile flags and link flags.
 if(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
   set(MATH_LIB_COMPILE_FLAGS "-I$ENV{MKLROOT}/include")
@@ -125,11 +127,15 @@ set(GQTEN_INCLUDE_DEST "${CMAKE_INSTALL_PREFIX}/include/gqten")
 set(GQTEN_LIB_DEST "${CMAKE_INSTALL_PREFIX}/lib")
 
 
-# Subdirectories.
+# Build dependencies.
 add_subdirectory(external)
 
+# Build library.
+set(GQTEN_HEADER_PATH "${PROJECT_SOURCE_DIR}/include")
+set(GQTEN_SRC_PATH "${PROJECT_SOURCE_DIR}/src")
 add_subdirectory(src lib)
 
+# Build binary.
 if(GQTEN_MPI_PARALLEL)
   add_subdirectory(app bin)
 endif()

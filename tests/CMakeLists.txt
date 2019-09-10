@@ -17,8 +17,8 @@ macro(add_unittest
 
   if(GQTEN_MPI_PARALLEL)
     target_include_directories(${TEST_NAME}
-      PRIVATE "${PROJECT_SOURCE_DIR}/include"
-      PRIVATE "${PROJECT_SOURCE_DIR}/src"
+      PRIVATE ${GQTEN_HEADER_PATH}
+      PRIVATE ${GQTEN_SRC_PATH}
       PRIVATE ${MPI_CXX_INCLUDE_PATH}
       PRIVATE ${CFLAGS})
     target_compile_options(${TEST_NAME}
@@ -32,8 +32,8 @@ macro(add_unittest
       "${LINK_LIBS}" "${LINK_LIB_FLAGS}")
   else()
     target_include_directories(${TEST_NAME}
-      PRIVATE "${PROJECT_SOURCE_DIR}/include"
-      PRIVATE "${PROJECT_SOURCE_DIR}/src"
+      PRIVATE ${GQTEN_HEADER_PATH}
+      PRIVATE ${GQTEN_SRC_PATH}
       PRIVATE ${CFLAGS})
     target_link_libraries(${TEST_NAME}
       gqten
@@ -47,12 +47,13 @@ macro(add_unittest
       NAME ${TEST_NAME}
       COMMAND "${TEST_NAME}")
   else()
+    set(GQTEN_GEMM_BATCH_WORKER ${CMAKE_BINARY_DIR}/bin/gqten_mpi_gemm_batch_worker)
     if(APPLE)
       add_test(${TEST_NAME}
-        mpirun --host localhost:4 -np 1 ${TEST_NAME} : --host localhost:4 -np 3 ../bin/gqten_mpi_gemm_batch_worker)
+        mpirun --host localhost:4 -np 1 ${TEST_NAME} : --host localhost:4 -np 3 ${GQTEN_GEMM_BATCH_WORKER})
     else()
       add_test(${TEST_NAME}
-        mpirun -np 1 ./${TEST_NAME} : -np 3 ../bin/gqten_mpi_gemm_batch_worker)
+        mpirun -np 1 ./${TEST_NAME} : -np 3 ${GQTEN_GEMM_BATCH_WORKER})
     endif()
   endif()
 
