@@ -47,22 +47,22 @@ T CalcCartProd(T v) {
 
 // Inline functions.
 // Free the resources of a GQTensor.
-inline void GQTenFree(GQTensor *pt) {
-  for (auto &pblk : pt->blocks()) { delete pblk; }
-}
+//inline void GQTenFree(GQTensor *pt) {
+  //for (auto &pblk : pt->blocks()) { delete pblk; }
+//}
 
 
 // Calculate offset for the effective one dimension array.
-inline long CalcEffOneDimArrayOffset(
-    const std::vector<long> &coors,
-    const long ndim,
-    const std::vector<long> &data_offsets) {
-  long offset = 0;
-  for (long i = 0; i < ndim; ++i) {
-    offset += coors[i] * data_offsets[i];
-  }
-  return offset;
-}
+//inline long CalcEffOneDimArrayOffset(
+    //const std::vector<long> &coors,
+    //const long ndim,
+    //const std::vector<long> &data_offsets) {
+  //long offset = 0;
+  //for (long i = 0; i < ndim; ++i) {
+    //offset += coors[i] * data_offsets[i];
+  //}
+  //return offset;
+//}
 
 
 inline bool DoubleEq(const double a, const double b) {

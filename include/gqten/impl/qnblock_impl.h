@@ -1,21 +1,20 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 /*
 * Author: Rongyang Sun <sun-rongyang@outlook.com>
-* Creation Date: 2019-08-07 20:26
+* Creation Date: 2019-09-11 15:24
 * 
-* Description: GraceQ/tensor project. Implementation details about quantum number block.
+* Description: GraceQ/tensor project. Implementation details for quantum number class template.
 */
-#include "gqten/gqten.h"
-#include "ten_trans.h"
-#include "vec_hash.h"
-#include "utils.h"
+#include <assert.h>
 
 #include <vector>
 #include <iostream>
 #include <fstream>
 #include <cstring>
 
-#include <assert.h>
+#include "gqten/gqten.h"
+#include "gqten/impl/vec_hash.h"
+#include "gqten/impl/utils_inl.h"
 
 #ifdef Release
   #define NDEBUG
@@ -25,7 +24,18 @@
 namespace gqten {
 
 
-QNBlock::QNBlock(const std::vector<QNSector> &init_qnscts) :
+// Forward declarations.
+std::vector<long> CalcMultiDimDataOffsets(const std::vector<long> &);
+double *DenseTensorTranspose(
+    const double *,
+    const long,
+    const long,
+    const std::vector<long> &,
+    const std::vector<long> &);
+
+
+template <typename ElemType>
+QNBlock<ElemType>::QNBlock(const std::vector<QNSector> &init_qnscts) :
     QNSectorSet(init_qnscts) {
   ndim = qnscts.size(); 
   for (auto &qnsct : qnscts) {
@@ -41,7 +51,8 @@ QNBlock::QNBlock(const std::vector<QNSector> &init_qnscts) :
 }
 
 
-QNBlock::QNBlock(const std::vector<const QNSector *> &pinit_qnscts) :
+template <typename ElemType>
+QNBlock<ElemType>::QNBlock(const std::vector<const QNSector *> &pinit_qnscts) :
     QNSectorSet(pinit_qnscts) {
   ndim = qnscts.size(); 
   for (auto &qnsct : qnscts) {
@@ -59,7 +70,8 @@ QNBlock::QNBlock(const std::vector<const QNSector *> &pinit_qnscts) :
 }
 
 
-QNBlock::QNBlock(const QNBlock &qnblk) :
+template <typename ElemType>
+QNBlock<ElemType>::QNBlock(const QNBlock &qnblk) :
     QNSectorSet(qnblk),   // Use copy constructor of the base class.
     ndim(qnblk.ndim),
     shape(qnblk.shape),
@@ -71,7 +83,8 @@ QNBlock::QNBlock(const QNBlock &qnblk) :
 }
 
 
-QNBlock &QNBlock::operator=(const QNBlock &rhs) {
+template <typename ElemType>
+QNBlock<ElemType> &QNBlock<ElemType>::operator=(const QNBlock &rhs) {
   // Copy data.
   auto new_data = new double [rhs.size];
   std::memcpy(new_data, rhs.data_, rhs.size * sizeof(double));
@@ -88,7 +101,8 @@ QNBlock &QNBlock::operator=(const QNBlock &rhs) {
 }
 
 
-QNBlock::QNBlock(QNBlock &&qnblk) noexcept :
+template <typename ElemType>
+QNBlock<ElemType>::QNBlock(QNBlock &&qnblk) noexcept :
     QNSectorSet(qnblk),
     ndim(qnblk.ndim),
     shape(qnblk.shape),
@@ -100,7 +114,8 @@ QNBlock::QNBlock(QNBlock &&qnblk) noexcept :
 }
 
 
-QNBlock &QNBlock::operator=(QNBlock &&rhs) noexcept {
+template <typename ElemType>
+QNBlock<ElemType> &QNBlock<ElemType>::operator=(QNBlock &&rhs) noexcept {
   // Move data.
   delete [] data_;
   data_ = rhs.data_;
@@ -116,14 +131,17 @@ QNBlock &QNBlock::operator=(QNBlock &&rhs) noexcept {
 }
 
 
-QNBlock::~QNBlock(void) {
+template <typename ElemType>
+QNBlock<ElemType>::~QNBlock(void) {
   delete [] data_;
   data_ = nullptr;
 }
 
 
 // Block element getter.
-const double &QNBlock::operator()(const std::vector<long> &coors) const {
+template <typename ElemType>
+const double &QNBlock<ElemType>::operator()(
+    const std::vector<long> &coors) const {
   assert(coors.size() == ndim);
   auto offset = CalcEffOneDimArrayOffset(coors, ndim, data_offsets_);
   return *(data_+offset);
@@ -131,14 +149,16 @@ const double &QNBlock::operator()(const std::vector<long> &coors) const {
 
 
 // Block element setter.
-double &QNBlock::operator()(const std::vector<long> &coors) {
+template <typename ElemType>
+double &QNBlock<ElemType>::operator()(const std::vector<long> &coors) {
   assert(coors.size() == ndim);
   auto offset = CalcEffOneDimArrayOffset(coors, ndim, data_offsets_);
   return *(data_+offset);
 }
 
 
-size_t QNBlock::PartHash(const std::vector<long> &axes) const {
+template <typename ElemType>
+size_t QNBlock<ElemType>::PartHash(const std::vector<long> &axes) const {
   auto selected_qnscts_ndim  = axes.size();
   std::vector<const QNSector *> pselected_qnscts(selected_qnscts_ndim);
   for (std::size_t i = 0; i < selected_qnscts_ndim; ++i) {
@@ -149,12 +169,14 @@ size_t QNBlock::PartHash(const std::vector<long> &axes) const {
 
 
 // Inplace operation.
-void QNBlock::Random(void) {
+template <typename ElemType>
+void QNBlock<ElemType>::Random(void) {
   for (int i = 0; i < size; ++i) { data_[i] = double(rand()) / RAND_MAX; }
 }
 
 
-void QNBlock::Transpose(const std::vector<long> &transed_axes) {
+template <typename ElemType>
+void QNBlock<ElemType>::Transpose(const std::vector<long> &transed_axes) {
   std::vector<QNSector> transed_qnscts(ndim);
   std::vector<long> transed_shape(ndim);
   for (long i = 0; i < ndim; ++i) {
@@ -174,7 +196,8 @@ void QNBlock::Transpose(const std::vector<long> &transed_axes) {
 }
 
 
-std::ifstream &bfread(std::ifstream &ifs, QNBlock &qnblk) {
+template <typename ElemType>
+std::ifstream &bfread(std::ifstream &ifs, QNBlock<ElemType> &qnblk) {
   ifs >> qnblk.ndim;
 
   ifs >> qnblk.size;
@@ -200,7 +223,8 @@ std::ifstream &bfread(std::ifstream &ifs, QNBlock &qnblk) {
 }
 
 
-std::ofstream &bfwrite(std::ofstream &ofs, const QNBlock &qnblk) {
+template <typename ElemType>
+std::ofstream &bfwrite(std::ofstream &ofs, const QNBlock<ElemType> &qnblk) {
   ofs << qnblk.ndim << std::endl;
 
   ofs << qnblk.size << std::endl;

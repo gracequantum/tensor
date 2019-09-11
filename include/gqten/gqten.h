@@ -205,15 +205,24 @@ std::ofstream &bfwrite(std::ofstream &, const Index &);
 
 
 // Dense block labeled by the quantum number.
+template <typename> class QNBlock;
+
+template <typename ElemType>
+std::ifstream &bfread(std::ifstream &, QNBlock<ElemType> &);
+
+template <typename ElemType>
+std::ofstream &bfwrite(std::ofstream &, const QNBlock<ElemType> &);
+
+template <typename ElemType>
 class QNBlock : public QNSectorSet {
 // Binary I/O.
-friend std::ifstream &bfread(std::ifstream &, QNBlock &);
-friend std::ofstream &bfwrite(std::ofstream &, const QNBlock &);
+friend std::ifstream &bfread<ElemType>(std::ifstream &, QNBlock<ElemType> &);
+friend std::ofstream &bfwrite<ElemType>(std::ofstream &, const QNBlock<ElemType> &);
 // Some functions called by tensor numerical functions to use the private constructor.
-friend std::vector<QNBlock *> BlocksCtrctBatch(
-    const std::vector<long> &, const std::vector<long> &,
-    const double,
-    const std::vector<QNBlock *> &, const std::vector<QNBlock *> &);
+//friend std::vector<QNBlock *> BlocksCtrctBatch(
+    //const std::vector<long> &, const std::vector<long> &,
+    //const double,
+    //const std::vector<QNBlock *> &, const std::vector<QNBlock *> &);
 #ifdef GQTEN_MPI_PARALLEL
 friend std::vector<QNBlock *> GQTEN_MPI_BlocksCtrctBatch(
     const std::vector<long> &, const std::vector<long> &,
@@ -266,204 +275,200 @@ private:
   std::size_t qnscts_hash_ = 0;
 };
 
-std::ifstream &bfread(std::ifstream &, QNBlock &);
 
-std::ofstream &bfwrite(std::ofstream &, const QNBlock &);
+//// Tensor with U1 symmetry.
+//struct BlkInterOffsetsAndQNSS {     // QNSS: QNSectorSet.
+  //BlkInterOffsetsAndQNSS(
+      //const std::vector<long> &blk_inter_offsets, const QNSectorSet &blk_qnss) :
+      //blk_inter_offsets(blk_inter_offsets), blk_qnss(blk_qnss) {}
 
+  //std::vector<long> blk_inter_offsets;
+  //QNSectorSet blk_qnss;
+//};
 
-// Tensor with U1 symmetry.
-struct BlkInterOffsetsAndQNSS {     // QNSS: QNSectorSet.
-  BlkInterOffsetsAndQNSS(
-      const std::vector<long> &blk_inter_offsets, const QNSectorSet &blk_qnss) :
-      blk_inter_offsets(blk_inter_offsets), blk_qnss(blk_qnss) {}
+//class GQTensor {
+//friend std::ifstream &bfread(std::ifstream &, GQTensor &);
+//friend std::ofstream &bfwrite(std::ofstream &, const GQTensor &);
 
-  std::vector<long> blk_inter_offsets;
-  QNSectorSet blk_qnss;
-};
+//public:
+  //GQTensor(void) = default;
+  //GQTensor(const std::vector<Index> &);
 
-class GQTensor {
-friend std::ifstream &bfread(std::ifstream &, GQTensor &);
-friend std::ofstream &bfwrite(std::ofstream &, const GQTensor &);
+  //GQTensor(const GQTensor &);
+  //GQTensor &operator=(const GQTensor &);
 
-public:
-  GQTensor(void) = default;
-  GQTensor(const std::vector<Index> &);
+  //GQTensor(GQTensor &&) noexcept;
+  //GQTensor &operator=(GQTensor &&) noexcept;
 
-  GQTensor(const GQTensor &);
-  GQTensor &operator=(const GQTensor &);
+  //~GQTensor(void);
 
-  GQTensor(GQTensor &&) noexcept;
-  GQTensor &operator=(GQTensor &&) noexcept;
+  //// Element getter and setter.
+  //double Elem(const std::vector<long> &) const;     // Getter.
+  //double &operator()(const std::vector<long> &);    // Setter.
 
-  ~GQTensor(void);
+  //// Access to the blocks.
+  //const std::vector<QNBlock *> &cblocks(void) const { return blocks_; }
+  //std::vector<QNBlock *> &blocks(void) { return blocks_; }
 
-  // Element getter and setter.
-  double Elem(const std::vector<long> &) const;     // Getter.
-  double &operator()(const std::vector<long> &);    // Setter.
+  //// Inplace operations.
 
-  // Access to the blocks.
-  const std::vector<QNBlock *> &cblocks(void) const { return blocks_; }
-  std::vector<QNBlock *> &blocks(void) { return blocks_; }
+  //// Random set tensor elements with given quantum number divergence.
+  //// Any original blocks will be destroyed.
+  //void Random(const QN &);
 
-  // Inplace operations.
+  //// Tensor transpose.
+  //void Transpose(const std::vector<long> &);
 
-  // Random set tensor elements with given quantum number divergence.
-  // Any original blocks will be destroyed.
-  void Random(const QN &);
+  //// Normalize the GQTensor and return its norm.
+  //double Normalize(void);
 
-  // Tensor transpose.
-  void Transpose(const std::vector<long> &);
+  //// Switch the direction of the indexes, complex conjugate of the element in the future.
+  //void Dag(void) { for (auto &index : indexes) { index.Dag(); } }
 
-  // Normalize the GQTensor and return its norm.
-  double Normalize(void);
+  //// Operators overload.
+  //GQTensor operator-(void) const;
+  //GQTensor operator+(const GQTensor &);
+  //GQTensor &operator+=(const GQTensor &);
 
-  // Switch the direction of the indexes, complex conjugate of the element in the future.
-  void Dag(void) { for (auto &index : indexes) { index.Dag(); } }
+  //bool operator==(const GQTensor &) const;
+  //bool operator!=(const GQTensor &rhs) const { return !(*this == rhs); }
 
-  // Operators overload.
-  GQTensor operator-(void) const;
-  GQTensor operator+(const GQTensor &);
-  GQTensor &operator+=(const GQTensor &);
+  //// Iterators.
+  //// Return all the tensor coordinates. So heavy that you should not use it!
+  //std::vector<std::vector<long>> CoorsIter(void) const;
 
-  bool operator==(const GQTensor &) const;
-  bool operator!=(const GQTensor &rhs) const { return !(*this == rhs); }
+  //// Public data members.
+  //std::vector<Index> indexes;
+  //double scalar = 0.0;
+  //std::vector<long> shape;
 
-  // Iterators.
-  // Return all the tensor coordinates. So heavy that you should not use it!
-  std::vector<std::vector<long>> CoorsIter(void) const;
+//private:
+  //std::vector<QNBlock *> blocks_;
 
-  // Public data members.
-  std::vector<Index> indexes;
-  double scalar = 0.0;
-  std::vector<long> shape;
+  //double Norm(void);
 
-private:
-  std::vector<QNBlock *> blocks_;
-
-  double Norm(void);
-
-  BlkInterOffsetsAndQNSS CalcTargetBlkInterOffsetsAndQNSS(
-      const std::vector<long> &) const;
-  std::vector<QNSectorSet> BlkQNSSsIter(void) const;
-};
+  //BlkInterOffsetsAndQNSS CalcTargetBlkInterOffsetsAndQNSS(
+      //const std::vector<long> &) const;
+  //std::vector<QNSectorSet> BlkQNSSsIter(void) const;
+//};
 
 
-// GQTensor objects operations.
-// For Index.
-Index InverseIndex(const Index &);
+//// GQTensor objects operations.
+//// For Index.
+//Index InverseIndex(const Index &);
 
-// For GQTensor.
-GQTensor Dag(const GQTensor &);
+//// For GQTensor.
+//GQTensor Dag(const GQTensor &);
 
-// Just mock the dag. Not construct a new object.
-inline const GQTensor &MockDag(const GQTensor &t) { return t; }
+//// Just mock the dag. Not construct a new object.
+//inline const GQTensor &MockDag(const GQTensor &t) { return t; }
 
-QN Div(const GQTensor &);
+//QN Div(const GQTensor &);
 
-GQTensor operator*(const GQTensor &, const double &);
+//GQTensor operator*(const GQTensor &, const double &);
 
-GQTensor operator*(const double &, const GQTensor &);
+//GQTensor operator*(const double &, const GQTensor &);
 
-// GQTensor I/O
-std::ifstream &bfread(std::ifstream &, GQTensor &);
+//// GQTensor I/O
+//std::ifstream &bfread(std::ifstream &, GQTensor &);
 
-std::ofstream &bfwrite(std::ofstream &, const GQTensor &);
-
-
-// Tensor numerical functions.
-// Tensors contraction.
-void Contract(
-    const GQTensor *, const GQTensor *,
-    const std::vector<std::vector<long>> &,
-    GQTensor *);
-
-// This API just for forward compatibility, it will be deleted soon.
-/* TODO: Remove this API. */
-GQTensor *Contract(
-    const GQTensor &, const GQTensor &,
-    const std::vector<std::vector<long>> &);
-
-#ifdef GQTEN_MPI_PARALLEL
-const char kGemmWorkerStatCont = 'c';
-
-const char kGemmWorkerStatStop = 's';
-
-void GQTEN_MPI_Contract(
-    const GQTensor *, const GQTensor *,
-    const std::vector<std::vector<long>> &,
-    GQTensor *,
-    MPI_Comm, const int);
-
-// This API just for forward compatibility, it will be deleted soon.
-/* TODO: Remove this API. */
-GQTensor *GQTEN_MPI_Contract(
-    const GQTensor &, const GQTensor &,
-    const std::vector<std::vector<long>> &,
-    MPI_Comm, const int);
+//std::ofstream &bfwrite(std::ofstream &, const GQTensor &);
 
 
-inline void MPI_SendGemmWorkerStat(
-    const char stat, const int worker, MPI_Comm comm) {
-  MPI_Send(&stat, 1, MPI_CHAR, worker, 5, comm);
-}
-#endif
+//// Tensor numerical functions.
+//// Tensors contraction.
+//void Contract(
+    //const GQTensor *, const GQTensor *,
+    //const std::vector<std::vector<long>> &,
+    //GQTensor *);
 
-// Tensors linear combination.
-// Do the operation: res += (coefs[0]*ts[0] + coefs[1]*ts[1] + ...).
-/* TODO: Support scalar (rank 0) tensor case. */
-void LinearCombine(
-    const std::vector<double> &,
-    const std::vector<GQTensor *> &,
-    GQTensor *);
+//// This API just for forward compatibility, it will be deleted soon.
+//[> TODO: Remove this API. <]
+//GQTensor *Contract(
+    //const GQTensor &, const GQTensor &,
+    //const std::vector<std::vector<long>> &);
 
-void LinearCombine(
-    const std::size_t,
-    const double *,
-    const std::vector<GQTensor *> &,
-    GQTensor *);
+//#ifdef GQTEN_MPI_PARALLEL
+//const char kGemmWorkerStatCont = 'c';
 
-// Tensor SVD.
-void Svd(
-    const GQTensor *,
-    const long, const long,
-    const QN &, const QN &,
-    const double, const long, const long,
-    GQTensor *, GQTensor *, GQTensor *,
-    double *, long *);
+//const char kGemmWorkerStatStop = 's';
 
+//void GQTEN_MPI_Contract(
+    //const GQTensor *, const GQTensor *,
+    //const std::vector<std::vector<long>> &,
+    //GQTensor *,
+    //MPI_Comm, const int);
 
-struct SvdRes {
-  SvdRes(
-      GQTensor *u, GQTensor *s, GQTensor *v,
-      const double trunc_err, const long D) :
-      u(u), s(s), v(v), trunc_err(trunc_err), D(D) {}
-  GQTensor *u;
-  GQTensor *s;
-  GQTensor *v;
-  const double trunc_err;
-  const long D;
-};
-
-// This API just for forward compatibility, it will be deleted soon.
-/* TODO: Remove this API. */
-SvdRes Svd(
-    const GQTensor &,
-    const long, const long,
-    const QN &, const QN &);
-
-// This API just for forward compatibility, it will be deleted soon.
-/* TODO: Remove this API. */
-SvdRes Svd(
-    const GQTensor &,
-    const long, const long,
-    const QN &, const QN &,
-    const double, const long, const long);
+//// This API just for forward compatibility, it will be deleted soon.
+//[> TODO: Remove this API. <]
+//GQTensor *GQTEN_MPI_Contract(
+    //const GQTensor &, const GQTensor &,
+    //const std::vector<std::vector<long>> &,
+    //MPI_Comm, const int);
 
 
-// Tensor transpose function multi-thread controller.
-int GQTenGetTensorTransposeNumThreads(void);
+//inline void MPI_SendGemmWorkerStat(
+    //const char stat, const int worker, MPI_Comm comm) {
+  //MPI_Send(&stat, 1, MPI_CHAR, worker, 5, comm);
+//}
+//#endif
 
-void GQTenSetTensorTransposeNumThreads(const int);
+//// Tensors linear combination.
+//// Do the operation: res += (coefs[0]*ts[0] + coefs[1]*ts[1] + ...).
+//[> TODO: Support scalar (rank 0) tensor case. <]
+//void LinearCombine(
+    //const std::vector<double> &,
+    //const std::vector<GQTensor *> &,
+    //GQTensor *);
+
+//void LinearCombine(
+    //const std::size_t,
+    //const double *,
+    //const std::vector<GQTensor *> &,
+    //GQTensor *);
+
+//// Tensor SVD.
+//void Svd(
+    //const GQTensor *,
+    //const long, const long,
+    //const QN &, const QN &,
+    //const double, const long, const long,
+    //GQTensor *, GQTensor *, GQTensor *,
+    //double *, long *);
+
+
+//struct SvdRes {
+  //SvdRes(
+      //GQTensor *u, GQTensor *s, GQTensor *v,
+      //const double trunc_err, const long D) :
+      //u(u), s(s), v(v), trunc_err(trunc_err), D(D) {}
+  //GQTensor *u;
+  //GQTensor *s;
+  //GQTensor *v;
+  //const double trunc_err;
+  //const long D;
+//};
+
+//// This API just for forward compatibility, it will be deleted soon.
+//[> TODO: Remove this API. <]
+//SvdRes Svd(
+    //const GQTensor &,
+    //const long, const long,
+    //const QN &, const QN &);
+
+//// This API just for forward compatibility, it will be deleted soon.
+//[> TODO: Remove this API. <]
+//SvdRes Svd(
+    //const GQTensor &,
+    //const long, const long,
+    //const QN &, const QN &,
+    //const double, const long, const long);
+
+
+//// Tensor transpose function multi-thread controller.
+//int GQTenGetTensorTransposeNumThreads(void);
+
+//void GQTenSetTensorTransposeNumThreads(const int);
 
 
 // Timer.
@@ -482,4 +487,10 @@ private:
   double GetWallTime(void);
 };
 } /* gqten */ 
+
+
+// Include implementation details.
+#include "gqten/impl/qnblock_impl.h"
+
+
 #endif /* ifndef GQTEN_GQTEN_H */

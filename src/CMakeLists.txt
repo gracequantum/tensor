@@ -18,11 +18,11 @@ set(GQTEN_BASIC_SRC
   qn.cc
   qnsector.cc
   index.cc
-  qnblock.cc
-  gqtensor.cc
-  ten_ctrct.cc
-  ten_lincmb.cc
-  ten_svd.cc)
+  #gqtensor.cc
+  #ten_ctrct.cc
+  #ten_lincmb.cc
+  #ten_svd.cc
+  )
 
 
 if(GQTEN_MPI_PARALLEL)
