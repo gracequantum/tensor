@@ -76,8 +76,8 @@ add_unittest(test_index test_index.cc "" "" "${MATH_LIB_LINK_FLAGS}" "")
 # Test dense block labeled by the quantum numbers, QNBlock.
 add_unittest(test_qnblock test_qnblock.cc "" "" "${MATH_LIB_LINK_FLAGS}" "")
 
-## Test tensor with U1 symmetry, GQTensor.
-#add_unittest(test_gqtensor test_gqtensor.cc "" "" "${MATH_LIB_LINK_FLAGS}" "")
+# Test tensor with U1 symmetry, GQTensor.
+add_unittest(test_gqtensor test_gqtensor.cc "" "" "${MATH_LIB_LINK_FLAGS}" "")
 
 ## Test tensor numerical functions.
 ## Test tensor contraction.

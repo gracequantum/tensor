@@ -20,13 +20,17 @@ using namespace gqten;
 const double kEpsilon = 1.0E-12;
 
 
+typedef GQTensor<double> DGQTensor;
+typedef QNBlock<double> DQNBlock;
+
+
 struct TestGQTensor : public testing::Test {
   QNSector szup = QNSector(QN({QNNameVal("Sz", 1)}), 1);
   QNSector szdn = QNSector(QN({QNNameVal("Sz", -1)}), 1);
   Index bpb = Index({szdn, szup}, IN, "b");
   Index tpb = Index({szdn, szup}, OUT, "t");
-  GQTensor vec = GQTensor({tpb});
-  GQTensor site = GQTensor({bpb, tpb});
+  DGQTensor vec = DGQTensor({tpb});
+  DGQTensor site = DGQTensor({bpb, tpb});
   int d = 3;
   Index idx_in = Index({
                      QNSector(QN({QNNameVal("Sz", -1)}), d),
@@ -36,7 +40,7 @@ struct TestGQTensor : public testing::Test {
                       QNSector(QN({QNNameVal("Sz", -1)}), d),
                       QNSector(QN({QNNameVal("Sz",  0)}), d),
                       QNSector(QN({QNNameVal("Sz",  1)}), d)}, OUT);
-  GQTensor vec_rand_up = GQTensor({tpb});
+  DGQTensor vec_rand_up = DGQTensor({tpb});
 
   void SetUp(void) {
     vec_rand_up.Random(QN({QNNameVal("Sz", 1)}));
@@ -46,7 +50,7 @@ struct TestGQTensor : public testing::Test {
 
 TEST_F(TestGQTensor, Initialization) {
   // Test default constructor.
-  GQTensor gqten_default = GQTensor(); 
+  DGQTensor gqten_default = DGQTensor(); 
   EXPECT_EQ(gqten_default.indexes, std::vector<Index>());
 
   // Test common constructor.
@@ -54,7 +58,7 @@ TEST_F(TestGQTensor, Initialization) {
   EXPECT_EQ(site.indexes, (std::vector<Index>{bpb, tpb}));
 
   // Test copy constructor.
-  GQTensor vec_rand_up_cpy(vec_rand_up);
+  DGQTensor vec_rand_up_cpy(vec_rand_up);
   EXPECT_EQ(vec_rand_up_cpy.indexes, std::vector<Index>{tpb});
   EXPECT_NE(vec_rand_up_cpy.cblocks()[0], vec_rand_up.cblocks()[0]);
   EXPECT_EQ(
@@ -69,21 +73,21 @@ TEST_F(TestGQTensor, Initialization) {
       vec_rand_up.cblocks()[0]->cdata()[0]);
 
   // Test move constructor.
-  GQTensor vec_rand_up_tomove(vec_rand_up);
-  GQTensor vec_rand_up_moved(std::move(vec_rand_up_tomove));
+  DGQTensor vec_rand_up_tomove(vec_rand_up);
+  DGQTensor vec_rand_up_moved(std::move(vec_rand_up_tomove));
   EXPECT_EQ(vec_rand_up_moved.indexes, std::vector<Index>{tpb});
   EXPECT_EQ(
       vec_rand_up_moved.cblocks()[0]->cdata()[0],
       vec_rand_up.cblocks()[0]->cdata()[0]);
-  EXPECT_EQ(vec_rand_up_tomove.cblocks(), std::vector<QNBlock *>{});
+  EXPECT_EQ(vec_rand_up_tomove.cblocks(), std::vector<DQNBlock *>{});
 
-  GQTensor vec_rand_up_tomove2(vec_rand_up);
+  DGQTensor vec_rand_up_tomove2(vec_rand_up);
   auto vec_rand_up_moved2 = std::move(vec_rand_up_tomove2);
   EXPECT_EQ(vec_rand_up_moved2.indexes, std::vector<Index>{tpb});
   EXPECT_EQ(
       vec_rand_up_moved2.cblocks()[0]->cdata()[0],
       vec_rand_up.cblocks()[0]->cdata()[0]);
-  EXPECT_EQ(vec_rand_up_tomove2.cblocks(), std::vector<QNBlock *>{});
+  EXPECT_EQ(vec_rand_up_tomove2.cblocks(), std::vector<DQNBlock *>{});
 }
 
 
@@ -120,7 +124,7 @@ TEST_F(TestGQTensor, Random) {
                      QNSector(QN({QNNameVal("Sz",  0)}), 10),
                      QNSector(QN({QNNameVal("Sz",  1)}), 10)}, IN);
   auto lidx_out = InverseIndex(lidx_in);
-  auto lt2 = GQTensor({lidx_in, lidx_out});
+  auto lt2 = DGQTensor({lidx_in, lidx_out});
   srand(0);
   lt2.Random(QN({QNNameVal("Sz", 1)}));
   srand(0);
@@ -142,7 +146,7 @@ TEST_F(TestGQTensor, Random) {
 
 
 void RunTestTransposeCase(
-    const GQTensor &t, const std::vector<long> &axes) {
+    const DGQTensor &t, const std::vector<long> &axes) {
   auto transed_t = t;
   transed_t.Transpose(axes);
   for (size_t i = 0; i < axes.size(); ++i) {
@@ -157,7 +161,7 @@ void RunTestTransposeCase(
 
 TEST_F(TestGQTensor, TestTranspose) {
   // 2D case.
-  auto ten = GQTensor({idx_in, idx_out});
+  auto ten = DGQTensor({idx_in, idx_out});
   srand(0);
   ten.Random(QN({QNNameVal("Sz", 0)}));
   RunTestTransposeCase(ten, {0, 1});
@@ -166,26 +170,26 @@ TEST_F(TestGQTensor, TestTranspose) {
   ten.Random(QN({QNNameVal("Sz", 1)}));
   RunTestTransposeCase(ten, {1, 0});
   // Diff indexes size.
-  auto ten2 = GQTensor({bpb, idx_out});
+  auto ten2 = DGQTensor({bpb, idx_out});
   srand(0);
   ten2.Random(QN({QNNameVal("Sz", 0)}));
   RunTestTransposeCase(ten2, {0, 1});
   RunTestTransposeCase(ten2, {1, 0});
 
   // 3D case.
-  ten = GQTensor({idx_in, idx_out, idx_out});
+  ten = DGQTensor({idx_in, idx_out, idx_out});
   srand(0);
   ten.Random(QN({QNNameVal("Sz", 0)}));
   RunTestTransposeCase(ten, {1, 0, 2});
   // Diff indexes size.
-  ten2 = GQTensor({bpb, idx_out, tpb});
+  ten2 = DGQTensor({bpb, idx_out, tpb});
   srand(0);
   ten2.Random(QN({QNNameVal("Sz", 0)}));
   RunTestTransposeCase(ten2, {1, 0, 2});
 }
 
 
-void RunTestNormalizeCase(GQTensor &t, const QN &div) {
+void RunTestNormalizeCase(DGQTensor &t, const QN &div) {
   srand(0);
   t.Random(div);
 
@@ -203,19 +207,19 @@ void RunTestNormalizeCase(GQTensor &t, const QN &div) {
 
 TEST_F(TestGQTensor, TestNormalize) {
   // 2D case.
-  auto ten = GQTensor({idx_in, idx_out});
+  auto ten = DGQTensor({idx_in, idx_out});
   RunTestNormalizeCase(ten, QN({QNNameVal("Sz", 0)}));
   RunTestNormalizeCase(ten, QN({QNNameVal("Sz", 1)}));
 
   // 3D case.
-  ten = GQTensor({idx_in, idx_out, idx_out});
+  ten = DGQTensor({idx_in, idx_out, idx_out});
   RunTestNormalizeCase(ten, QN({QNNameVal("Sz", 0)}));
   RunTestNormalizeCase(ten, QN({QNNameVal("Sz", 1)}));
 }
 
 
 TEST_F(TestGQTensor, TestDag) {
-  auto ten = GQTensor({idx_in, idx_out});
+  auto ten = DGQTensor({idx_in, idx_out});
   auto ten_dag = Dag(ten);
   EXPECT_EQ(ten_dag.indexes[0], idx_out);
   EXPECT_EQ(ten_dag.indexes[1], idx_in);
@@ -223,7 +227,7 @@ TEST_F(TestGQTensor, TestDag) {
 
 
 TEST_F(TestGQTensor, TestDiv) {
-  auto ten = GQTensor({idx_in, idx_out});
+  auto ten = DGQTensor({idx_in, idx_out});
 
   auto div = QN({QNNameVal("Sz", 0)});
   ten.Random(div);
@@ -236,13 +240,13 @@ TEST_F(TestGQTensor, TestDiv) {
 
 
 TEST_F(TestGQTensor, TestSummation) {
-  auto ten1 = GQTensor({idx_in, idx_out});
+  auto ten1 = DGQTensor({idx_in, idx_out});
   srand(0);
   ten1.Random(QN({QNNameVal("Sz", 0)}));
-  auto ten2 = GQTensor({idx_in, idx_out});
+  auto ten2 = DGQTensor({idx_in, idx_out});
   ten2.Random(QN({QNNameVal("Sz", 1)}));
   auto sum1 = ten1 + ten2;
-  auto sum2 = GQTensor(ten1);
+  auto sum2 = DGQTensor(ten1);
   sum2 += ten2;
   for (auto &coors : sum1.CoorsIter()) {
     EXPECT_NEAR(sum1.Elem(coors), sum2.Elem(coors), kEpsilon);
@@ -251,12 +255,12 @@ TEST_F(TestGQTensor, TestSummation) {
 
 
 TEST_F(TestGQTensor, TestDotMultiplication) {
-  auto ten = GQTensor();
+  auto ten = DGQTensor();
   ten.scalar = 1.0;
   auto multed_ten = 2.33 * ten;
   EXPECT_DOUBLE_EQ(multed_ten.scalar, 2.33);
 
-  ten = GQTensor({idx_in,  idx_out});
+  ten = DGQTensor({idx_in,  idx_out});
   ten.Random(QN({QNNameVal("Sz", 0)}));
   multed_ten = 2.33  * ten;
   for (size_t i = 0; i < ten.cblocks().size(); ++i) {
@@ -270,23 +274,23 @@ TEST_F(TestGQTensor, TestDotMultiplication) {
 
 
 TEST_F(TestGQTensor, TestEq) {
-  auto ten1 = GQTensor({idx_in,  idx_out});
+  auto ten1 = DGQTensor({idx_in,  idx_out});
   ten1.Random(QN({QNNameVal("Sz", 0)}));
   EXPECT_TRUE(ten1 == ten1);
 
-  auto ten2 = GQTensor({idx_in, idx_out});
+  auto ten2 = DGQTensor({idx_in, idx_out});
   ten2.Random(QN({QNNameVal("Sz", 1)}));
   EXPECT_TRUE(ten1 != ten2);
 }
 
 
-void RunTestGQTensorFileIOCase(const GQTensor &t) {
+void RunTestGQTensorFileIOCase(const DGQTensor &t) {
   std::string file = "test.gqten";
   std::ofstream out(file, std::ofstream::binary);
   bfwrite(out, t);
   out.close();
   std::ifstream in(file, std::ifstream::binary);
-  GQTensor t_cpy;
+  DGQTensor t_cpy;
   bfread(in, t_cpy);
   in.close();
   EXPECT_EQ(t_cpy, t);
@@ -295,7 +299,7 @@ void RunTestGQTensorFileIOCase(const GQTensor &t) {
 
 TEST_F(TestGQTensor, FileIO) {
   // Default case.
-  RunTestGQTensorFileIOCase(GQTensor());
+  RunTestGQTensorFileIOCase(DGQTensor());
 
   // Small case.
   RunTestGQTensorFileIOCase(vec_rand_up);
@@ -306,7 +310,7 @@ TEST_F(TestGQTensor, FileIO) {
                      QNSector(QN({QNNameVal("Sz",  0)}), 10),
                      QNSector(QN({QNNameVal("Sz",  1)}), 10)}, IN);
   auto lidx_out = InverseIndex(lidx_in);
-  auto lt2 = GQTensor({lidx_in, lidx_out});
+  auto lt2 = DGQTensor({lidx_in, lidx_out});
   srand(0);
   lt2.Random(QN({QNNameVal("Sz", 1)}));
   RunTestGQTensorFileIOCase(lt2);

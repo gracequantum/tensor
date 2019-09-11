@@ -173,12 +173,12 @@ void RunTestQNBlockFileIOCase(const DQNBlock &qnblk) {
 }
 
 
-//TEST_F(TestQNBlock, FileIO) {
-  //RunTestQNBlockFileIOCase(qnblock_default);
-  //qnblock_sz0sct1_1d.Random();
-  //RunTestQNBlockFileIOCase(qnblock_sz0sct1_1d);
-  //qnblock_sz0sct1_2d.Random();
-  //RunTestQNBlockFileIOCase(qnblock_sz0sct1_2d);
-  //qnblock_sz1sct2_2d.Random();
-  //RunTestQNBlockFileIOCase(qnblock_sz1sct2_2d);
-//}
+TEST_F(TestQNBlock, FileIO) {
+  RunTestQNBlockFileIOCase(qnblock_default);
+  qnblock_sz0sct1_1d.Random();
+  RunTestQNBlockFileIOCase(qnblock_sz0sct1_1d);
+  qnblock_sz0sct1_2d.Random();
+  RunTestQNBlockFileIOCase(qnblock_sz0sct1_2d);
+  qnblock_sz1sct2_2d.Random();
+  RunTestQNBlockFileIOCase(qnblock_sz1sct2_2d);
+}
