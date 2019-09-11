@@ -36,6 +36,13 @@ InterOffsetQnsct Index::CoorInterOffsetAndQnsct(const long coor) const {
 }
 
 
+Index InverseIndex(const Index &idx) {
+  Index inversed_idx = idx;
+  inversed_idx.Dag();
+  return inversed_idx;
+}
+
+
 std::ifstream &bfread(std::ifstream &ifs, Index &idx) {
   long qnscts_num;
   ifs >> qnscts_num;
