@@ -5,20 +5,22 @@
 * 
 * Description: GraceQ/tensor project. Unittests for QNBlock object.
 */
-#include "gtest/gtest.h"
-#include "gqten/gqten.h"
-
 #include <utility>
 #include <cstdio>
+
+#include "gtest/gtest.h"
+#include "gqten/gqten.h"
+#include "testing_utils.h"
 
 
 using namespace gqten;
 
 
+// Testing QNBlock<double>.
 typedef QNBlock<double> DQNBlock;
 
 
-struct TestQNBlock : public testing::Test {
+struct TestDQNBlock : public testing::Test {
   DQNBlock qnblock_default;
   QNSector sz0_sct1 = QNSector(QN({QNNameVal("Sz", 0)}), 1);
   QNSector sz1_sct2 = QNSector(QN({QNNameVal("Sz", 1)}), 2);
@@ -28,14 +30,14 @@ struct TestQNBlock : public testing::Test {
 };
 
 
-TEST_F(TestQNBlock, TestNdim) {
+TEST_F(TestDQNBlock, TestNdim) {
   EXPECT_EQ(qnblock_default.ndim, 0);
   EXPECT_EQ(qnblock_sz0sct1_1d.ndim, 1);
   EXPECT_EQ(qnblock_sz0sct1_2d.ndim, 2);
 }
 
 
-TEST_F(TestQNBlock, TestShape) {
+TEST_F(TestDQNBlock, TestShape) {
   std::vector<long> lvec0; 
   EXPECT_EQ(qnblock_default.shape, lvec0);
   std::vector<long> lvec1 = {1};
@@ -47,7 +49,7 @@ TEST_F(TestQNBlock, TestShape) {
 }
 
 
-TEST_F(TestQNBlock, TestElemAssignment) {
+TEST_F(TestDQNBlock, TestElemAssignment) {
   qnblock_sz0sct1_1d({0}) = 1;
   EXPECT_EQ(qnblock_sz0sct1_1d({0}), 1);
 
@@ -70,7 +72,7 @@ TEST_F(TestQNBlock, TestElemAssignment) {
 }
 
 
-TEST_F(TestQNBlock, TestCopyConstructors) {
+TEST_F(TestDQNBlock, TestCopyConstructors) {
   qnblock_sz0sct1_1d({0}) = 1;
   DQNBlock qnblock_sz0sct1_1d_copyed(qnblock_sz0sct1_1d);
   EXPECT_EQ(qnblock_sz0sct1_1d_copyed.qnscts, qnblock_sz0sct1_1d.qnscts);
@@ -96,7 +98,7 @@ TEST_F(TestQNBlock, TestCopyConstructors) {
 }
 
 
-TEST_F(TestQNBlock, TestMoveConstructors) {
+TEST_F(TestDQNBlock, TestMoveConstructors) {
   qnblock_sz0sct1_1d({0}) = 1;
   auto qnblock_sz0sct1_1d_tomove = qnblock_sz0sct1_1d;
   DQNBlock qnblock_sz0sct1_1d_moved(std::move(qnblock_sz0sct1_1d_tomove));
@@ -128,7 +130,7 @@ TEST_F(TestQNBlock, TestMoveConstructors) {
 }
 
 
-TEST_F(TestQNBlock, TestPartialHash) {
+TEST_F(TestDQNBlock, TestPartialHash) {
   EXPECT_EQ(
       qnblock_sz0sct1_1d.PartHash({0}),
       QNSectorSet({qnblock_sz0sct1_1d.qnscts[0]}).Hash());
@@ -139,7 +141,7 @@ TEST_F(TestQNBlock, TestPartialHash) {
 }
 
 
-TEST_F(TestQNBlock, TestQNSectorSetHash) {
+TEST_F(TestDQNBlock, TestQNSectorSetHash) {
   EXPECT_EQ(qnblock_default.QNSectorSetHash(), 0);
   EXPECT_EQ(
       qnblock_sz0sct1_1d.QNSectorSetHash(),
@@ -150,9 +152,60 @@ TEST_F(TestQNBlock, TestQNSectorSetHash) {
 }
 
 
-/* TODO: Test Random and Transpose methods. */
+// Test rand a QNBlock.
+template <typename ElemType>
+void RunTestRandQNBlockCase(QNBlock<ElemType> &qnblk) {
+  auto size = qnblk.size;
+  auto rand_array = new ElemType[size]();
+  srand(0);
+  for (long i = 0; i < size; ++i) {
+    rand_array[i] = ElemType(rand()) / RAND_MAX;
+  }
+  srand(0);
+  qnblk.Random();
+  GtestArrayEq(rand_array, qnblk.cdata(), size);
+}
 
 
+TEST_F(TestDQNBlock, TestRandQNBlock) {
+  RunTestRandQNBlockCase(qnblock_default);
+  RunTestRandQNBlockCase(qnblock_sz0sct1_1d);
+  RunTestRandQNBlockCase(qnblock_sz0sct1_2d);
+  RunTestRandQNBlockCase(qnblock_sz1sct2_2d);
+}
+
+
+// Test QNBlock transpose.
+template <typename ElemType>
+void RunTestQNBlockTransposeCase(
+    const QNBlock<ElemType> &blk, const std::vector<long> &axes) {
+  auto transed_blk = blk;
+  transed_blk.Transpose(axes);
+  for (size_t i = 0; i < axes.size(); ++i) {
+    EXPECT_EQ(transed_blk.shape[i], transed_blk.shape[axes[i]]);
+  }
+  for (auto blk_coors : GenAllCoors(blk.shape)) {
+    EXPECT_EQ(transed_blk(TransCoors(blk_coors, axes)), blk(blk_coors));
+  }
+}
+
+
+TEST_F(TestDQNBlock, TestQNBlockTranspose) {
+  srand(0);
+  qnblock_sz0sct1_1d.Random();
+  RunTestQNBlockTransposeCase(qnblock_sz0sct1_1d, {0});
+  srand(0);
+  qnblock_sz0sct1_2d.Random();
+  RunTestQNBlockTransposeCase(qnblock_sz0sct1_2d, {0, 1});
+  RunTestQNBlockTransposeCase(qnblock_sz0sct1_2d, {1, 0});
+  srand(0);
+  qnblock_sz1sct2_2d.Random();
+  RunTestQNBlockTransposeCase(qnblock_sz1sct2_2d, {0, 1});
+  RunTestQNBlockTransposeCase(qnblock_sz1sct2_2d, {1, 0});
+}
+
+
+// Test file I/O
 void RunTestQNBlockFileIOCase(const DQNBlock &qnblk) {
   std::string file = "test.qnblk";
   std::ofstream out(file, std::ofstream::binary);
@@ -167,13 +220,11 @@ void RunTestQNBlockFileIOCase(const DQNBlock &qnblk) {
   EXPECT_EQ(qnblk_cpy.size, qnblk.size);
   EXPECT_EQ(qnblk_cpy.shape, qnblk.shape);
   EXPECT_EQ(qnblk_cpy.qnscts, qnblk.qnscts);
-  for (long i = 0; i < qnblk_cpy.size; i++) {
-    EXPECT_DOUBLE_EQ(qnblk_cpy.cdata()[i], qnblk.cdata()[i]);
-  }
+  GtestArrayEq(qnblk_cpy.cdata(), qnblk.cdata(), qnblk_cpy.size);
 }
 
 
-TEST_F(TestQNBlock, FileIO) {
+TEST_F(TestDQNBlock, FileIO) {
   RunTestQNBlockFileIOCase(qnblock_default);
   qnblock_sz0sct1_1d.Random();
   RunTestQNBlockFileIOCase(qnblock_sz0sct1_1d);

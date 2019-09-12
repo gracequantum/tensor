@@ -11,6 +11,7 @@
 
 #include <vector>
 
+#include "gtest/gtest.h"
 
 
 inline std::vector<long> TransCoors(
@@ -23,4 +24,9 @@ inline std::vector<long> TransCoors(
 }
 
 
+inline void GtestArrayEq(const double *lhs, const double *rhs, const long len) {
+  for (long i = 0; i < len; ++i) {
+    EXPECT_DOUBLE_EQ(lhs[i], rhs[i]);
+  }
+}
 #endif /* ifndef GQTEN_TESTING_UTILS_H */
