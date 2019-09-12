@@ -16,6 +16,16 @@
 using namespace gqten;
 
 
+template <typename ElemType>
+void QNBlockEq(const QNBlock<ElemType> &lhs, const QNBlock<ElemType> &rhs) {
+  EXPECT_EQ(rhs.qnscts, lhs.qnscts);
+  EXPECT_EQ(rhs.ndim, lhs.ndim);
+  EXPECT_EQ(rhs.shape, lhs.shape);
+  EXPECT_EQ(rhs.size, lhs.size);
+  GtestArrayEq(rhs.cdata(), lhs.cdata(), lhs.size);
+}
+
+
 // Testing QNBlock<double>.
 typedef QNBlock<double> DQNBlock;
 
@@ -75,26 +85,10 @@ TEST_F(TestDQNBlock, TestElemAssignment) {
 TEST_F(TestDQNBlock, TestCopyConstructors) {
   qnblock_sz0sct1_1d({0}) = 1;
   DQNBlock qnblock_sz0sct1_1d_copyed(qnblock_sz0sct1_1d);
-  EXPECT_EQ(qnblock_sz0sct1_1d_copyed.qnscts, qnblock_sz0sct1_1d.qnscts);
-  EXPECT_EQ(qnblock_sz0sct1_1d_copyed.ndim, qnblock_sz0sct1_1d.ndim);
-  EXPECT_EQ(qnblock_sz0sct1_1d_copyed.shape, qnblock_sz0sct1_1d.shape);
-  EXPECT_EQ(qnblock_sz0sct1_1d_copyed.size, qnblock_sz0sct1_1d.size);
-  for (long i = 0; i < qnblock_sz0sct1_1d.size; ++i) {
-    EXPECT_DOUBLE_EQ(
-        qnblock_sz0sct1_1d_copyed.cdata()[i],
-        qnblock_sz0sct1_1d.cdata()[i]);
-  }
+  QNBlockEq(qnblock_sz0sct1_1d, qnblock_sz0sct1_1d_copyed);
 
   auto qnblock_sz0sct1_1d_copyed2 = qnblock_sz0sct1_1d;
-  EXPECT_EQ(qnblock_sz0sct1_1d_copyed2.qnscts, qnblock_sz0sct1_1d.qnscts);
-  EXPECT_EQ(qnblock_sz0sct1_1d_copyed2.ndim, qnblock_sz0sct1_1d.ndim);
-  EXPECT_EQ(qnblock_sz0sct1_1d_copyed2.shape, qnblock_sz0sct1_1d.shape);
-  EXPECT_EQ(qnblock_sz0sct1_1d_copyed2.size, qnblock_sz0sct1_1d.size);
-  for (long i = 0; i < qnblock_sz0sct1_1d.size; ++i) {
-    EXPECT_DOUBLE_EQ(
-        qnblock_sz0sct1_1d_copyed2.cdata()[i],
-        qnblock_sz0sct1_1d.cdata()[i]);
-  }
+  QNBlockEq(qnblock_sz0sct1_1d, qnblock_sz0sct1_1d_copyed2);
 }
 
 
@@ -102,30 +96,12 @@ TEST_F(TestDQNBlock, TestMoveConstructors) {
   qnblock_sz0sct1_1d({0}) = 1;
   auto qnblock_sz0sct1_1d_tomove = qnblock_sz0sct1_1d;
   DQNBlock qnblock_sz0sct1_1d_moved(std::move(qnblock_sz0sct1_1d_tomove));
-  EXPECT_EQ(qnblock_sz0sct1_1d_moved.qnscts, qnblock_sz0sct1_1d_tomove.qnscts);
-  EXPECT_EQ(qnblock_sz0sct1_1d_moved.ndim, qnblock_sz0sct1_1d_tomove.ndim);
-  EXPECT_EQ(qnblock_sz0sct1_1d_moved.shape, qnblock_sz0sct1_1d_tomove.shape);
-  EXPECT_EQ(qnblock_sz0sct1_1d_moved.size, qnblock_sz0sct1_1d_tomove.size);
-  for (long i = 0; i < qnblock_sz0sct1_1d.size; ++i) {
-    EXPECT_DOUBLE_EQ(
-        qnblock_sz0sct1_1d_moved.cdata()[i],
-        qnblock_sz0sct1_1d.cdata()[i]);
-  }
+  QNBlockEq(qnblock_sz0sct1_1d_moved, qnblock_sz0sct1_1d);
   EXPECT_EQ(qnblock_sz0sct1_1d_tomove.cdata(), nullptr);
 
   auto qnblock_sz0sct1_1d_tomove2 = qnblock_sz0sct1_1d;
   auto qnblock_sz0sct1_1d_moved2 = std::move(qnblock_sz0sct1_1d_tomove2);
-  EXPECT_EQ(
-      qnblock_sz0sct1_1d_moved2.qnscts,
-      qnblock_sz0sct1_1d_tomove2.qnscts);
-  EXPECT_EQ(qnblock_sz0sct1_1d_moved2.ndim, qnblock_sz0sct1_1d_tomove2.ndim);
-  EXPECT_EQ(qnblock_sz0sct1_1d_moved2.shape, qnblock_sz0sct1_1d_tomove2.shape);
-  EXPECT_EQ(qnblock_sz0sct1_1d_moved2.size, qnblock_sz0sct1_1d_tomove2.size);
-  for (long i = 0; i < qnblock_sz0sct1_1d.size; ++i) {
-    EXPECT_DOUBLE_EQ(
-        qnblock_sz0sct1_1d_moved2.cdata()[i],
-        qnblock_sz0sct1_1d.cdata()[i]);
-  }
+  QNBlockEq(qnblock_sz0sct1_1d_moved2, qnblock_sz0sct1_1d);
   EXPECT_EQ(qnblock_sz0sct1_1d_tomove2.cdata(), nullptr);
 }
 
