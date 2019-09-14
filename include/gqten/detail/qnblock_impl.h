@@ -13,8 +13,8 @@
 #include <cstring>
 
 #include "gqten/gqten.h"
-#include "gqten/impl/vec_hash.h"
-#include "gqten/impl/utils_inl.h"
+#include "gqten/detail/vec_hash.h"
+#include "gqten/detail/utils_inl.h"
 
 #ifdef Release
   #define NDEBUG
@@ -26,8 +26,16 @@ namespace gqten {
 
 // Forward declarations.
 std::vector<long> CalcMultiDimDataOffsets(const std::vector<long> &);
-double *DenseTensorTranspose(
-    const double *,
+GQTEN_Double *DenseTensorTranspose(
+    const GQTEN_Double *,
+    const long,
+    const long,
+    const std::vector<long> &,
+    const std::vector<long> &);
+
+
+GQTEN_Complex *DenseTensorTranspose(
+    const GQTEN_Complex *,
     const long,
     const long,
     const std::vector<long> &,
@@ -44,7 +52,7 @@ QNBlock<ElemType>::QNBlock(const std::vector<QNSector> &init_qnscts) :
   if (ndim != 0) {
     size = 1;       // Initialize the block size.
     for (long i = 0; i < ndim; ++i) { size *= shape[i]; }
-    data_ = new double[size] ();    // Allocate memory and initialize to 0.
+    data_ = new ElemType[size] ();    // Allocate memory and initialize to 0.
     data_offsets_ = CalcMultiDimDataOffsets(shape);
     qnscts_hash_ = QNSectorSet::Hash();
   }
@@ -63,7 +71,7 @@ QNBlock<ElemType>::QNBlock(const std::vector<const QNSector *> &pinit_qnscts) :
     for (long i = 0; i < ndim; ++i) {
       size *= shape[i];
     }
-    data_ = new double[size];    // Allocate memory. NOT INITIALIZE TO ZERO!!!
+    data_ = new ElemType[size];    // Allocate memory. NOT INITIALIZE TO ZERO!!!
     data_offsets_ = CalcMultiDimDataOffsets(shape);
     qnscts_hash_ = QNSectorSet::Hash();
   }
@@ -78,16 +86,16 @@ QNBlock<ElemType>::QNBlock(const QNBlock &qnblk) :
     size(qnblk.size),
     data_offsets_(qnblk.data_offsets_),
     qnscts_hash_(qnblk.qnscts_hash_) {
-  data_ = new double[size];
-  std::memcpy(data_, qnblk.data_, size * sizeof(double));
+  data_ = new ElemType[size];
+  std::memcpy(data_, qnblk.data_, size * sizeof(ElemType));
 }
 
 
 template <typename ElemType>
 QNBlock<ElemType> &QNBlock<ElemType>::operator=(const QNBlock &rhs) {
   // Copy data.
-  auto new_data = new double [rhs.size];
-  std::memcpy(new_data, rhs.data_, rhs.size * sizeof(double));
+  auto new_data = new ElemType [rhs.size];
+  std::memcpy(new_data, rhs.data_, rhs.size * sizeof(ElemType));
   delete [] data_;
   data_ = new_data;
   // Copy other members.
@@ -140,7 +148,7 @@ QNBlock<ElemType>::~QNBlock(void) {
 
 // Block element getter.
 template <typename ElemType>
-const double &QNBlock<ElemType>::operator()(
+const ElemType &QNBlock<ElemType>::operator()(
     const std::vector<long> &coors) const {
   assert(coors.size() == ndim);
   auto offset = CalcEffOneDimArrayOffset(coors, ndim, data_offsets_);
@@ -150,7 +158,7 @@ const double &QNBlock<ElemType>::operator()(
 
 // Block element setter.
 template <typename ElemType>
-double &QNBlock<ElemType>::operator()(const std::vector<long> &coors) {
+ElemType &QNBlock<ElemType>::operator()(const std::vector<long> &coors) {
   assert(coors.size() == ndim);
   auto offset = CalcEffOneDimArrayOffset(coors, ndim, data_offsets_);
   return *(data_+offset);
@@ -171,7 +179,7 @@ size_t QNBlock<ElemType>::PartHash(const std::vector<long> &axes) const {
 // Inplace operation.
 template <typename ElemType>
 void QNBlock<ElemType>::Random(void) {
-  for (int i = 0; i < size; ++i) { data_[i] = double(rand()) / RAND_MAX; }
+  for (int i = 0; i < size; ++i) { Rand(data_[i]); }
 }
 
 
@@ -216,8 +224,8 @@ std::ifstream &bfread(std::ifstream &ifs, QNBlock<ElemType> &qnblk) {
   ifs.seekg(1, std::ios::cur);    // Skip the line break.
 
   if (qnblk.size != 0) {
-    qnblk.data_ = new double[qnblk.size];
-    ifs.read((char *) qnblk.data_, qnblk.size*sizeof(double));
+    qnblk.data_ = new ElemType[qnblk.size];
+    ifs.read((char *) qnblk.data_, qnblk.size*sizeof(ElemType));
   }
   return ifs;
 }
@@ -238,7 +246,7 @@ std::ofstream &bfwrite(std::ofstream &ofs, const QNBlock<ElemType> &qnblk) {
   ofs << qnblk.qnscts_hash_ << std::endl;
 
   if (qnblk.size != 0) {
-    ofs.write((char *) qnblk.data_, qnblk.size*sizeof(double));
+    ofs.write((char *) qnblk.data_, qnblk.size*sizeof(ElemType));
   }
   ofs << std::endl;
   return ofs;

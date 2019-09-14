@@ -12,6 +12,10 @@
 #include <vector>
 
 #include "gtest/gtest.h"
+#include "gqten/detail/value_t.h"
+
+
+using namespace gqten;
 
 
 inline std::vector<long> TransCoors(
@@ -24,9 +28,25 @@ inline std::vector<long> TransCoors(
 }
 
 
+inline void EXPECT_COMPLEX_EQ(
+    const GQTEN_Complex &lhs,
+    const GQTEN_Complex &rhs) {
+  EXPECT_DOUBLE_EQ(lhs.real(), rhs.real());
+  EXPECT_DOUBLE_EQ(lhs.imag(), rhs.imag());
+}
+
+
 inline void GtestArrayEq(const double *lhs, const double *rhs, const long len) {
   for (long i = 0; i < len; ++i) {
     EXPECT_DOUBLE_EQ(lhs[i], rhs[i]);
+  }
+}
+
+
+inline void GtestArrayEq(
+    const GQTEN_Complex *lhs, const GQTEN_Complex *rhs, const long len) {
+  for (long i = 0; i < len; ++i) {
+    EXPECT_COMPLEX_EQ(lhs[i], rhs[i]);
   }
 }
 #endif /* ifndef GQTEN_TESTING_UTILS_H */

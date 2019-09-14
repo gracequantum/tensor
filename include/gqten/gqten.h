@@ -18,7 +18,8 @@
 #include "mpi.h"
 #endif
 
-#include "gqten/impl/consts.h"
+#include "gqten/detail/consts.h"
+#include "gqten/detail/value_t.h"
 
 
 namespace gqten {
@@ -238,12 +239,12 @@ public:
   ~QNBlock(void) override;
   
   // Element getter and setter.
-  const double &operator()(const std::vector<long> &) const;
-  double &operator()(const std::vector<long> &);
+  const ElemType &operator()(const std::vector<long> &) const;
+  ElemType &operator()(const std::vector<long> &);
 
   // Data access.
-  const double *cdata(void) const { return data_; }   // constant reference.
-  double * &data(void) { return data_; }              // non-constant reference.
+  const ElemType *cdata(void) const { return data_; }   // constant reference.
+  ElemType * &data(void) { return data_; }              // non-constant reference.
 
   // Hash methods.
   size_t PartHash(const std::vector<long> &) const;
@@ -263,7 +264,7 @@ private:
   // It should only be intra-used.
   QNBlock(const std::vector<const QNSector *> &);
 
-  double *data_ = nullptr;    // Data in a 1D array.
+  ElemType *data_ = nullptr;    // Data in a 1D array.
   std::vector<long> data_offsets_;
   std::size_t qnscts_hash_ = 0;
 };
@@ -498,8 +499,8 @@ private:
 
 
 // Include implementation details.
-#include "gqten/impl/qnblock_impl.h"
-#include "gqten/impl/gqtensor_impl.h"
+#include "gqten/detail/qnblock_impl.h"
+#include "gqten/detail/gqtensor_impl.h"
 
 
 #endif /* ifndef GQTEN_GQTEN_H */

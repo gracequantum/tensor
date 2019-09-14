@@ -5,14 +5,15 @@
 * 
 * Description: GraceQ/tensor project. Inline utility functions used by template headers.
 */
-#ifndef GQTEN_IMPL_UTILS_INL_H
-#define GQTEN_IMPL_UTILS_INL_H
+#ifndef GQTEN_DETAIL_UTILS_INL_H
+#define GQTEN_DETAIL_UTILS_INL_H
 
 
 #include <vector>
 #include <cmath>
 
-#include "gqten/impl/consts.h"
+#include "gqten/detail/consts.h"
+#include "gqten/detail/value_t.h"
 
 
 namespace gqten {
@@ -71,5 +72,25 @@ inline bool ArrayEq(
   }
   return true;
 }
+
+
+inline GQTEN_Double drand(void) {
+  return GQTEN_Double(rand()) / RAND_MAX;
+}
+
+
+inline GQTEN_Complex zrand(void) {
+  return GQTEN_Complex(drand(), drand());
+}
+
+
+inline void Rand(GQTEN_Double &d) {
+  d = drand();
+}
+
+
+inline void Rand(GQTEN_Complex &z) {
+  z = zrand();
+}
 } /* gqten */
-#endif /* ifndef GQTEN_IMPL_UTILS_INL_H */
+#endif /* ifndef GQTEN_DETAIL_UTILS_INL_H */
