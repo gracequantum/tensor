@@ -11,6 +11,7 @@
 #include <iostream>
 #include <fstream>
 #include <utility>
+#include <type_traits>    // is_same
 #include <cmath>
 
 #include "gqten/gqten.h"
@@ -95,19 +96,19 @@ GQTensor<ElemType>::~GQTensor(void) {
 
 
 template <typename ElemType>
-double GQTensor<ElemType>::Elem(const std::vector<long> &coors) const {
+ElemType GQTensor<ElemType>::Elem(const std::vector<long> &coors) const {
   auto blk_inter_offsets_and_blk_qnss = CalcTargetBlkInterOffsetsAndQNSS(coors);
   for (auto &pblk : blocks_) {
     if (pblk->qnscts == blk_inter_offsets_and_blk_qnss.blk_qnss) {
       return (*pblk)(blk_inter_offsets_and_blk_qnss.blk_inter_offsets);
     }
   }
-  return 0.0;
+  return ElemType(0.0);
 }
 
 
 template <typename ElemType>
-double &GQTensor<ElemType>::operator()(const std::vector<long> &coors) {
+ElemType &GQTensor<ElemType>::operator()(const std::vector<long> &coors) {
   auto blk_inter_offsets_and_blk_qnss = CalcTargetBlkInterOffsetsAndQNSS(coors);
   for (auto &pblk : blocks_) {
     if (pblk->qnscts == blk_inter_offsets_and_blk_qnss.blk_qnss) {
@@ -155,7 +156,7 @@ void GQTensor<ElemType>::Random(const QN &div) {
 
 
 template <typename ElemType>
-double GQTensor<ElemType>::Normalize(void) {
+GQTEN_Double GQTensor<ElemType>::Normalize(void) {
   auto norm = Norm();
   for (auto &pblk : blocks_) {
     auto data = pblk->data();
@@ -164,6 +165,20 @@ double GQTensor<ElemType>::Normalize(void) {
     }
   }
   return norm;
+}
+
+
+template <typename ElemType>
+void GQTensor<ElemType>::Dag(void) {
+  for (auto &index : indexes) { index.Dag(); }
+  if (std::is_same<ElemType, GQTEN_Complex>::value) {
+    for (auto &pblk : blocks_) {
+      auto data = pblk->data();
+      for (long i = 0; i < pblk->size; ++i) {
+        data[i] = Conj(data[i]);
+      }
+    }
+  }
 }
 
 
@@ -177,7 +192,7 @@ GQTensor<ElemType> GQTensor<ElemType>::operator+(const GQTensor &rhs) {
       if (lhs_blk->QNSectorSetHash() == prhs_blk->QNSectorSetHash()) {
         assert(lhs_blk->size == prhs_blk->size);
         auto added_blk = new QNBlock<ElemType>(lhs_blk->qnscts);
-        auto added_data = new double [lhs_blk->size];
+        auto added_data = new ElemType [lhs_blk->size];
         auto lhs_blk_data = lhs_blk->cdata();
         auto rhs_blk_data = prhs_blk->cdata();
         for (long i = 0; i < lhs_blk->size; ++i) {
@@ -330,11 +345,11 @@ std::vector<QNSectorSet> GQTensor<ElemType>::BlkQNSSsIter(void) const {
 
 
 template <typename ElemType>
-double GQTensor<ElemType>::Norm(void) {
-  double norm2 = 0.0; 
+GQTEN_Double GQTensor<ElemType>::Norm(void) {
+  GQTEN_Double norm2 = 0.0;
   for (auto &pblk : blocks_) {
     for (long i = 0; i < pblk->size; ++i) {
-      norm2 += std::pow(pblk->data()[i], 2.0);
+      norm2 += std::norm(pblk->data()[i]);
     }
   }
   return std::sqrt(norm2);
@@ -371,7 +386,7 @@ QN Div(const GQTensor<ElemType> &t) {
 
 
 template <typename ElemType>
-GQTensor<ElemType> operator*(const GQTensor<ElemType> &t, const double &s) {
+GQTensor<ElemType> operator*(const GQTensor<ElemType> &t, const ElemType &s) {
   auto muled_t = GQTensor<ElemType>(t);
   // For scalar case.
   if (muled_t.indexes.size() == 0) {
@@ -382,7 +397,7 @@ GQTensor<ElemType> operator*(const GQTensor<ElemType> &t, const double &s) {
   for (auto &pblk : muled_t.blocks()) {
     auto data = pblk->data();
     for (long i = 0; i < pblk->size; ++i) {
-      data[i]  = data[i] * s;
+      data[i] = data[i] * s;
     }
   }
   return std::move(muled_t);
@@ -390,7 +405,7 @@ GQTensor<ElemType> operator*(const GQTensor<ElemType> &t, const double &s) {
 
 
 template <typename ElemType>
-GQTensor<ElemType> operator*(const double &s, const GQTensor<ElemType> &t) {
+GQTensor<ElemType> operator*(const ElemType &s, const GQTensor<ElemType> &t) {
   return std::move(t * s);
 }
 

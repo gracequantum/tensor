@@ -308,8 +308,8 @@ public:
   ~GQTensor(void);
 
   // Element getter and setter.
-  double Elem(const std::vector<long> &) const;     // Getter.
-  double &operator()(const std::vector<long> &);    // Setter.
+  ElemType Elem(const std::vector<long> &) const;     // Getter.
+  ElemType &operator()(const std::vector<long> &);    // Setter.
 
   // Access to the blocks.
   const std::vector<QNBlock<ElemType> *> &cblocks(void) const {
@@ -327,10 +327,11 @@ public:
   void Transpose(const std::vector<long> &);
 
   // Normalize the GQTensor and return its norm.
-  double Normalize(void);
+  GQTEN_Double Normalize(void);
 
-  // Switch the direction of the indexes, complex conjugate of the element in the future.
-  void Dag(void) { for (auto &index : indexes) { index.Dag(); } }
+  // Switch the direction of the indexes, complex conjugate of the element.
+  //void Dag(void) { for (auto &index : indexes) { index.Dag(); } }
+  void Dag(void);
 
   // Operators overload.
   GQTensor operator-(void) const;
@@ -346,7 +347,7 @@ public:
 
   // Public data members.
   std::vector<Index> indexes;
-  double scalar = 0.0;
+  ElemType scalar = 0.0;
   std::vector<long> shape;
 
 private:
@@ -378,10 +379,10 @@ template <typename ElemType>
 QN Div(const GQTensor<ElemType> &);
 
 template <typename ElemType>
-GQTensor<ElemType> operator*(const GQTensor<ElemType> &, const double &);
+GQTensor<ElemType> operator*(const GQTensor<ElemType> &, const ElemType &);
 
 template <typename ElemType>
-GQTensor<ElemType> operator*(const double &, const GQTensor<ElemType> &);
+GQTensor<ElemType> operator*(const ElemType &, const GQTensor<ElemType> &);
 
 
 //// Tensor numerical functions.

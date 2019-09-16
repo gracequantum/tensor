@@ -10,6 +10,7 @@
 
 
 #include <vector>
+#include <complex>
 #include <cmath>
 
 #include "gqten/detail/consts.h"
@@ -50,7 +51,16 @@ inline long CalcEffOneDimArrayOffset(
 }
 
 
-inline bool DoubleEq(const double a, const double b) {
+inline bool DoubleEq(const GQTEN_Double a, const GQTEN_Double b) {
+  if (std::abs(a-b) < kDoubleEpsilon) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+
+inline bool ComplexEq(const GQTEN_Complex a, const GQTEN_Complex b) {
   if (std::abs(a-b) < kDoubleEpsilon) {
     return true;
   } else {
@@ -60,13 +70,28 @@ inline bool DoubleEq(const double a, const double b) {
 
 
 inline bool ArrayEq(
-    const double *parray1, const size_t size1,
-    const double *parray2, const size_t size2) {
+    const GQTEN_Double *parray1, const size_t size1,
+    const GQTEN_Double *parray2, const size_t size2) {
   if (size1 !=  size2) {
     return false;
   }
   for (size_t i = 0; i < size1; ++i) {
     if (!DoubleEq(parray1[i], parray2[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
+inline bool ArrayEq(
+    const GQTEN_Complex *parray1, const size_t size1,
+    const GQTEN_Complex *parray2, const size_t size2) {
+  if (size1 !=  size2) {
+    return false;
+  }
+  for (size_t i = 0; i < size1; ++i) {
+    if (!ComplexEq(parray1[i], parray2[i])) {
       return false;
     }
   }
@@ -99,6 +124,16 @@ inline ElemType RandT() {
   ElemType val;
   Rand(val);
   return val;
+}
+
+
+inline GQTEN_Double Conj(GQTEN_Double d) {
+  return d;
+}
+
+
+inline GQTEN_Complex Conj(GQTEN_Complex z) {
+  return std::conj(z);
 }
 } /* gqten */
 #endif /* ifndef GQTEN_DETAIL_UTILS_INL_H */
