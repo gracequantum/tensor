@@ -92,5 +92,13 @@ inline void Rand(GQTEN_Double &d) {
 inline void Rand(GQTEN_Complex &z) {
   z = zrand();
 }
+
+
+template <typename ElemType>
+inline ElemType RandT() {
+  ElemType val;
+  Rand(val);
+  return val;
+}
 } /* gqten */
 #endif /* ifndef GQTEN_DETAIL_UTILS_INL_H */
