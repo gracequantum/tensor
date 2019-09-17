@@ -18,6 +18,7 @@
 #include "mpi.h"
 #endif
 
+#include "gqten/detail/fwd_dcl.h"
 #include "gqten/detail/consts.h"
 #include "gqten/detail/value_t.h"
 
@@ -199,14 +200,6 @@ std::ofstream &bfwrite(std::ofstream &, const Index &);
 
 
 // Dense block labeled by the quantum number.
-template <typename> class QNBlock;
-
-template <typename ElemType>
-std::ifstream &bfread(std::ifstream &, QNBlock<ElemType> &);
-
-template <typename ElemType>
-std::ofstream &bfwrite(std::ofstream &, const QNBlock<ElemType> &);
-
 template <typename ElemType>
 class QNBlock : public QNSectorSet {
 // Binary I/O.
@@ -280,15 +273,6 @@ struct BlkInterOffsetsAndQNSS {     // QNSS: QNSectorSet.
   QNSectorSet blk_qnss;
 };
 
-template <typename> class GQTensor;
-
-
-// GQTensor I/O
-template <typename ElemType>
-std::ifstream &bfread(std::ifstream &, GQTensor<ElemType> &);
-
-template <typename ElemType>
-std::ofstream &bfwrite(std::ofstream &, const GQTensor<ElemType> &);
 
 template <typename ElemType>
 class GQTensor {
@@ -385,15 +369,16 @@ template <typename ElemType>
 GQTensor<ElemType> operator*(const ElemType &, const GQTensor<ElemType> &);
 
 
-//// Tensor numerical functions.
-//// Tensors contraction.
-//void Contract(
-    //const GQTensor *, const GQTensor *,
-    //const std::vector<std::vector<long>> &,
-    //GQTensor *);
+// Tensor numerical functions.
+// Tensors contraction.
+template <typename ElemType>
+void Contract(
+    const GQTensor<ElemType> *, const GQTensor<ElemType> *,
+    const std::vector<std::vector<long>> &,
+    GQTensor<ElemType> *);
 
-//// This API just for forward compatibility, it will be deleted soon.
-//[> TODO: Remove this API. <]
+// This API just for forward compatibility, it will be deleted soon.
+// TODO: Remove this API.
 //GQTensor *Contract(
     //const GQTensor &, const GQTensor &,
     //const std::vector<std::vector<long>> &);

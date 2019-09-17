@@ -19,13 +19,6 @@
 using namespace gqten;
 
 
-const double kEpsilon = 1.0E-12;
-
-
-using DGQTensor = GQTensor<GQTEN_Double>;
-using ZGQTensor = GQTensor<GQTEN_Complex>;
-
-
 struct TestGQTensor : public testing::Test {
   std::string qn_nm = "qn";
   QN qn0 =  QN({QNNameVal(qn_nm,  0)});

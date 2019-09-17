@@ -11,13 +11,17 @@
 
 #include <complex>
 
+#include "gqten/detail/fwd_dcl.h"
+
 
 namespace gqten {
 
 
 using GQTEN_Double = double;
-
-
 using GQTEN_Complex = std::complex<GQTEN_Double>;
+
+
+using DGQTensor = GQTensor<GQTEN_Double>;
+using ZGQTensor = GQTensor<GQTEN_Complex>;
 } /* gqten */ 
 #endif /* ifndef GQTEN_DETAIL_VALUE_T_H */

@@ -18,6 +18,9 @@
 using namespace gqten;
 
 
+const double kEpsilon = 1.0E-12;
+
+
 inline std::vector<long> TransCoors(
     const std::vector<long> &old_coors, const std::vector<long> &axes_map) {
   std::vector<long> new_coors(old_coors.size());
