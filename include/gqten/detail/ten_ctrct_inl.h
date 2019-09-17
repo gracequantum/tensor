@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 /*
 * Author: Rongyang Sun <sun-rongyang@outlook.com>
-* Creation Date: 2019-08-09 10:57
+* Creation Date: 2019-09-17 13:27
 * 
-* Description: GraceQ/tensor project. Intra-used classes/functions for tensor contraction.
+* Description: GraceQ/tensor project. Inline functions for implementing tensor contraction.
 */
-#ifndef GQTEN_TEN_CTRCT_H
-#define GQTEN_TEN_CTRCT_H
+#ifndef GQTEN_DETAIL_TEN_CTRCT_INL_H
+#define GQTEN_DETAIL_TEN_CTRCT_INL_H
 
-
-#include "gqten/gqten.h"
 
 #include <vector>
 
@@ -18,24 +16,6 @@
 
 namespace gqten {
 
-
-std::vector<QNBlock *> BlocksCtrctBatch(
-    const std::vector<long> &, const std::vector<long> &,
-    const double,
-    const std::vector<QNBlock *> &, const std::vector<QNBlock *> &);
-
-GQTensor *InitCtrctedTen(
-    const GQTensor &, const GQTensor &,
-    const std::vector<long> &, const std::vector<long> &);
-
-void InitCtrctedTen(
-    const GQTensor *, const GQTensor *,
-    const std::vector<long> &, const std::vector<long> &,
-    GQTensor *);
-
-void WrapCtrctBlocks(std::vector<QNBlock *> &, GQTensor *);
-
-std::vector<QNBlock *> MergeCtrctBlks(const std::vector<QNBlock *> &);
 
 inline void GemmBatch(
     const CBLAS_LAYOUT Layout,
@@ -84,22 +64,45 @@ inline void GemmBatch(
 #endif
 }
 
-void CalcBlkCtrctDimsInfo(
-    const std::size_t, const QNBlock *, const std::vector<long> &,
-    long *, long *);
 
-std::vector<const QNSector *> GetPNewBlkQNScts(
-    const QNBlock *, const QNBlock *,
-    const std::vector<long> &, const std::vector<long> &);
-
+template <typename TenElemType>
 bool CtrctTransChecker(
-    const std::vector<long> &, const long, const char, std::vector<long> &);
-
-std::vector<std::size_t> GenBlksPartHashTable(
-    const std::vector<QNBlock *> &, const std::vector<long> &);
-
-inline void FreeBlks(std::vector<QNBlock *> &blks) {
-  for (auto &blk : blks) { delete blk; }
+    const std::vector<long> &ctrct_axes,
+    const long ndim,
+    const char position,
+    std::vector<long> &transed_axes) {
+  auto ctrct_ndim = ctrct_axes.size();
+  std::vector<long> saved_axes(ndim-ctrct_ndim);
+  std::size_t saved_axes_idx = 0;
+  std::vector<long> ordered_axes(ndim);
+  for (long i = 0; i < ndim; ++i) {
+    if (std::find(ctrct_axes.begin(), ctrct_axes.end(), i) ==
+        ctrct_axes.end()) {
+      saved_axes[saved_axes_idx] = i;
+      saved_axes_idx++;
+    }
+    ordered_axes[i] = i;
+  }
+  switch (position) {
+    case 'a':
+      transed_axes = saved_axes;
+      transed_axes.insert(
+          transed_axes.end(),
+          ctrct_axes.begin(), ctrct_axes.end());
+      if (transed_axes != ordered_axes) { return true; }
+      break;
+    case 'b':
+      transed_axes = ctrct_axes;
+      transed_axes.insert(
+          transed_axes.end(),
+          saved_axes.begin(), saved_axes.end());
+      if (transed_axes != ordered_axes) { return true; }
+      break;
+    default:
+      std::cout << "position must be 'a' or 'b', but" << position << std::endl;
+      exit(1);
+  }
+  return false;
 }
 } /* gqten */ 
-#endif /* ifndef GQTEN_TEN_CTRCT_H */
+#endif /* ifndef GQTEN_DETAIL_TEN_CTRCT_INL_H */

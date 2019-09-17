@@ -5,6 +5,7 @@
 * 
 * Description: GraceQ/tensor project. Unittests for tensor contraction functions.
 */
+#include "testing_utils.h"
 #include "gtest/gtest.h"
 #include "gqten/gqten.h"
 
@@ -14,12 +15,6 @@
 
 
 using namespace gqten;
-
-
-const double kEpsilon = 1.0E-12;
-
-
-inline double drand(void) { return double(rand()) / RAND_MAX; }
 
 
 struct TestContraction : public testing::Test {
@@ -33,14 +28,14 @@ struct TestContraction : public testing::Test {
 
 
 TEST_F(TestContraction, 1DCase) {
-  auto ten = GQTensor({idx});
+  auto ten = DGQTensor({idx});
   srand(0);
   auto dense_ten = new double [idx_size];
   for (long i = 0; i < idx_size; ++i) {
     dense_ten[i] = drand();
     ten({i}) = dense_ten[i];
   }
-  GQTensor res;
+  DGQTensor res;
   Contract(&ten, &ten, {{0}, {0}}, &res);
   double res0 = 0;
   for (long i = 0; i < idx_size; ++i) { res0 += std::pow(dense_ten[i], 2.0); }
@@ -50,7 +45,7 @@ TEST_F(TestContraction, 1DCase) {
 
 
 TEST_F(TestContraction, 2DCase) {
-  auto ten = GQTensor({idx, idx});
+  auto ten = DGQTensor({idx, idx});
   srand(0);
   auto dense_ten = new double [idx_size * idx_size];
   for (long i = 0; i < idx_size; ++i) {
@@ -59,7 +54,7 @@ TEST_F(TestContraction, 2DCase) {
       ten({i, j}) = dense_ten[i*idx_size + j];
     }
   }
-  GQTensor res;
+  DGQTensor res;
   Contract(&ten, &ten, {{1}, {0}}, &res);
   auto res0 = new double [idx_size * idx_size];
   cblas_dgemm(
@@ -81,7 +76,7 @@ TEST_F(TestContraction, 2DCase) {
 
 
 TEST_F(TestContraction, 3DCase) {
-  auto ten = GQTensor({idx, idx, idx});
+  auto ten = DGQTensor({idx, idx, idx});
   srand(0);
   auto dense_ten = new double [idx_size * idx_size * idx_size];
   for (long i = 0; i < idx_size; ++i) {
@@ -93,7 +88,7 @@ TEST_F(TestContraction, 3DCase) {
       }
     }
   }
-  GQTensor res;
+  DGQTensor res;
   Contract(&ten, &ten, {{2}, {0}}, &res);
   auto res0 = new double [idx_size * idx_size * idx_size * idx_size];
   cblas_dgemm(

@@ -15,6 +15,9 @@
 namespace gqten {
 
 
+class QNSector;
+
+
 template <typename> class QNBlock;
 
 template <typename ElemType>
@@ -22,6 +25,13 @@ std::ifstream &bfread(std::ifstream &, QNBlock<ElemType> &);
 
 template <typename ElemType>
 std::ofstream &bfwrite(std::ofstream &, const QNBlock<ElemType> &);
+
+template <typename TenElemType>
+std::vector<QNBlock<TenElemType> *> BlocksCtrctBatch(
+    const std::vector<long> &, const std::vector<long> &,
+    const double,
+    const std::vector<QNBlock<TenElemType> *> &,
+    const std::vector<QNBlock<TenElemType> *> &);
 
 
 template <typename> class GQTensor;

@@ -18,7 +18,6 @@ set(GQTEN_BASIC_SRC
   qn.cc
   qnsector.cc
   index.cc
-  #ten_ctrct.cc
   #ten_lincmb.cc
   #ten_svd.cc
   )

@@ -206,10 +206,11 @@ class QNBlock : public QNSectorSet {
 friend std::ifstream &bfread<ElemType>(std::ifstream &, QNBlock<ElemType> &);
 friend std::ofstream &bfwrite<ElemType>(std::ofstream &, const QNBlock<ElemType> &);
 // Some functions called by tensor numerical functions to use the private constructor.
-//friend std::vector<QNBlock *> BlocksCtrctBatch(
-    //const std::vector<long> &, const std::vector<long> &,
-    //const double,
-    //const std::vector<QNBlock *> &, const std::vector<QNBlock *> &);
+friend std::vector<QNBlock<ElemType> *> BlocksCtrctBatch<ElemType>(
+    const std::vector<long> &, const std::vector<long> &,
+    const double,
+    const std::vector<QNBlock<ElemType> *> &,
+    const std::vector<QNBlock<ElemType> *> &);
 #ifdef GQTEN_MPI_PARALLEL
 friend std::vector<QNBlock *> GQTEN_MPI_BlocksCtrctBatch(
     const std::vector<long> &, const std::vector<long> &,
@@ -371,17 +372,22 @@ GQTensor<ElemType> operator*(const ElemType &, const GQTensor<ElemType> &);
 
 // Tensor numerical functions.
 // Tensors contraction.
-template <typename ElemType>
+template <typename TenElemType>
 void Contract(
-    const GQTensor<ElemType> *, const GQTensor<ElemType> *,
+    const GQTensor<TenElemType> *, const GQTensor<TenElemType> *,
     const std::vector<std::vector<long>> &,
-    GQTensor<ElemType> *);
+    GQTensor<TenElemType> *);
 
 // This API just for forward compatibility, it will be deleted soon.
 // TODO: Remove this API.
-//GQTensor *Contract(
-    //const GQTensor &, const GQTensor &,
-    //const std::vector<std::vector<long>> &);
+template <typename TenElemType>
+inline GQTensor<TenElemType> *Contract(
+    const GQTensor<TenElemType> &ta, const GQTensor<TenElemType> &tb,
+    const std::vector<std::vector<long>> &axes_set) {
+  auto res_t = new GQTensor<TenElemType>();
+  Contract(&ta, &tb, axes_set, res_t);
+  return res_t;
+}
 
 //#ifdef GQTEN_MPI_PARALLEL
 //const char kGemmWorkerStatCont = 'c';
@@ -487,6 +493,7 @@ private:
 // Include implementation details.
 #include "gqten/detail/qnblock_impl.h"
 #include "gqten/detail/gqtensor_impl.h"
+#include "gqten/detail/ten_ctrct_impl.h"
 
 
 #endif /* ifndef GQTEN_GQTEN_H */
