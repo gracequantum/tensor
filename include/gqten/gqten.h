@@ -315,7 +315,6 @@ public:
   GQTEN_Double Normalize(void);
 
   // Switch the direction of the indexes, complex conjugate of the element.
-  //void Dag(void) { for (auto &index : indexes) { index.Dag(); } }
   void Dag(void);
 
   // Operators overload.
