@@ -208,7 +208,7 @@ friend std::ofstream &bfwrite<ElemType>(std::ofstream &, const QNBlock<ElemType>
 // Some functions called by tensor numerical functions to use the private constructor.
 friend std::vector<QNBlock<ElemType> *> BlocksCtrctBatch<ElemType>(
     const std::vector<long> &, const std::vector<long> &,
-    const double,
+    const ElemType,
     const std::vector<QNBlock<ElemType> *> &,
     const std::vector<QNBlock<ElemType> *> &);
 #ifdef GQTEN_MPI_PARALLEL

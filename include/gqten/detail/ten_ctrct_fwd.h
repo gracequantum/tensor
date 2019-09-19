@@ -18,13 +18,6 @@ namespace gqten {
 
 
 template <typename TenElemType>
-std::vector<QNBlock<TenElemType> *> BlocksCtrctBatch(
-    const std::vector<long> &, const std::vector<long> &,
-    const double,
-    const std::vector<QNBlock<TenElemType> *> &,
-    const std::vector<QNBlock<TenElemType> *> &);
-
-template <typename TenElemType>
 void InitCtrctedTen(
     const GQTensor<TenElemType> *, const GQTensor<TenElemType> *,
     const std::vector<long> &, const std::vector<long> &,
@@ -44,6 +37,13 @@ template <typename TenElemType>
 std::vector<const QNSector *> GetPNewBlkQNScts(
     const QNBlock<TenElemType> *, const QNBlock<TenElemType> *,
     const std::vector<long> &, const std::vector<long> &);
+
+template <typename TenElemType>
+bool CtrctTransChecker(
+    const std::vector<long> &,
+    const long,
+    const char,
+    std::vector<long> &);
 
 template <typename TenElemType>
 std::vector<std::size_t> GenBlksPartHashTable(

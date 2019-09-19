@@ -12,6 +12,8 @@
 #include <vector>
 
 #include "gtest/gtest.h"
+#include "mkl.h"
+
 #include "gqten/detail/value_t.h"
 
 
@@ -39,6 +41,32 @@ inline void EXPECT_COMPLEX_EQ(
 }
 
 
+inline void GtestNear(
+    const double lhs,
+    const double rhs,
+    const double delta) {
+  EXPECT_NEAR(lhs, rhs, delta);
+}
+
+
+inline void GtestNear(
+    const GQTEN_Complex lhs,
+    const GQTEN_Complex rhs,
+    const double delta) {
+  EXPECT_NEAR(lhs.real(), rhs.real(), delta);
+  EXPECT_NEAR(lhs.imag(), rhs.imag(), delta);
+}
+
+
+template <typename T>
+inline void GtestExpectNear(
+    const T lhs,
+    const T rhs,
+    const double delta) {
+  GtestNear(lhs, rhs, delta);
+}
+
+
 inline void GtestArrayEq(const double *lhs, const double *rhs, const long len) {
   for (long i = 0; i < len; ++i) {
     EXPECT_DOUBLE_EQ(lhs[i], rhs[i]);
@@ -51,5 +79,47 @@ inline void GtestArrayEq(
   for (long i = 0; i < len; ++i) {
     EXPECT_COMPLEX_EQ(lhs[i], rhs[i]);
   }
+}
+
+
+inline void CblasGemm(
+    const CBLAS_LAYOUT Layout,
+    const CBLAS_TRANSPOSE transa, const CBLAS_TRANSPOSE transb,
+    const MKL_INT m, const MKL_INT n, const MKL_INT k,
+    const GQTEN_Double alpha,
+    const GQTEN_Double *a, const MKL_INT lda,
+    const GQTEN_Double *b, const MKL_INT ldb,
+    const GQTEN_Double beta,
+    GQTEN_Double *c, const MKL_INT ldc) {
+  cblas_dgemm(
+      Layout,
+      transa, transb,
+      m, n, k,
+      alpha,
+      a, lda,
+      b, ldb,
+      beta,
+      c, ldc);
+}
+
+
+inline void CblasGemm(
+    const CBLAS_LAYOUT Layout,
+    const CBLAS_TRANSPOSE transa, const CBLAS_TRANSPOSE transb,
+    const MKL_INT m, const MKL_INT n, const MKL_INT k,
+    const GQTEN_Complex alpha,
+    const GQTEN_Complex *a, const MKL_INT lda,
+    const GQTEN_Complex *b, const MKL_INT ldb,
+    const GQTEN_Complex beta,
+    GQTEN_Complex *c, const MKL_INT ldc) {
+  cblas_zgemm(
+      Layout,
+      transa, transb,
+      m, n, k,
+      &alpha,
+      a, lda,
+      b, ldb,
+      &beta,
+      c, ldc);
 }
 #endif /* ifndef GQTEN_TESTING_UTILS_H */

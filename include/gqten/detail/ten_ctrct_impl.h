@@ -74,7 +74,7 @@ template <typename TenElemType>
 std::vector<QNBlock<TenElemType> *> BlocksCtrctBatch(
     const std::vector<long> &ctrct_axes_a,
     const std::vector<long> &ctrct_axes_b,
-    const double alpha,
+    const TenElemType alpha,
     const std::vector<QNBlock<TenElemType> *> &ta_blks,
     const std::vector<QNBlock<TenElemType> *> &tb_blks) {
   // Data prepare.
@@ -126,8 +126,8 @@ std::vector<QNBlock<TenElemType> *> BlocksCtrctBatch(
 
   // Initialize data.
   // Data with size of number of blocks of tensor.
-  auto ta_to_ctrct_blks = new const double *[ta_blks_num] ();
-  auto tb_to_ctrct_blks = new const double *[tb_blks_num] ();
+  auto ta_to_ctrct_blks = new const TenElemType *[ta_blks_num] ();
+  auto tb_to_ctrct_blks = new const TenElemType *[tb_blks_num] ();
   auto ta_to_ctrct_blk_saved_dims = new long[ta_blks_num];
   auto tb_to_ctrct_blk_saved_dims = new long[tb_blks_num];
   auto ta_to_ctrct_blk_ctrct_dims = new long[ta_blks_num];
@@ -139,15 +139,15 @@ std::vector<QNBlock<TenElemType> *> BlocksCtrctBatch(
     gemm_batch_transa_array[i] = CblasNoTrans;
     gemm_batch_transb_array[i] = CblasNoTrans;
   }
-  auto gemm_batch_a_array = new const double *[blk_pairs];
-  auto gemm_batch_b_array = new const double *[blk_pairs];
-  auto gemm_batch_c_array = new double *[blk_pairs];
+  auto gemm_batch_a_array = new const TenElemType *[blk_pairs];
+  auto gemm_batch_b_array = new const TenElemType *[blk_pairs];
+  auto gemm_batch_c_array = new TenElemType *[blk_pairs];
   auto gemm_batch_m_array = new MKL_INT[blk_pairs];
   auto gemm_batch_n_array = new MKL_INT[blk_pairs];
   auto gemm_batch_k_array = new MKL_INT[blk_pairs];
   std::vector<QNBlock<TenElemType> *> pnew_blks(blk_pairs, nullptr);
-  auto gemm_batch_alpha_array = new double[blk_pairs];
-  auto gemm_batch_beta_array = new double[blk_pairs] ();
+  auto gemm_batch_alpha_array = new TenElemType[blk_pairs];
+  auto gemm_batch_beta_array = new TenElemType[blk_pairs] ();
   auto gemm_batch_grp_size_array = new MKL_INT[blk_pairs];
   for (long i = 0; i < blk_pairs; ++i) {
     gemm_batch_alpha_array[i] = alpha;
@@ -166,7 +166,7 @@ std::vector<QNBlock<TenElemType> *> BlocksCtrctBatch(
         pnew_blks[blk_pair_cnt] = new QNBlock<TenElemType>(pnew_blk_qnscts);
         // For contracting to scalar case.
         if (pnew_blks[blk_pair_cnt]->cdata() == nullptr) {
-          pnew_blks[blk_pair_cnt]->data() = new double[1];
+          pnew_blks[blk_pair_cnt]->data() = new TenElemType[1];
         }
 
         // Deal with ta block.
@@ -350,7 +350,7 @@ void WrapCtrctBlocks(
     GQTensor<TenElemType> *res_t) {
   auto nnew_blk = pnew_blks.size();   // nnew_blk: number of new blocks.
   if (res_t->indexes.size() == 0 && nnew_blk != 0) {  // Contract to scalar case.
-    double scalar = 0;
+    TenElemType scalar = 0.0;
     for (auto &pnew_blk : pnew_blks) {
       scalar += (pnew_blk->cdata()[0]);
       delete pnew_blk;
@@ -388,7 +388,7 @@ std::vector<QNBlock<TenElemType> *> MergeCtrctBlks(
   daxpy_timer.Restart();
 #endif
 
-        cblas_daxpy(
+        CblasAxpy(
             data_size,
             1.0, pnew_blk->cdata(), 1,
             pmerged_blk->data(), 1);
@@ -410,44 +410,45 @@ std::vector<QNBlock<TenElemType> *> MergeCtrctBlks(
 }
 
 
-//bool CtrctTransChecker(
-    //const std::vector<long> &ctrct_axes,
-    //const long ndim,
-    //const char position,
-    //std::vector<long> &transed_axes) {
-  //auto ctrct_ndim = ctrct_axes.size();
-  //std::vector<long> saved_axes(ndim-ctrct_ndim);
-  //std::size_t saved_axes_idx = 0;
-  //std::vector<long> ordered_axes(ndim);
-  //for (long i = 0; i < ndim; ++i) {
-    //if (std::find(ctrct_axes.begin(), ctrct_axes.end(), i) ==
-        //ctrct_axes.end()) {
-      //saved_axes[saved_axes_idx] = i;
-      //saved_axes_idx++;
-    //}
-    //ordered_axes[i] = i;
-  //}
-  //switch (position) {
-    //case 'a':
-      //transed_axes = saved_axes;
-      //transed_axes.insert(
-          //transed_axes.end(),
-          //ctrct_axes.begin(), ctrct_axes.end());
-      //if (transed_axes != ordered_axes) { return true; }
-      //break;
-    //case 'b':
-      //transed_axes = ctrct_axes;
-      //transed_axes.insert(
-          //transed_axes.end(),
-          //saved_axes.begin(), saved_axes.end());
-      //if (transed_axes != ordered_axes) { return true; }
-      //break;
-    //default:
-      //std::cout << "position must be 'a' or 'b', but" << position << std::endl;
-      //exit(1);
-  //}
-  //return false;
-//}
+template <typename TenElemType>
+bool CtrctTransChecker(
+    const std::vector<long> &ctrct_axes,
+    const long ndim,
+    const char position,
+    std::vector<long> &transed_axes) {
+  auto ctrct_ndim = ctrct_axes.size();
+  std::vector<long> saved_axes(ndim-ctrct_ndim);
+  std::size_t saved_axes_idx = 0;
+  std::vector<long> ordered_axes(ndim);
+  for (long i = 0; i < ndim; ++i) {
+    if (std::find(ctrct_axes.begin(), ctrct_axes.end(), i) ==
+        ctrct_axes.end()) {
+      saved_axes[saved_axes_idx] = i;
+      saved_axes_idx++;
+    }
+    ordered_axes[i] = i;
+  }
+  switch (position) {
+    case 'a':
+      transed_axes = saved_axes;
+      transed_axes.insert(
+          transed_axes.end(),
+          ctrct_axes.begin(), ctrct_axes.end());
+      if (transed_axes != ordered_axes) { return true; }
+      break;
+    case 'b':
+      transed_axes = ctrct_axes;
+      transed_axes.insert(
+          transed_axes.end(),
+          saved_axes.begin(), saved_axes.end());
+      if (transed_axes != ordered_axes) { return true; }
+      break;
+    default:
+      std::cout << "position must be 'a' or 'b', but" << position << std::endl;
+      exit(1);
+  }
+  return false;
+}
 
 
 template <typename TenElemType>

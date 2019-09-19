@@ -29,7 +29,7 @@ std::ofstream &bfwrite(std::ofstream &, const QNBlock<ElemType> &);
 template <typename TenElemType>
 std::vector<QNBlock<TenElemType> *> BlocksCtrctBatch(
     const std::vector<long> &, const std::vector<long> &,
-    const double,
+    const TenElemType,
     const std::vector<QNBlock<TenElemType> *> &,
     const std::vector<QNBlock<TenElemType> *> &);
 

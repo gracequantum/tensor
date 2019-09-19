@@ -5,13 +5,13 @@
 * 
 * Description: GraceQ/tensor project. Unittests for tensor contraction functions.
 */
-#include "testing_utils.h"
-#include "gtest/gtest.h"
-#include "gqten/gqten.h"
-
 #include <cmath>
 
 #include "mkl.h"
+
+#include "testing_utils.h"
+#include "gtest/gtest.h"
+#include "gqten/gqten.h"
 
 
 using namespace gqten;
@@ -42,6 +42,13 @@ struct TestContraction : public testing::Test {
   DGQTensor dten_2d_l = DGQTensor({idx_in_l, idx_out_l});
   DGQTensor dten_3d_s = DGQTensor({idx_in_s, idx_out_s, idx_out_s});
   DGQTensor dten_3d_l = DGQTensor({idx_in_l, idx_out_l, idx_out_l});
+
+  ZGQTensor zten_1d_s = ZGQTensor({idx_out_s});
+  ZGQTensor zten_1d_l = ZGQTensor({idx_out_l});
+  ZGQTensor zten_2d_s = ZGQTensor({idx_in_s, idx_out_s});
+  ZGQTensor zten_2d_l = ZGQTensor({idx_in_l, idx_out_l});
+  ZGQTensor zten_3d_s = ZGQTensor({idx_in_s, idx_out_s, idx_out_s});
+  ZGQTensor zten_3d_l = ZGQTensor({idx_in_l, idx_out_l, idx_out_l});
 };
 
 
@@ -57,7 +64,7 @@ void RunTestTenCtrct1DCase(GQTensor<TenElemType> &t, const QN &div) {
   GQTensor<TenElemType> t_res;
   auto t_dag = Dag(t);
   Contract(&t, &t_dag, {{0}, {0}}, &t_res);
-  EXPECT_NEAR(t_res.scalar, res, kEpsilon);
+  GtestExpectNear(t_res.scalar, res, kEpsilon);
 }
 
 
@@ -65,6 +72,10 @@ TEST_F(TestContraction, 1DCase) {
   RunTestTenCtrct1DCase(dten_1d_s, qn0);
   RunTestTenCtrct1DCase(dten_1d_s, qnp1);
   RunTestTenCtrct1DCase(dten_1d_s, qnm1);
+
+  RunTestTenCtrct1DCase(zten_1d_s, qn0);
+  RunTestTenCtrct1DCase(zten_1d_s, qnp1);
+  RunTestTenCtrct1DCase(zten_1d_s, qnm1);
 }
 
 
@@ -90,7 +101,7 @@ void RunTestTenCtrct2DCase1(
     dense_tb[idx] = tb.Elem(coor);
     idx++;
   }
-  cblas_dgemm(
+  CblasGemm(
       CblasRowMajor, CblasNoTrans, CblasNoTrans,
       m, n, k1,
       1.0,
@@ -102,7 +113,7 @@ void RunTestTenCtrct2DCase1(
   Contract(&ta, &tb, {{1}, {0}}, &res);
   idx = 0;
   for (auto &coor : res.CoorsIter()) {
-    EXPECT_NEAR(res.Elem(coor), dense_res[idx], kEpsilon);
+    GtestExpectNear(res.Elem(coor), dense_res[idx], kEpsilon);
     idx++;
   }
   delete [] dense_ta;
@@ -138,7 +149,7 @@ void RunTestTenCtrct2DCase2(
   }
   GQTensor<TenElemType> res;
   Contract(&ta, &tb, {{0, 1}, {1, 0}}, &res);
-  EXPECT_NEAR(res.scalar, res_scalar, kEpsilon);
+  GtestExpectNear(res.scalar, res_scalar, kEpsilon);
   delete [] dense_ta;
   delete [] dense_tb;
 }
@@ -158,6 +169,20 @@ TEST_F(TestContraction, 2DCase) {
   dten_2d_s2.Random(qnm1);
   RunTestTenCtrct2DCase1(dten_2d_s, dten_2d_s2);
   RunTestTenCtrct2DCase2(dten_2d_s, dten_2d_s2);
+
+  auto zten_2d_s2 = zten_2d_s;
+  zten_2d_s.Random(qn0);
+  zten_2d_s2.Random(qn0);
+  RunTestTenCtrct2DCase1(zten_2d_s, zten_2d_s2);
+  RunTestTenCtrct2DCase2(zten_2d_s, zten_2d_s2);
+  zten_2d_s.Random(qnp1);
+  zten_2d_s2.Random(qn0);
+  RunTestTenCtrct2DCase1(zten_2d_s, zten_2d_s2);
+  RunTestTenCtrct2DCase2(zten_2d_s, zten_2d_s2);
+  zten_2d_s.Random(qnp1);
+  zten_2d_s2.Random(qnm1);
+  RunTestTenCtrct2DCase1(zten_2d_s, zten_2d_s2);
+  RunTestTenCtrct2DCase2(zten_2d_s, zten_2d_s2);
 }
 
 
@@ -184,7 +209,7 @@ void RunTestTenCtrct3DCase1(
     dense_tb[idx] = tb.Elem(coor);
     idx++;
   }
-  cblas_dgemm(
+  CblasGemm(
       CblasRowMajor, CblasNoTrans, CblasNoTrans,
       m, n, k1,
       1.0,
@@ -196,7 +221,7 @@ void RunTestTenCtrct3DCase1(
   Contract(&ta, &tb, {{2}, {0}}, &res);
   idx = 0;
   for (auto &coor : res.CoorsIter()) {
-    EXPECT_NEAR(res.Elem(coor), dense_res[idx], kEpsilon);
+    GtestExpectNear(res.Elem(coor), dense_res[idx], kEpsilon);
     idx++;
   }
   delete [] dense_ta;
@@ -228,7 +253,7 @@ void RunTestTenCtrct3DCase2(
     dense_tb[idx] = tb.Elem(coor);
     idx++;
   }
-  cblas_dgemm(
+  CblasGemm(
       CblasRowMajor, CblasNoTrans, CblasNoTrans,
       m, n, k1,
       1.0,
@@ -240,7 +265,7 @@ void RunTestTenCtrct3DCase2(
   Contract(&ta, &tb, {{1, 2}, {0, 1}}, &res);
   idx = 0;
   for (auto &coor : res.CoorsIter()) {
-    EXPECT_NEAR(res.Elem(coor), dense_res[idx], kEpsilon);
+    GtestExpectNear(res.Elem(coor), dense_res[idx], kEpsilon);
     idx++;
   }
   delete [] dense_ta;
@@ -277,7 +302,7 @@ void RunTestTenCtrct3DCase3(
   }
   GQTensor<TenElemType> res;
   Contract(&ta, &tb, {{0, 1, 2}, {0, 1, 2}}, &res);
-  EXPECT_NEAR(res.scalar, res_scalar, kEpsilon);
+  GtestExpectNear(res.scalar, res_scalar, kEpsilon);
   delete [] dense_ta;
   delete [] dense_tb;
 }
@@ -312,4 +337,33 @@ TEST_F(TestContraction, 3DCase) {
   dten_3d_s.Random(qnp1);
   dten_3d_s2.Random(qnm1);
   RunTestTenCtrct3DCase3(dten_3d_s, dten_3d_s2);
+
+  auto zten_3d_s2 = zten_3d_s;
+  zten_3d_s.Random(qn0);
+  zten_3d_s2.Random(qn0);
+  RunTestTenCtrct3DCase1(zten_3d_s, zten_3d_s2);
+  zten_3d_s.Random(qnp1);
+  zten_3d_s2.Random(qn0);
+  RunTestTenCtrct3DCase1(zten_3d_s, zten_3d_s2);
+  zten_3d_s.Random(qnp1);
+  zten_3d_s2.Random(qnm1);
+  RunTestTenCtrct3DCase1(zten_3d_s, zten_3d_s2);
+  zten_3d_s.Random(qn0);
+  zten_3d_s2.Random(qn0);
+  RunTestTenCtrct3DCase2(zten_3d_s, zten_3d_s2);
+  zten_3d_s.Random(qnp1);
+  zten_3d_s2.Random(qn0);
+  RunTestTenCtrct3DCase2(zten_3d_s, zten_3d_s2);
+  zten_3d_s.Random(qnp1);
+  zten_3d_s2.Random(qnm1);
+  RunTestTenCtrct3DCase2(zten_3d_s, zten_3d_s2);
+  zten_3d_s.Random(qn0);
+  zten_3d_s2.Random(qn0);
+  RunTestTenCtrct3DCase3(zten_3d_s, zten_3d_s2);
+  zten_3d_s.Random(qnp1);
+  zten_3d_s2.Random(qn0);
+  RunTestTenCtrct3DCase3(zten_3d_s, zten_3d_s2);
+  zten_3d_s.Random(qnp1);
+  zten_3d_s2.Random(qnm1);
+  RunTestTenCtrct3DCase3(zten_3d_s, zten_3d_s2);
 }
