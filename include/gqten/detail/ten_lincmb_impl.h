@@ -1,16 +1,14 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 /*
 * Author: Rongyang Sun <sun-rongyang@outlook.com>
-* Creation Date: 2019-08-09 11:39
+* Creation Date: 2019-09-20 09:27
 * 
-* Description: GraceQ/tensor project. Implementation details about tensor linear combination.
+* Description: GraceQ/tensor project. Implementation details for tensor linear combination.
 */
-#include "gqten/gqten.h"
-#include "ten_lincmb.h"
-
 #include <assert.h>
 
-#include "mkl.h"
+#include "gqten/gqten.h"
+#include "gqten/detail/ten_linalg_wrapper.h"
 
 #ifdef Release
   #define NDEBUG
@@ -20,10 +18,18 @@
 namespace gqten {
 
 
+template <typename TenElemType>
+void LinearCombineOneTerm(
+    const TenElemType,
+    const GQTensor<TenElemType> *,
+    GQTensor<TenElemType> *);
+
+
+template <typename TenElemType>
 void LinearCombine(
-    const std::vector<double> &coefs,
-    const std::vector<GQTensor *> &ts,
-    GQTensor *res) {
+    const std::vector<TenElemType> &coefs,
+    const std::vector<GQTensor<TenElemType> *> &ts,
+    GQTensor<TenElemType> *res) {
   auto nt = ts.size();
   assert(coefs.size() == nt);
   for (std::size_t i = 0; i < nt; ++i) {
@@ -32,21 +38,26 @@ void LinearCombine(
 }
 
 
+template <typename TenElemType>
 void LinearCombine(
     const std::size_t size,
-    const double *coefs,
-    const std::vector<GQTensor *> &ts,
-    GQTensor *res) {
+    const TenElemType *coefs,
+    const std::vector<GQTensor<TenElemType> *> &ts,
+    GQTensor<TenElemType> *res) {
   for (std::size_t i = 0; i < size; i++) {
     LinearCombineOneTerm(coefs[i], ts[i], res);
   }
 }
 
 
-void LinearCombineOneTerm(const double coef, const GQTensor *t, GQTensor *res) {
+template <typename TenElemType>
+void LinearCombineOneTerm(
+    const TenElemType coef,
+    const GQTensor<TenElemType> *t,
+    GQTensor<TenElemType> *res) {
 
 #ifdef GQTEN_TIMING_MODE
-  Timer daxpy_timer("daxpy");
+  Timer axpy_timer("axpy");
 #endif
 
   for (auto &blk : t->cblocks()) {
@@ -59,13 +70,13 @@ void LinearCombineOneTerm(const double coef, const GQTensor *t, GQTensor *res) {
         auto res_blk_data = res_blk->data();
 
 #ifdef GQTEN_TIMING_MODE
-        daxpy_timer.Restart();
+        axpy_timer.Restart();
 #endif
 
-        cblas_daxpy(size, coef, blk_data, 1, res_blk_data, 1);
+        CblasAxpy(size, coef, blk_data, 1, res_blk_data, 1);
 
 #ifdef GQTEN_TIMING_MODE
-        daxpy_timer.PrintElapsed(8);
+        axpy_timer.PrintElapsed(8);
 #endif
 
         has_blk = true;
@@ -73,7 +84,7 @@ void LinearCombineOneTerm(const double coef, const GQTensor *t, GQTensor *res) {
       }
     }
     if (!has_blk) {
-      auto new_blk = new QNBlock(*blk);
+      auto new_blk = new QNBlock<TenElemType>(*blk);
       auto size = new_blk->size;
       auto new_blk_data = new_blk->data();
       for (long i = 0; i < size; ++i) {

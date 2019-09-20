@@ -3,10 +3,10 @@
 * Author: Rongyang Sun <sun-rongyang@outlook.com>
 * Creation Date: 2019-09-17 13:27
 * 
-* Description: GraceQ/tensor project. Inline functions for implementing tensor contraction.
+* Description: GraceQ/tensor project. Linear algebra function wrappers.
 */
-#ifndef GQTEN_DETAIL_TEN_CTRCT_INL_H
-#define GQTEN_DETAIL_TEN_CTRCT_INL_H
+#ifndef GQTEN_DETAIL_TEN_LINALG_WRAPPER_H
+#define GQTEN_DETAIL_TEN_LINALG_WRAPPER_H
 
 
 #include <iostream>
@@ -137,4 +137,4 @@ inline void GemmBatch(
 #endif
 }
 } /* gqten */ 
-#endif /* ifndef GQTEN_DETAIL_TEN_CTRCT_INL_H */
+#endif /* ifndef GQTEN_DETAIL_TEN_LINALG_WRAPPER_H */

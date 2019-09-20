@@ -413,19 +413,21 @@ inline GQTensor<TenElemType> *Contract(
 //}
 //#endif
 
-//// Tensors linear combination.
-//// Do the operation: res += (coefs[0]*ts[0] + coefs[1]*ts[1] + ...).
+// Tensors linear combination.
+// Do the operation: res += (coefs[0]*ts[0] + coefs[1]*ts[1] + ...).
 //[> TODO: Support scalar (rank 0) tensor case. <]
-//void LinearCombine(
-    //const std::vector<double> &,
-    //const std::vector<GQTensor *> &,
-    //GQTensor *);
+template <typename TenElemType>
+void LinearCombine(
+    const std::vector<TenElemType> &,
+    const std::vector<GQTensor<TenElemType> *> &,
+    GQTensor<TenElemType> *);
 
-//void LinearCombine(
-    //const std::size_t,
-    //const double *,
-    //const std::vector<GQTensor *> &,
-    //GQTensor *);
+template <typename TenElemType>
+void LinearCombine(
+    const std::size_t,
+    const TenElemType *,
+    const std::vector<GQTensor<TenElemType> *> &,
+    GQTensor<TenElemType> *);
 
 //// Tensor SVD.
 //void Svd(
@@ -493,6 +495,7 @@ private:
 #include "gqten/detail/qnblock_impl.h"
 #include "gqten/detail/gqtensor_impl.h"
 #include "gqten/detail/ten_ctrct_impl.h"
+#include "gqten/detail/ten_lincmb_impl.h"
 
 
 #endif /* ifndef GQTEN_GQTEN_H */

@@ -85,11 +85,11 @@ add_unittest(test_ten_ctrct
   test_ten_ctrct.cc "${MATH_LIB_COMPILE_FLAGS}"
   "" "${MATH_LIB_LINK_FLAGS}"
   "")
-## Test tensor linear combination.
-#add_unittest(test_ten_lincmb
-  #test_ten_lincmb.cc "${MATH_LIB_COMPILE_FLAGS}"
-  #"" "${MATH_LIB_LINK_FLAGS}"
-  #"")
+# Test tensor linear combination.
+add_unittest(test_ten_lincmb
+  test_ten_lincmb.cc "${MATH_LIB_COMPILE_FLAGS}"
+  "" "${MATH_LIB_LINK_FLAGS}"
+  "")
 
 ## Test tensor SVD.
 #add_unittest(test_ten_svd

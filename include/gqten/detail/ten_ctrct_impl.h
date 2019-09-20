@@ -15,7 +15,7 @@
 
 #include "gqten/gqten.h"
 #include "gqten/detail/ten_ctrct_fwd.h"
-#include "gqten/detail/ten_ctrct_inl.h"
+#include "gqten/detail/ten_linalg_wrapper.h"
 
 #ifdef Release
   #define NDEBUG
