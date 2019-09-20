@@ -15,7 +15,13 @@
 namespace gqten {
 
 
+class QN;
+
+
 class QNSector;
+
+
+class QNSectorSet;
 
 
 class Index;

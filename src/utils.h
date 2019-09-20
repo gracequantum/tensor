@@ -9,9 +9,9 @@
 #define GQTEN_UTILS_H
 
 
-#include "gqten/gqten.h"
-
 #include <vector>
+
+#include "gqten/detail/fwd_dcl.h"
 
 
 namespace gqten {

@@ -5,12 +5,13 @@
 * 
 * Description: GraceQ/tensor project. Implementation details about utility classes and functions.
 */
-#include "gqten/gqten.h"
 #include "utils.h"
 
 #include <vector>
 
 #include <assert.h>
+
+#include "gqten/gqten.h"
 
 #ifdef Release
   #define NDEBUG
