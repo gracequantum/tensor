@@ -7,7 +7,7 @@
 */
 #include <assert.h>
 
-#include "gqten/gqten.h"
+#include "gqten/detail/fwd_dcl.h"
 #include "gqten/detail/ten_linalg_wrapper.h"
 
 #ifdef Release

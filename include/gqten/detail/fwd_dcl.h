@@ -18,6 +18,9 @@ namespace gqten {
 class QNSector;
 
 
+class Index;
+
+
 template <typename> class QNBlock;
 
 template <typename ElemType>
