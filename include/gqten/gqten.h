@@ -429,48 +429,87 @@ void LinearCombine(
     const std::vector<GQTensor<TenElemType> *> &,
     GQTensor<TenElemType> *);
 
-//// Tensor SVD.
-//void Svd(
-    //const GQTensor *,
-    //const long, const long,
-    //const QN &, const QN &,
-    //const double, const long, const long,
-    //GQTensor *, GQTensor *, GQTensor *,
-    //double *, long *);
+// Tensor SVD.
+template <typename TenElemType>
+void Svd(
+    const GQTensor<TenElemType> *,
+    const long, const long,
+    const QN &, const QN &,
+    const double, const long, const long,
+    GQTensor<TenElemType> *,
+    GQTensor<TenElemType> *,
+    GQTensor<TenElemType> *,
+    double *, long *);
 
 
-//struct SvdRes {
-  //SvdRes(
-      //GQTensor *u, GQTensor *s, GQTensor *v,
-      //const double trunc_err, const long D) :
-      //u(u), s(s), v(v), trunc_err(trunc_err), D(D) {}
-  //GQTensor *u;
-  //GQTensor *s;
-  //GQTensor *v;
-  //const double trunc_err;
-  //const long D;
-//};
-
-//// This API just for forward compatibility, it will be deleted soon.
-//[> TODO: Remove this API. <]
-//SvdRes Svd(
-    //const GQTensor &,
-    //const long, const long,
-    //const QN &, const QN &);
-
-//// This API just for forward compatibility, it will be deleted soon.
-//[> TODO: Remove this API. <]
-//SvdRes Svd(
-    //const GQTensor &,
-    //const long, const long,
-    //const QN &, const QN &,
-    //const double, const long, const long);
+// These APIs just for forward compatibility, it will be deleted soon.
+// TODO: Remove these APIs.
+template <typename TenElemType>
+struct SvdRes {
+  SvdRes(
+      GQTensor<TenElemType> *u,
+      GQTensor<TenElemType> *s,
+      GQTensor<TenElemType> *v,
+      const double trunc_err, const long D) :
+      u(u), s(s), v(v), trunc_err(trunc_err), D(D) {}
+  GQTensor<TenElemType> *u;
+  GQTensor<TenElemType> *s;
+  GQTensor<TenElemType> *v;
+  const double trunc_err;
+  const long D;
+};
 
 
-//// Tensor transpose function multi-thread controller.
-//int GQTenGetTensorTransposeNumThreads(void);
+template <typename TenElemType>
+inline SvdRes<TenElemType> Svd(
+    const GQTensor<TenElemType> &t,
+    const long ldims, const long rdims,
+    const QN &ldiv, const QN &rdiv,
+    const double cutoff, const long Dmin, const long Dmax) {
+  auto pu =  new GQTensor<TenElemType>();
+  auto ps =  new GQTensor<TenElemType>();
+  auto pvt = new GQTensor<TenElemType>();
+  double trunc_err;
+  long D;
+  Svd(
+      &t,
+      ldims, rdims,
+      ldiv, rdiv,
+      cutoff, Dmin, Dmax,
+      pu, ps, pvt,
+      &trunc_err, &D);
+  return SvdRes<TenElemType>(pu, ps, pvt,trunc_err, D);
+}
 
-//void GQTenSetTensorTransposeNumThreads(const int);
+
+template <typename TenElemType>
+inline SvdRes<TenElemType> Svd(
+    const GQTensor<TenElemType> &t,
+    const long ldims, const long rdims,
+    const QN &ldiv, const QN &rdiv) {
+  auto t_shape = t.shape;
+  long lsize = 1;
+  long rsize = 1;
+  for (std::size_t i = 0; i < t_shape.size(); ++i) {
+    if (i < ldims) {
+      lsize *= t_shape[i];
+    } else {
+      rsize *= t_shape[i];
+    }
+  }
+  auto D = ((lsize >= rsize) ? lsize : rsize);
+  return Svd(
+      t,
+      ldims, rdims,
+      ldiv, rdiv,
+      0, D, D);
+}
+
+
+// Tensor transpose function multi-thread controller.
+int GQTenGetTensorTransposeNumThreads(void);
+
+void GQTenSetTensorTransposeNumThreads(const int);
 
 
 // Timer.
@@ -496,6 +535,7 @@ private:
 #include "gqten/detail/gqtensor_impl.h"
 #include "gqten/detail/ten_ctrct_impl.h"
 #include "gqten/detail/ten_lincmb_impl.h"
+#include "gqten/detail/ten_svd_impl.h"
 
 
 #endif /* ifndef GQTEN_GQTEN_H */

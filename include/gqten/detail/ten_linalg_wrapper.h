@@ -136,5 +136,48 @@ inline void GemmBatch(
 
 #endif
 }
+
+
+struct RawSvdRes {
+  int info;
+  double *u;
+  double *s;
+  double *v;
+};
+
+
+inline RawSvdRes MatSvd(double *mat, const long &mld, const long &mrd) {
+  auto m = mld;
+  auto n = mrd;
+  auto lda = n;
+  long ldu, ldvt;
+  double *s;
+  double *vt;
+  if (m >= n) {
+    ldu = n;
+    ldvt = n;
+    s = new double [n];
+    vt = new double [ldvt*n];
+  } else {
+    ldu = m;
+    ldvt = n;
+    s = new double [m];
+    vt = new double [ldvt*m];
+  }
+  double *u = new double [ldu*m];
+  auto info = LAPACKE_dgesdd(
+      LAPACK_ROW_MAJOR, 'S',
+      m, n,
+      mat, lda,
+      s,
+      u, ldu,
+      vt, ldvt);
+  RawSvdRes raw_svd_res;
+  raw_svd_res.info = info;
+  raw_svd_res.u = u;
+  raw_svd_res.s = s;
+  raw_svd_res.v = vt;
+  return raw_svd_res;
+}
 } /* gqten */ 
 #endif /* ifndef GQTEN_DETAIL_TEN_LINALG_WRAPPER_H */

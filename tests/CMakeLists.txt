@@ -91,11 +91,11 @@ add_unittest(test_ten_lincmb
   "" "${MATH_LIB_LINK_FLAGS}"
   "")
 
-## Test tensor SVD.
-#add_unittest(test_ten_svd
-  #test_ten_svd.cc "${MATH_LIB_COMPILE_FLAGS}"
-  #"" "${MATH_LIB_LINK_FLAGS}"
-  #"")
+# Test tensor SVD.
+add_unittest(test_ten_svd
+  test_ten_svd.cc "${MATH_LIB_COMPILE_FLAGS}"
+  "" "${MATH_LIB_LINK_FLAGS}"
+  "")
 
 ## Test Distributed tensor numerical functions.
 ## Test distributed tensor contraction.

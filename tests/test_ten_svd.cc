@@ -36,8 +36,9 @@ inline long IntDot(const long &size, const long *x, const long *y) {
 }
 
 
+template <typename TenElemType>
 void RunTestSvdCase(
-    GQTensor &t,
+    GQTensor<TenElemType> &t,
     const long &ldims,
     const long &rdims,
     const double &cutoff,
@@ -48,7 +49,7 @@ void RunTestSvdCase(
     srand(0);
     t.Random(*random_div);
   }
-  GQTensor u, s, vt;
+  GQTensor<TenElemType> u, s, vt;
   double trunc_err;
   long D;
   Svd(
@@ -136,7 +137,7 @@ void RunTestSvdCase(
   EXPECT_NEAR(trunc_err, dense_trunc_err, kEpsilon);
 
   if (trunc_err < 1.0E-10) {
-    GQTensor t_restored_tmp,  t_restored;
+    GQTensor<TenElemType> t_restored_tmp,  t_restored;
     Contract(&u, &s, {{ldims}, {0}}, &t_restored_tmp);
     Contract(&t_restored_tmp, &vt, {{ldims}, {0}}, &t_restored);
     for (auto &coors : GenAllCoors(t.shape)) {
@@ -168,7 +169,7 @@ TEST_F(TestSvd, 2DCase) {
       QNSector(QN({QNNameVal("Sz",  0)}), 2),
       QNSector(QN({QNNameVal("Sz",  2)}), 1)}, IN);
   auto sidx_out = InverseIndex(sidx_in);
-  auto st2 = GQTensor({sidx_in, sidx_out});
+  auto st2 = DGQTensor({sidx_in, sidx_out});
   st2({1, 1}) = 1;
   st2({2, 2}) = 1;
 
@@ -196,7 +197,7 @@ TEST_F(TestSvd, 2DCase) {
       &qn2);
 
   // Large
-  auto lt2 = GQTensor({lidx_in, lidx_out});
+  auto lt2 = DGQTensor({lidx_in, lidx_out});
 
   RunTestSvdCase(
       lt2,
@@ -226,7 +227,7 @@ TEST_F(TestSvd, 3DCase) {
                      QNSector(QN({QNNameVal("Sz",  0)}), smalld),
                      QNSector(QN({QNNameVal("Sz",  1)}), smalld)}, IN);
   auto sidx_out = InverseIndex(sidx_in);
-  auto st3 = GQTensor({sidx_in, sidx_out, sidx_out});
+  auto st3 = DGQTensor({sidx_in, sidx_out, sidx_out});
   RunTestSvdCase(
       st3,
       1, 2,
@@ -246,7 +247,7 @@ TEST_F(TestSvd, 3DCase) {
       &qn0);
 
   // Large case
-  auto lt3 = GQTensor({lidx_in, lidx_out, lidx_out});
+  auto lt3 = DGQTensor({lidx_in, lidx_out, lidx_out});
   RunTestSvdCase(
       lt3,
       1, 2,
@@ -274,7 +275,7 @@ TEST_F(TestSvd, 3DCase) {
 
 
 TEST_F(TestSvd, 4DCase) {
-  auto t4 = GQTensor({lidx_in, lidx_out, lidx_out, lidx_out});
+  auto t4 = DGQTensor({lidx_in, lidx_out, lidx_out, lidx_out});
   RunTestSvdCase(
       t4,
       2, 2,
