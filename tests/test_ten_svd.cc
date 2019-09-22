@@ -5,14 +5,15 @@
 * 
 * Description: GraceQ/tensor project. Unittests for tensor SVD functions.
 */
-#include "gtest/gtest.h"
-#include "gqten/gqten.h"
-#include "utils.h"
-
 #include <iostream>
 #include <algorithm>
 
 #include "mkl.h"
+#include "gtest/gtest.h"
+
+#include "gqten/gqten.h"
+#include "gqten/detail/ten_linalg_wrapper.h"
+#include "utils.h"
 
 
 using namespace gqten;
@@ -21,12 +22,26 @@ using namespace gqten;
 const double kEpsilon = 1.0E-12;
 
 
-// Test SVD decomposition.
-QN qn0 = QN({QNNameVal("Sz", 0)});
-QN qnn2 = QN({QNNameVal("Sz", -2)});
-QN qn2 = QN({QNNameVal("Sz", 2)});
-QN qnn1 = QN({QNNameVal("Sz", -1)});
-QN qn1 = QN({QNNameVal("Sz", 1)});
+struct TestSvd : public testing::Test {
+  std::string qn_nm = "qn";
+  QN qn0 =  QN({QNNameVal(qn_nm,  0)});
+  QN qnp1 = QN({QNNameVal(qn_nm,  1)});
+  QN qnp2 = QN({QNNameVal(qn_nm,  2)});
+  QN qnm1 = QN({QNNameVal(qn_nm, -1)});
+  QN qnm2 = QN({QNNameVal(qn_nm, -2)});
+  int d_s = 3;
+  QNSector qnsct0_s =  QNSector(qn0,  d_s);
+  QNSector qnsctp1_s = QNSector(qnp1, d_s);
+  QNSector qnsctm1_s = QNSector(qnm1, d_s);
+  Index idx_in_s =  Index({qnsctm1_s, qnsct0_s, qnsctp1_s}, IN);
+  Index idx_out_s = Index({qnsctm1_s, qnsct0_s, qnsctp1_s}, OUT);
+
+  DGQTensor dten_default = DGQTensor();
+  DGQTensor dten_1d_s = DGQTensor({idx_out_s});
+  DGQTensor dten_2d_s = DGQTensor({idx_in_s, idx_out_s});
+  DGQTensor dten_3d_s = DGQTensor({idx_in_s, idx_out_s, idx_out_s});
+  DGQTensor dten_4d_s = DGQTensor({idx_in_s, idx_out_s, idx_out_s, idx_out_s});
+};
 
 
 inline long IntDot(const long &size, const long *x, const long *y) {
@@ -52,6 +67,8 @@ void RunTestSvdCase(
   GQTensor<TenElemType> u, s, vt;
   double trunc_err;
   long D;
+  std::string qn_nm = "qn";
+  QN qn0 =  QN({QNNameVal(qn_nm,  0)});
   Svd(
       &t,
       ldims, rdims,
@@ -69,7 +86,7 @@ void RunTestSvdCase(
       cols *= t.indexes[i].CalcDim();
     }
   }
-  auto dense_mat = new double [rows*cols];
+  auto dense_mat = new TenElemType [rows*cols];
   auto offsets = CalcMultiDimDataOffsets(t.shape);
   for (auto &coors : GenAllCoors(t.shape)) {
     dense_mat[IntDot(ndim, coors.data(), offsets.data())] = t.Elem(coors);
@@ -80,22 +97,22 @@ void RunTestSvdCase(
   auto lda = n;
   long ldu, ldvt;
   double *dense_s;
-  double *dense_vt;
+  TenElemType *dense_vt;
   long dense_sdim;
   if (m >= n) {
     dense_sdim = n;
     ldu = n;
     ldvt = n;
     dense_s = new double [n];
-    dense_vt = new double [ldvt*n];
+    dense_vt = new TenElemType [ldvt*n];
   } else {
     dense_sdim = m;
     ldu = m;
     ldvt = n;
     dense_s = new double [m];
-    dense_vt = new double [ldvt*m];
+    dense_vt = new TenElemType [ldvt*m];
   }
-  double *dense_u = new double [ldu*m];
+  auto *dense_u = new TenElemType [ldu*m];
   LAPACKE_dgesdd(
       LAPACK_ROW_MAJOR, 'S',
       m, n,
@@ -152,157 +169,143 @@ void RunTestSvdCase(
 }
 
 
-struct TestSvd : public testing::Test {
-  long d = 5;
-  Index lidx_in = Index({
-                     QNSector(QN({QNNameVal("Sz", -1)}), d),
-                     QNSector(QN({QNNameVal("Sz",  0)}), d),
-                     QNSector(QN({QNNameVal("Sz",  1)}), d)}, IN);
-  Index lidx_out = InverseIndex(lidx_in);
-};
-
-
 TEST_F(TestSvd, 2DCase) {
-  // Small
-  auto sidx_in = Index({
-      QNSector(QN({QNNameVal("Sz", -2)}), 1),
-      QNSector(QN({QNNameVal("Sz",  0)}), 2),
-      QNSector(QN({QNNameVal("Sz",  2)}), 1)}, IN);
-  auto sidx_out = InverseIndex(sidx_in);
-  auto st2 = DGQTensor({sidx_in, sidx_out});
-  st2({1, 1}) = 1;
-  st2({2, 2}) = 1;
-
   RunTestSvdCase(
-      st2,
+      dten_2d_s,
       1, 1,
-      0, 1, 2);
-
-  RunTestSvdCase(
-      st2,
-      1, 1,
-      0, 1, 4,
+      0, 1, d_s*3,
       &qn0);
-  
   RunTestSvdCase(
-      st2,
+      dten_2d_s,
       1, 1,
-      0, 1, 2,
-      &qnn2);
-
-  RunTestSvdCase(
-      st2,
-      1, 1,
-      0, 1, 2,
-      &qn2);
-
-  // Large
-  auto lt2 = DGQTensor({lidx_in, lidx_out});
-
-  RunTestSvdCase(
-      lt2,
-      1, 1,
-      0, 1, d*3,
+      0, 1, d_s,
       &qn0);
-
   RunTestSvdCase(
-      lt2,
+      dten_2d_s,
       1, 1,
-      0, 1, d,
-      &qn0);
-
+      0, 1, d_s*3,
+      &qnp1);
   RunTestSvdCase(
-      lt2,
+      dten_2d_s,
       1, 1,
-      0, 1, d*3,
-      &qnn1);
+      0, 1, d_s,
+      &qnp1);
+  RunTestSvdCase(
+      dten_2d_s,
+      1, 1,
+      0, 1, d_s*3,
+      &qnp2);
+  RunTestSvdCase(
+      dten_2d_s,
+      1, 1,
+      0, 1, d_s,
+      &qnp2);
+  RunTestSvdCase(
+      dten_2d_s,
+      1, 1,
+      0, 1, d_s*3,
+      &qnm1);
+  RunTestSvdCase(
+      dten_2d_s,
+      1, 1,
+      0, 1, d_s,
+      &qnm1);
+  RunTestSvdCase(
+      dten_2d_s,
+      1, 1,
+      0, 1, d_s*3,
+      &qnm2);
+  RunTestSvdCase(
+      dten_2d_s,
+      1, 1,
+      0, 1, d_s,
+      &qnm2);
 }
 
 
 TEST_F(TestSvd, 3DCase) {
-  // Small case
-  auto smalld = 1;
-  auto sidx_in = Index({
-                     QNSector(QN({QNNameVal("Sz", -1)}), smalld),
-                     QNSector(QN({QNNameVal("Sz",  0)}), smalld),
-                     QNSector(QN({QNNameVal("Sz",  1)}), smalld)}, IN);
-  auto sidx_out = InverseIndex(sidx_in);
-  auto st3 = DGQTensor({sidx_in, sidx_out, sidx_out});
   RunTestSvdCase(
-      st3,
+      dten_3d_s,
       1, 2,
-      0, 1, smalld*3,
+      0, 1, d_s*3,
       &qn0);
-
   RunTestSvdCase(
-      st3,
+      dten_3d_s,
       1, 2,
-      0, 1, smalld*3,
-      &qn1);
-
+      0, 1, d_s*2,
+      &qn0);
   RunTestSvdCase(
-      st3,
+      dten_3d_s,
+      1, 2,
+      0, 1, d_s*3,
+      &qnp1);
+  RunTestSvdCase(
+      dten_3d_s,
+      1, 2,
+      0, 1, d_s*2,
+      &qnp1);
+  RunTestSvdCase(
+      dten_3d_s,
       2, 1,
-      0, 1, smalld*3,
+      0, 1, d_s*3,
       &qn0);
-
-  // Large case
-  auto lt3 = DGQTensor({lidx_in, lidx_out, lidx_out});
   RunTestSvdCase(
-      lt3,
-      1, 2,
-      0, 1, d*3,
-      &qn0);
-
-  RunTestSvdCase(
-      lt3,
-      1, 2,
-      0, 1, d*2,
-      &qn0);
-
-  RunTestSvdCase(
-      lt3,
+      dten_3d_s,
       2, 1,
-      0, 1, d*3,
+      0, 1, d_s*2,
       &qn0);
-
   RunTestSvdCase(
-      lt3,
-      1, 2,
-      0, 1, d*3,
-      &qn1);
+      dten_3d_s,
+      2, 1,
+      0, 1, d_s*3,
+      &qnp1);
+  RunTestSvdCase(
+      dten_3d_s,
+      2, 1,
+      0, 1, d_s*2,
+      &qnp1);
 }
 
 
 TEST_F(TestSvd, 4DCase) {
-  auto t4 = DGQTensor({lidx_in, lidx_out, lidx_out, lidx_out});
   RunTestSvdCase(
-      t4,
+      dten_4d_s,
       2, 2,
-      0, 1, (d*3)*(d*3),
+      0, 1, (d_s*3)*(d_s*3),
       &qn0);
-
   RunTestSvdCase(
-      t4,
+      dten_4d_s,
       2, 2,
-      0, 1, d*3,
+      0, 1, (d_s*3),
       &qn0);
-
   RunTestSvdCase(
-      t4,
+      dten_4d_s,
+      2, 2,
+      0, 1, (d_s*3)*(d_s*3),
+      &qnp1);
+  RunTestSvdCase(
+      dten_4d_s,
+      2, 2,
+      0, 1, (d_s*3),
+      &qnp1);
+  RunTestSvdCase(
+      dten_4d_s,
       1, 3,
-      0, 1, d*3,
+      0, 1, d_s*3,
       &qn0);
-
   RunTestSvdCase(
-      t4,
-      2, 2,
-      0, 1, (d*3)*(d*3),
-      &qn1);
-
+      dten_4d_s,
+      1, 3,
+      0, 1, d_s*2,
+      &qn0);
   RunTestSvdCase(
-      t4,
-      2, 2,
-      0, 1, (d*3)*(d*3),
-      &qn2);
+      dten_4d_s,
+      1, 3,
+      0, 1, d_s*3,
+      &qnp1);
+  RunTestSvdCase(
+      dten_4d_s,
+      1, 3,
+      0, 1, d_s*2,
+      &qnp1);
 }
