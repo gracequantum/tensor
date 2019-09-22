@@ -7,11 +7,12 @@
 */
 #include <cmath>
 
-#include "mkl.h"
-
-#include "testing_utils.h"
 #include "gtest/gtest.h"
+
 #include "gqten/gqten.h"
+#include "testing_utils.h"
+
+#include "mkl.h"    // Included after other header file. Because GraceQ needs redefine MKL_Complex16 to gqten::GQTEN_Complex .
 
 
 using namespace gqten;

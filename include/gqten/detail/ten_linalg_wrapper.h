@@ -12,9 +12,10 @@
 #include <iostream>
 #include <vector>
 
-#include "mkl.h"
-
 #include "gqten/detail/value_t.h"
+
+#define MKL_Complex16 gqten::GQTEN_Complex
+#include "mkl.h"
 
 
 namespace gqten {
@@ -138,15 +139,16 @@ inline void GemmBatch(
 }
 
 
+template <typename TenElemType>
 struct RawSvdRes {
   int info;
-  double *u;
+  TenElemType *u;
   double *s;
-  double *v;
+  TenElemType *v;
 };
 
 
-inline RawSvdRes MatSvd(double *mat, const long &mld, const long &mrd) {
+inline RawSvdRes<double> MatSvd(double *mat, const long mld, const long mrd) {
   auto m = mld;
   auto n = mrd;
   auto lda = n;
@@ -164,7 +166,7 @@ inline RawSvdRes MatSvd(double *mat, const long &mld, const long &mrd) {
     s = new double [m];
     vt = new double [ldvt*m];
   }
-  double *u = new double [ldu*m];
+  auto *u = new double [ldu*m];
   auto info = LAPACKE_dgesdd(
       LAPACK_ROW_MAJOR, 'S',
       m, n,
@@ -172,12 +174,48 @@ inline RawSvdRes MatSvd(double *mat, const long &mld, const long &mrd) {
       s,
       u, ldu,
       vt, ldvt);
-  RawSvdRes raw_svd_res;
+  RawSvdRes<double> raw_svd_res;
   raw_svd_res.info = info;
   raw_svd_res.u = u;
   raw_svd_res.s = s;
   raw_svd_res.v = vt;
   return raw_svd_res;
 }
-} /* gqten */ 
+
+
+inline RawSvdRes<GQTEN_Complex> MatSvd(
+    GQTEN_Complex *mat, const long mld, const long mrd) {
+  auto m = mld;
+  auto n = mrd;
+  auto lda = n;
+  long ldu, ldvt;
+  double *s;
+  GQTEN_Complex *vt;
+  if (m >= n) {
+    ldu = n;
+    ldvt = n;
+    s = new double [n];
+    vt = new GQTEN_Complex [ldvt*n];
+  } else {
+    ldu = m;
+    ldvt = n;
+    s = new double [m];
+    vt = new GQTEN_Complex [ldvt*m];
+  }
+  auto *u = new GQTEN_Complex [ldu*m];
+  auto info = LAPACKE_zgesdd(
+      LAPACK_ROW_MAJOR, 'S',
+      m, n,
+      mat, lda,
+      s,
+      u, ldu,
+      vt, ldvt);
+  RawSvdRes<GQTEN_Complex> raw_svd_res;
+  raw_svd_res.info = info;
+  raw_svd_res.u = u;
+  raw_svd_res.s = s;
+  raw_svd_res.v = vt;
+  return raw_svd_res;
+}
+} /* gqten */
 #endif /* ifndef GQTEN_DETAIL_TEN_LINALG_WRAPPER_H */

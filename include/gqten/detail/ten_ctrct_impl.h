@@ -11,11 +11,11 @@
 #include <vector>
 #include <algorithm>
 
-#include "mkl.h"
-
 #include "gqten/detail/fwd_dcl.h"
 #include "gqten/detail/ten_ctrct_fwd.h"
 #include "gqten/detail/ten_linalg_wrapper.h"
+
+#include "mkl.h"    // Included after other header file. Because GraceQ needs redefine MKL_Complex16 to gqten::GQTEN_Complex .
 
 #ifdef Release
   #define NDEBUG

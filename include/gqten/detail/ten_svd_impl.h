@@ -360,7 +360,7 @@ TruncBlkSvdData<TenElemType> TruncatedBlockSvd(
         }
       }
     } else {
-      std::cout << "LAPACKE_dgesdd error." << std::endl;
+      std::cout << "LAPACKE_?gesdd error." << std::endl;
       exit(1);
     }
   }

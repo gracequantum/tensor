@@ -5,9 +5,9 @@
 * 
 * Description: GraceQ/tensor project. Unittests for GQTensor object.
 */
+#include "gqten/gqten.h"
 #include "testing_utils.h"
 #include "gtest/gtest.h"
-#include "gqten/gqten.h"
 
 #include <utility>
 #include <string>

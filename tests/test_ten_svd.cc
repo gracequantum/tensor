@@ -8,13 +8,13 @@
 #include <iostream>
 #include <algorithm>
 
-#include "mkl.h"
 #include "gtest/gtest.h"
 
 #include "gqten/gqten.h"
 #include "gqten/detail/ten_linalg_wrapper.h"
 #include "utils.h"
 
+#include "mkl.h"    // Included after other header file. Because GraceQ needs redefine MKL_Complex16 to gqten::GQTEN_Complex .
 
 using namespace gqten;
 
@@ -36,11 +36,15 @@ struct TestSvd : public testing::Test {
   Index idx_in_s =  Index({qnsctm1_s, qnsct0_s, qnsctp1_s}, IN);
   Index idx_out_s = Index({qnsctm1_s, qnsct0_s, qnsctp1_s}, OUT);
 
-  DGQTensor dten_default = DGQTensor();
   DGQTensor dten_1d_s = DGQTensor({idx_out_s});
   DGQTensor dten_2d_s = DGQTensor({idx_in_s, idx_out_s});
   DGQTensor dten_3d_s = DGQTensor({idx_in_s, idx_out_s, idx_out_s});
   DGQTensor dten_4d_s = DGQTensor({idx_in_s, idx_out_s, idx_out_s, idx_out_s});
+
+  ZGQTensor zten_1d_s = ZGQTensor({idx_out_s});
+  ZGQTensor zten_2d_s = ZGQTensor({idx_in_s, idx_out_s});
+  ZGQTensor zten_3d_s = ZGQTensor({idx_in_s, idx_out_s, idx_out_s});
+  ZGQTensor zten_4d_s = ZGQTensor({idx_in_s, idx_out_s, idx_out_s, idx_out_s});
 };
 
 
@@ -91,35 +95,16 @@ void RunTestSvdCase(
   for (auto &coors : GenAllCoors(t.shape)) {
     dense_mat[IntDot(ndim, coors.data(), offsets.data())] = t.Elem(coors);
   }
-
-  auto m = rows;
-  auto n = cols;
-  auto lda = n;
-  long ldu, ldvt;
-  double *dense_s;
-  TenElemType *dense_vt;
+  auto dense_mat_svd_res = MatSvd(dense_mat, rows, cols);
+  auto dense_s = dense_mat_svd_res.s;
+  auto dense_u = dense_mat_svd_res.u;
+  auto dense_vt = dense_mat_svd_res.v;
   long dense_sdim;
-  if (m >= n) {
-    dense_sdim = n;
-    ldu = n;
-    ldvt = n;
-    dense_s = new double [n];
-    dense_vt = new TenElemType [ldvt*n];
+  if (rows > cols) {
+    dense_sdim = cols;
   } else {
-    dense_sdim = m;
-    ldu = m;
-    ldvt = n;
-    dense_s = new double [m];
-    dense_vt = new TenElemType [ldvt*m];
+    dense_sdim = rows;
   }
-  auto *dense_u = new TenElemType [ldu*m];
-  LAPACKE_dgesdd(
-      LAPACK_ROW_MAJOR, 'S',
-      m, n,
-      dense_mat, lda,
-      dense_s,
-      dense_u, ldu,
-      dense_vt, ldvt);
 
   std::vector<double> dense_svs;
   for (long i = 0; i < dense_sdim; ++i) {
@@ -220,6 +205,57 @@ TEST_F(TestSvd, 2DCase) {
       1, 1,
       0, 1, d_s,
       &qnm2);
+
+  //RunTestSvdCase(
+      //zten_2d_s,
+      //1, 1,
+      //0, 1, d_s*3,
+      //&qn0);
+  //RunTestSvdCase(
+      //dten_2d_s,
+      //1, 1,
+      //0, 1, d_s,
+      //&qn0);
+  //RunTestSvdCase(
+      //dten_2d_s,
+      //1, 1,
+      //0, 1, d_s*3,
+      //&qnp1);
+  //RunTestSvdCase(
+      //dten_2d_s,
+      //1, 1,
+      //0, 1, d_s,
+      //&qnp1);
+  //RunTestSvdCase(
+      //dten_2d_s,
+      //1, 1,
+      //0, 1, d_s*3,
+      //&qnp2);
+  //RunTestSvdCase(
+      //dten_2d_s,
+      //1, 1,
+      //0, 1, d_s,
+      //&qnp2);
+  //RunTestSvdCase(
+      //dten_2d_s,
+      //1, 1,
+      //0, 1, d_s*3,
+      //&qnm1);
+  //RunTestSvdCase(
+      //dten_2d_s,
+      //1, 1,
+      //0, 1, d_s,
+      //&qnm1);
+  //RunTestSvdCase(
+      //dten_2d_s,
+      //1, 1,
+      //0, 1, d_s*3,
+      //&qnm2);
+  //RunTestSvdCase(
+      //dten_2d_s,
+      //1, 1,
+      //0, 1, d_s,
+      //&qnm2);
 }
 
 

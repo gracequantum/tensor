@@ -24,4 +24,9 @@ using GQTEN_Complex = std::complex<GQTEN_Double>;
 using DGQTensor = GQTensor<GQTEN_Double>;
 using ZGQTensor = GQTensor<GQTEN_Complex>;
 } /* gqten */ 
+
+
+#define MKL_Complex16 gqten::GQTEN_Complex
+
+
 #endif /* ifndef GQTEN_DETAIL_VALUE_T_H */
