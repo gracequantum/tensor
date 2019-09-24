@@ -10,7 +10,7 @@ if(NOT GQTEN_USE_EXTERNAL_HPTT_LIB)
 endif()
 
 
-set(GQTEN_HEADERS ${GQTEN_HEADER_PATH}/gqten/gqten.h)
+set(GQTEN_HEADERS_DIR ${GQTEN_HEADER_PATH}/gqten)
 set(GQTEN_BASIC_SRC
   utils.cc
   timer.cc
@@ -32,7 +32,7 @@ set(GQTEN_BASIC_SRC
 
 
 install(
-  FILES ${GQTEN_HEADERS}
+  DIRECTORY ${GQTEN_HEADERS_DIR}
   DESTINATION ${GQTEN_INCLUDE_DEST})
 install(
   TARGETS gqten

@@ -106,7 +106,7 @@ endif()
 
 
 # Installation path
-set(GQTEN_INCLUDE_DEST "${CMAKE_INSTALL_PREFIX}/include/gqten")
+set(GQTEN_INCLUDE_DEST "${CMAKE_INSTALL_PREFIX}/include")
 set(GQTEN_LIB_DEST "${CMAKE_INSTALL_PREFIX}/lib")
 
 
