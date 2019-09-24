@@ -14,10 +14,6 @@
 #include <fstream>
 #include <cmath>
 
-#ifdef GQTEN_MPI_PARALLEL
-#include "mpi.h"
-#endif
-
 #include "gqten/detail/fwd_dcl.h"
 #include "gqten/detail/consts.h"
 #include "gqten/detail/value_t.h"
@@ -211,14 +207,6 @@ friend std::vector<QNBlock<ElemType> *> BlocksCtrctBatch<ElemType>(
     const ElemType,
     const std::vector<QNBlock<ElemType> *> &,
     const std::vector<QNBlock<ElemType> *> &);
-#ifdef GQTEN_MPI_PARALLEL
-friend std::vector<QNBlock *> GQTEN_MPI_BlocksCtrctBatch(
-    const std::vector<long> &, const std::vector<long> &,
-    const double,
-    const std::vector<QNBlock *> &, const std::vector<QNBlock *> &,
-    MPI_Comm, const int);
-#endif
-
 
 public:
   QNBlock(void) = default;
@@ -390,30 +378,6 @@ inline GQTensor<TenElemType> *Contract(
   return res_t;
 }
 
-//#ifdef GQTEN_MPI_PARALLEL
-//const char kGemmWorkerStatCont = 'c';
-
-//const char kGemmWorkerStatStop = 's';
-
-//void GQTEN_MPI_Contract(
-    //const GQTensor *, const GQTensor *,
-    //const std::vector<std::vector<long>> &,
-    //GQTensor *,
-    //MPI_Comm, const int);
-
-//// This API just for forward compatibility, it will be deleted soon.
-//[> TODO: Remove this API. <]
-//GQTensor *GQTEN_MPI_Contract(
-    //const GQTensor &, const GQTensor &,
-    //const std::vector<std::vector<long>> &,
-    //MPI_Comm, const int);
-
-
-//inline void MPI_SendGemmWorkerStat(
-    //const char stat, const int worker, MPI_Comm comm) {
-  //MPI_Send(&stat, 1, MPI_CHAR, worker, 5, comm);
-//}
-//#endif
 
 // Tensors linear combination.
 // Do the operation: res += (coefs[0]*ts[0] + coefs[1]*ts[1] + ...).

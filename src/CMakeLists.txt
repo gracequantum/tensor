@@ -17,24 +17,9 @@ set(GQTEN_BASIC_SRC
   ten_trans.cc
   qn.cc
   qnsector.cc
-  index.cc
-  )
+  index.cc)
 
 
-if(GQTEN_MPI_PARALLEL)
-  add_library(gqten
-    ${GQTEN_BASIC_SRC}
-    mpi_ten_ctrct.cc)
-
-  target_include_directories(gqten
-    PRIVATE ${GQTEN_HEADER_PATH}
-    PRIVATE ${hptt_INCLUDE_DIR}
-    PRIVATE ${MPI_CXX_INCLUDE_PATH})
-
-  target_compile_options(gqten
-    PRIVATE ${MATH_LIB_COMPILE_FLAGS}
-    PRIVATE ${MPI_CXX_COMPILE_FLAGS})
-else()
   add_library(gqten
     ${GQTEN_BASIC_SRC})
 
@@ -44,7 +29,6 @@ else()
 
   target_compile_options(gqten
     PRIVATE ${MATH_LIB_COMPILE_FLAGS})
-endif()
 
 
 install(
