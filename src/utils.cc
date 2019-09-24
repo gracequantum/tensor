@@ -21,6 +21,22 @@
 namespace gqten {
 
 
+GQTensor<GQTEN_Complex> ToComplex(const GQTensor<GQTEN_Double> &dten) {
+  GQTensor<GQTEN_Complex> zten(dten.indexes);
+  if (dten.scalar != 0.0) {
+    zten.scalar = dten.scalar;
+    return zten;
+  }
+  for (auto &pdtenblk : dten.cblocks()) {
+    auto pztenblk = new QNBlock<GQTEN_Complex>(pdtenblk->qnscts);
+    assert(pztenblk->size == pdtenblk->size);
+    ArrayToComplex(pztenblk->data(), pdtenblk->cdata(), pdtenblk->size);
+    zten.blocks().push_back(pztenblk);
+  }
+  return zten;
+}
+
+
 QN CalcDiv(
     const std::vector<QNSector> &qnscts, const std::vector<Index> &indexes) {
   QN div;

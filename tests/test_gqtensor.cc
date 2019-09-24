@@ -723,6 +723,41 @@ TEST_F(TestGQTensor, TestDotMultiplication) {
 }
 
 
+void RunTestGQTensorToComplexCase(
+    GQTensor<GQTEN_Double> &t,
+    const QN & div,
+    unsigned int rand_seed) {
+  srand(rand_seed);
+  t.Random(div);
+  auto zten = ToComplex(t);
+  for (auto &coor : t.CoorsIter()) {
+    EXPECT_DOUBLE_EQ(zten.Elem(coor).real(), t.Elem(coor));
+  }
+}
+
+
+TEST_F(TestGQTensor, TestToComplex) {
+  srand(0);
+  dten_default.scalar = drand();
+  auto zten = ToComplex(dten_default);
+  srand(0);
+  EXPECT_DOUBLE_EQ(zten.scalar.real(), drand());
+
+  RunTestGQTensorToComplexCase(dten_1d_s, qn0, 0);
+  RunTestGQTensorToComplexCase(dten_1d_s, qn0, 1);
+  RunTestGQTensorToComplexCase(dten_1d_s, qnp1, 0);
+  RunTestGQTensorToComplexCase(dten_1d_s, qnp1, 1);
+  RunTestGQTensorToComplexCase(dten_2d_s, qn0, 0);
+  RunTestGQTensorToComplexCase(dten_2d_s, qn0, 1);
+  RunTestGQTensorToComplexCase(dten_2d_s, qnp1, 0);
+  RunTestGQTensorToComplexCase(dten_2d_s, qnp1, 1);
+  RunTestGQTensorToComplexCase(dten_3d_s, qn0, 0);
+  RunTestGQTensorToComplexCase(dten_3d_s, qn0, 1);
+  RunTestGQTensorToComplexCase(dten_3d_s, qnp1, 0);
+  RunTestGQTensorToComplexCase(dten_3d_s, qnp1, 1);
+}
+
+
 template <typename GQTensorT>
 void RunTestGQTensorFileIOCase(const GQTensorT &t) {
   std::string file = "test.gqten";

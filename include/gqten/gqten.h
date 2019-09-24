@@ -368,6 +368,8 @@ GQTensor<ElemType> operator*(const GQTensor<ElemType> &, const ElemType &);
 template <typename ElemType>
 GQTensor<ElemType> operator*(const ElemType &, const GQTensor<ElemType> &);
 
+GQTensor<GQTEN_Complex> ToComplex(const GQTensor<GQTEN_Double> &);
+
 
 // Tensor numerical functions.
 // Tensors contraction.
@@ -437,7 +439,7 @@ void Svd(
     const QN &, const QN &,
     const double, const long, const long,
     GQTensor<TenElemType> *,
-    GQTensor<TenElemType> *,
+    GQTensor<GQTEN_Double> *,
     GQTensor<TenElemType> *,
     double *, long *);
 
@@ -448,12 +450,12 @@ template <typename TenElemType>
 struct SvdRes {
   SvdRes(
       GQTensor<TenElemType> *u,
-      GQTensor<TenElemType> *s,
+      GQTensor<GQTEN_Double> *s,
       GQTensor<TenElemType> *v,
       const double trunc_err, const long D) :
       u(u), s(s), v(v), trunc_err(trunc_err), D(D) {}
   GQTensor<TenElemType> *u;
-  GQTensor<TenElemType> *s;
+  GQTensor<GQTEN_Double> *s;
   GQTensor<TenElemType> *v;
   const double trunc_err;
   const long D;
@@ -467,7 +469,7 @@ inline SvdRes<TenElemType> Svd(
     const QN &ldiv, const QN &rdiv,
     const double cutoff, const long Dmin, const long Dmax) {
   auto pu =  new GQTensor<TenElemType>();
-  auto ps =  new GQTensor<TenElemType>();
+  auto ps =  new GQTensor<GQTEN_Double>();
   auto pvt = new GQTensor<TenElemType>();
   double trunc_err;
   long D;
