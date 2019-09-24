@@ -170,44 +170,48 @@ inline std::vector<TenElemType> NormVec(const std::vector<TenElemType> &v) {
 }
 
 
-inline double *MatGetRows(
-    const double *mat, const long &rows, const long &cols,
+template <typename MatElemType>
+inline MatElemType *MatGetRows(
+    const MatElemType *mat, const long &rows, const long &cols,
     const long &from, const long &num_rows) {
   auto new_size = num_rows*cols;
-  auto new_mat = new double [new_size];
-  std::memcpy(new_mat, mat+(from*cols), new_size*sizeof(double));
+  auto new_mat = new MatElemType [new_size];
+  std::memcpy(new_mat, mat+(from*cols), new_size*sizeof(MatElemType));
   return new_mat;
 }
 
 
+template <typename MatElemType>
 inline void MatGetRows(
-    const double *mat, const long &rows, const long &cols,
+    const MatElemType *mat, const long &rows, const long &cols,
     const long &from, const long &num_rows,
-    double *new_mat) {
+    MatElemType *new_mat) {
   auto new_size = num_rows*cols;
-  std::memcpy(new_mat, mat+(from*cols), new_size*sizeof(double));
+  std::memcpy(new_mat, mat+(from*cols), new_size*sizeof(MatElemType));
 }
 
 
+template <typename MatElemType>
 inline void MatGetCols(
-    const double *mat, const long rows, const long cols,
+    const MatElemType *mat, const long rows, const long cols,
     const long from, const long num_cols,
-    double *new_mat) {
+    MatElemType *new_mat) {
   long offset = from;
   long new_offset = 0;
   for (long i = 0; i < rows; ++i) {
-    std::memcpy(new_mat+new_offset, mat+offset, num_cols*sizeof(double));
+    std::memcpy(new_mat+new_offset, mat+offset, num_cols*sizeof(MatElemType));
     offset += cols;
     new_offset += num_cols;
   }
 }
 
 
-inline double *MatGetCols(
-    const double *mat, const long rows, const long cols,
+template <typename MatElemType>
+inline MatElemType *MatGetCols(
+    const MatElemType *mat, const long rows, const long cols,
     const long from, const long num_cols) {
   auto new_size = num_cols * rows;
-  auto new_mat = new double [new_size];
+  auto new_mat = new MatElemType [new_size];
   MatGetCols(mat, rows, cols, from, num_cols, new_mat);
   return new_mat;
 }

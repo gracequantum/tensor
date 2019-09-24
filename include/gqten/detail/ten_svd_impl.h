@@ -17,7 +17,6 @@ namespace gqten {
 
 
 // Forward declarations.
-
 typedef std::pair<QN, QN> PartDivs;
 
 typedef std::vector<std::vector<QNSector>> QNSectorsSet;
@@ -100,7 +99,7 @@ struct BlkSvdData {
       const QNSectorsSet &lqnscts_set,
       const QNSectorsSet &rqnscts_set,
       TenElemType * &u,
-      TenElemType * &s,
+      double * &s,
       TenElemType * &v,
       const long &uldim,
       const long &sdim,
@@ -118,7 +117,7 @@ struct BlkSvdData {
   QNSectorsSet lqnscts_set;
   QNSectorsSet rqnscts_set;
   TenElemType *u;
-  TenElemType *s;
+  double *s;
   TenElemType *v;
   long uldim;
   long sdim;
@@ -156,7 +155,7 @@ void SvdWrapBlocks(
     const std::vector<Index> &,
     const long &, const long &,
     GQTensor<TenElemType> *,
-    GQTensor<TenElemType> *,
+    GQTensor<GQTEN_Double> *,
     GQTensor<TenElemType> *,
     double *, long *);
 
@@ -165,9 +164,10 @@ long MulDims(const std::vector<QNSector> &);
 
 long OffsetInQNSectorsSet(const std::vector<QNSector> &, const QNSectorsSet &);
 
+template <typename ElemType>
 void CpySubMat(
-    double *, const long &, const long &,
-    const double *, const long &, const long &,
+    ElemType *, const long &, const long &,
+    const ElemType *, const long &, const long &,
     const long &, const long &);
 
 
@@ -179,7 +179,7 @@ void Svd(
     const QN &ldiv, const QN &rdiv,
     const double cutoff, const long Dmin, const long Dmax,
     GQTensor<TenElemType> *pu,
-    GQTensor<TenElemType> *ps,
+    GQTensor<GQTEN_Double> *ps,
     GQTensor<TenElemType> *pvt,
     double *ptrunc_err, long *pD) {
   assert((ldims + rdims) == pt->indexes.size());
@@ -261,7 +261,7 @@ MergedBlk<TenElemType> SvdMergeBlk(
   QNSectorsSet rqnscts_set;
   long extra_ldim = 0;
   long extra_rdim = 0;
-  double *mat = nullptr;
+  TenElemType *mat = nullptr;
   for (auto &bipblk_data : blkdatas) {
     const std::vector<QNSector> &lqnscts = bipblk_data.lqnscts;
     const std::vector<QNSector> &rqnscts = bipblk_data.rqnscts;
@@ -276,8 +276,8 @@ MergedBlk<TenElemType> SvdMergeBlk(
           data, intra_ldim, intra_rdim,
           loffset, roffset);
     } else if (loffset == extra_ldim && roffset < extra_rdim) {
-      auto temp_mat = new double [(extra_ldim+intra_ldim)*extra_rdim] ();
-      std::memcpy(temp_mat, mat, (extra_ldim*extra_rdim)*sizeof(double));
+      auto temp_mat = new TenElemType [(extra_ldim+intra_ldim)*extra_rdim] ();
+      std::memcpy(temp_mat, mat, (extra_ldim*extra_rdim)*sizeof(TenElemType));
       delete [] mat;
       mat = temp_mat;
       CpySubMat(
@@ -287,7 +287,7 @@ MergedBlk<TenElemType> SvdMergeBlk(
       extra_ldim += intra_ldim;
       lqnscts_set.push_back(lqnscts);
     } else if (loffset < extra_ldim && roffset == extra_rdim) {
-      auto temp_mat = new double [extra_ldim*(extra_rdim+intra_rdim)] ();
+      auto temp_mat = new TenElemType [extra_ldim*(extra_rdim+intra_rdim)] ();
       CpySubMat(
           temp_mat, extra_ldim, extra_rdim+intra_rdim,
           mat, extra_ldim, extra_rdim,
@@ -301,7 +301,7 @@ MergedBlk<TenElemType> SvdMergeBlk(
       extra_rdim += intra_rdim;
       rqnscts_set.push_back(rqnscts);
     } else if (loffset == extra_ldim && roffset == extra_rdim) {
-      auto temp_mat = new double [(extra_ldim+intra_ldim)*
+      auto temp_mat = new TenElemType [(extra_ldim+intra_ldim)*
                                   (extra_rdim+intra_rdim)] ();
       if (mat != nullptr) {
         CpySubMat(
@@ -419,9 +419,9 @@ void SvdTruncteBlks(
     const double kept_smallest_sv,
     PartDivsAndBlkSvdData<TenElemType> &truncated_svd_data) {
   for (auto &kv : svd_data) {
-    double *trunced_u = nullptr;
+    TenElemType *trunced_u = nullptr;
     double *trunced_s = nullptr;
-    double *trunced_v = nullptr;
+    TenElemType *trunced_v = nullptr;
     auto blk_kept_dim = 0;
     for (long i = 0; i < kv.second.sdim; ++i) {
       if (kv.second.s[i] < kept_smallest_sv) {
@@ -474,17 +474,18 @@ void SvdWrapBlocks(
     const std::vector<Index> &indexes,
     const long &ldims, const long &rdims,
     GQTensor<TenElemType> *pu,
-    GQTensor<TenElemType> *ps,
+    GQTensor<GQTEN_Double> *ps,
     GQTensor<TenElemType> *pvt,
     double *ptrunc_err, long *pD) {
-  std::vector<QNBlock<TenElemType> *> ublocks, sblocks, vblocks;
+  std::vector<QNBlock<TenElemType> *> ublocks, vblocks;
+  std::vector<QNBlock<GQTEN_Double> *> sblocks;
   std::vector<QNSector> sblk_qnscts;
   for (auto &kv : truncated_blk_svd_data.trunc_blks) {
     // Create s block.
     auto sblk_qn = ldiv - kv.first.first;
     auto sblk_qnsct = QNSector(sblk_qn, kv.second.sdim);
     sblk_qnscts.push_back(sblk_qnsct);
-    auto sblock = new QNBlock<TenElemType>({sblk_qnsct, sblk_qnsct});
+    auto sblock = new QNBlock<GQTEN_Double>({sblk_qnsct, sblk_qnsct});
     GenDiagMat(kv.second.s, kv.second.sdim, sblock->data());
     delete [] kv.second.s; kv.second.s = nullptr;
     sblocks.push_back(sblock);
@@ -523,7 +524,7 @@ void SvdWrapBlocks(
   auto s_index_out = Index(sblk_qnscts, OUT);
   assert(ps != nullptr);
   GQTenFree(ps);
-  *ps = GQTensor<TenElemType>({s_index_in, s_index_out});
+  *ps = GQTensor<GQTEN_Double>({s_index_in, s_index_out});
   ps->blocks() = sblocks;
   assert(pu != nullptr);
   auto u_indexes = SliceFromBegin(indexes, ldims);
@@ -565,14 +566,15 @@ inline long OffsetInQNSectorsSet(
 }
 
 
+template <typename ElemType>
 inline void CpySubMat(
-    double *mat, const long &mat_ldim, const long &mat_rdim,
-    const double *sub, const long &sub_ldim, const long &sub_rdim,
+    ElemType *mat, const long &mat_ldim, const long &mat_rdim,
+    const ElemType *sub, const long &sub_ldim, const long &sub_rdim,
     const long &linter_offset, const long &rinter_offset) {
   for (long i = 0; i < sub_ldim; ++i) {
     long inter_offset = (i + linter_offset)*mat_rdim + rinter_offset;
     long intra_offset = i*sub_rdim;
-    std::memcpy(mat+inter_offset, sub+intra_offset, sub_rdim*sizeof(double));
+    std::memcpy(mat+inter_offset, sub+intra_offset, sub_rdim*sizeof(ElemType));
   }
 }
 } /* gqten */ 

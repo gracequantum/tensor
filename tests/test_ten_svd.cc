@@ -7,19 +7,19 @@
 */
 #include <iostream>
 #include <algorithm>
+#include <type_traits>    // is_same
 
 #include "gtest/gtest.h"
 
+#include "testing_utils.h"
 #include "gqten/gqten.h"
 #include "gqten/detail/ten_linalg_wrapper.h"
 #include "utils.h"
 
 #include "mkl.h"    // Included after other header file. Because GraceQ needs redefine MKL_Complex16 to gqten::GQTEN_Complex .
 
+
 using namespace gqten;
-
-
-const double kEpsilon = 1.0E-12;
 
 
 struct TestSvd : public testing::Test {
@@ -55,6 +55,41 @@ inline long IntDot(const long &size, const long *x, const long *y) {
 }
 
 
+inline double ToDouble(const double d) {
+  return d;
+}
+
+
+inline double ToDouble(const GQTEN_Complex z) {
+  return z.real();
+}
+
+
+inline void SVDTensRestore(
+    const DGQTensor *pu,
+    const DGQTensor *ps,
+    const DGQTensor *pvt,
+    const long ldims,
+    DGQTensor *pres) {
+  DGQTensor t_restored_tmp;
+  Contract(pu, ps, {{ldims}, {0}}, &t_restored_tmp);
+  Contract(&t_restored_tmp, pvt, {{ldims}, {0}}, pres);
+}
+
+
+inline void SVDTensRestore(
+    const ZGQTensor *pu,
+    const DGQTensor *ps,
+    const ZGQTensor *pvt,
+    const long ldims,
+    ZGQTensor *pres) {
+  ZGQTensor t_restored_tmp;
+  auto zs = ToComplex(*ps);
+  Contract(pu, &zs, {{ldims}, {0}}, &t_restored_tmp);
+  Contract(&t_restored_tmp, pvt, {{ldims}, {0}}, pres);
+}
+
+
 template <typename TenElemType>
 void RunTestSvdCase(
     GQTensor<TenElemType> &t,
@@ -68,11 +103,12 @@ void RunTestSvdCase(
     srand(0);
     t.Random(*random_div);
   }
-  GQTensor<TenElemType> u, s, vt;
+  GQTensor<TenElemType> u, vt;
+  GQTensor<GQTEN_Double> s;
   double trunc_err;
   long D;
   std::string qn_nm = "qn";
-  QN qn0 =  QN({QNNameVal(qn_nm,  0)});
+  QN qn0 = QN({QNNameVal(qn_nm,  0)});
   Svd(
       &t,
       ldims, rdims,
@@ -119,7 +155,7 @@ void RunTestSvdCase(
   auto saved_dense_svs = std::vector<double>(begit, endit);
   std::vector<double> qn_svs;
   for (long i = 0; i < s.shape[0]; i++) {
-    qn_svs.push_back(s.Elem({i, i}));
+    qn_svs.push_back(ToDouble(s.Elem({i, i})));
   }
   std::sort(qn_svs.begin(), qn_svs.end());
   EXPECT_EQ(qn_svs.size(), saved_dense_svs.size());
@@ -139,11 +175,10 @@ void RunTestSvdCase(
   EXPECT_NEAR(trunc_err, dense_trunc_err, kEpsilon);
 
   if (trunc_err < 1.0E-10) {
-    GQTensor<TenElemType> t_restored_tmp,  t_restored;
-    Contract(&u, &s, {{ldims}, {0}}, &t_restored_tmp);
-    Contract(&t_restored_tmp, &vt, {{ldims}, {0}}, &t_restored);
+    GQTensor<TenElemType> t_restored;
+    SVDTensRestore(&u, &s, &vt, ldims, &t_restored);
     for (auto &coors : GenAllCoors(t.shape)) {
-      EXPECT_NEAR(t_restored.Elem(coors), t.Elem(coors), kEpsilon);
+      GtestExpectNear(t_restored.Elem(coors), t.Elem(coors), kEpsilon);
     }
   }
 
@@ -206,56 +241,56 @@ TEST_F(TestSvd, 2DCase) {
       0, 1, d_s,
       &qnm2);
 
-  //RunTestSvdCase(
-      //zten_2d_s,
-      //1, 1,
-      //0, 1, d_s*3,
-      //&qn0);
-  //RunTestSvdCase(
-      //dten_2d_s,
-      //1, 1,
-      //0, 1, d_s,
-      //&qn0);
-  //RunTestSvdCase(
-      //dten_2d_s,
-      //1, 1,
-      //0, 1, d_s*3,
-      //&qnp1);
-  //RunTestSvdCase(
-      //dten_2d_s,
-      //1, 1,
-      //0, 1, d_s,
-      //&qnp1);
-  //RunTestSvdCase(
-      //dten_2d_s,
-      //1, 1,
-      //0, 1, d_s*3,
-      //&qnp2);
-  //RunTestSvdCase(
-      //dten_2d_s,
-      //1, 1,
-      //0, 1, d_s,
-      //&qnp2);
-  //RunTestSvdCase(
-      //dten_2d_s,
-      //1, 1,
-      //0, 1, d_s*3,
-      //&qnm1);
-  //RunTestSvdCase(
-      //dten_2d_s,
-      //1, 1,
-      //0, 1, d_s,
-      //&qnm1);
-  //RunTestSvdCase(
-      //dten_2d_s,
-      //1, 1,
-      //0, 1, d_s*3,
-      //&qnm2);
-  //RunTestSvdCase(
-      //dten_2d_s,
-      //1, 1,
-      //0, 1, d_s,
-      //&qnm2);
+  RunTestSvdCase(
+      zten_2d_s,
+      1, 1,
+      0, 1, d_s*3,
+      &qn0);
+  RunTestSvdCase(
+      zten_2d_s,
+      1, 1,
+      0, 1, d_s,
+      &qn0);
+  RunTestSvdCase(
+      zten_2d_s,
+      1, 1,
+      0, 1, d_s*3,
+      &qnp1);
+  RunTestSvdCase(
+      zten_2d_s,
+      1, 1,
+      0, 1, d_s,
+      &qnp1);
+  RunTestSvdCase(
+      zten_2d_s,
+      1, 1,
+      0, 1, d_s*3,
+      &qnp2);
+  RunTestSvdCase(
+      zten_2d_s,
+      1, 1,
+      0, 1, d_s,
+      &qnp2);
+  RunTestSvdCase(
+      zten_2d_s,
+      1, 1,
+      0, 1, d_s*3,
+      &qnm1);
+  RunTestSvdCase(
+      zten_2d_s,
+      1, 1,
+      0, 1, d_s,
+      &qnm1);
+  RunTestSvdCase(
+      zten_2d_s,
+      1, 1,
+      0, 1, d_s*3,
+      &qnm2);
+  RunTestSvdCase(
+      zten_2d_s,
+      1, 1,
+      0, 1, d_s,
+      &qnm2);
 }
 
 
@@ -300,6 +335,47 @@ TEST_F(TestSvd, 3DCase) {
       2, 1,
       0, 1, d_s*2,
       &qnp1);
+
+  RunTestSvdCase(
+      zten_3d_s,
+      1, 2,
+      0, 1, d_s*3,
+      &qn0);
+  RunTestSvdCase(
+      zten_3d_s,
+      1, 2,
+      0, 1, d_s*2,
+      &qn0);
+  RunTestSvdCase(
+      zten_3d_s,
+      1, 2,
+      0, 1, d_s*3,
+      &qnp1);
+  RunTestSvdCase(
+      zten_3d_s,
+      1, 2,
+      0, 1, d_s*2,
+      &qnp1);
+  RunTestSvdCase(
+      zten_3d_s,
+      2, 1,
+      0, 1, d_s*3,
+      &qn0);
+  RunTestSvdCase(
+      zten_3d_s,
+      2, 1,
+      0, 1, d_s*2,
+      &qn0);
+  RunTestSvdCase(
+      zten_3d_s,
+      2, 1,
+      0, 1, d_s*3,
+      &qnp1);
+  RunTestSvdCase(
+      zten_3d_s,
+      2, 1,
+      0, 1, d_s*2,
+      &qnp1);
 }
 
 
@@ -341,6 +417,47 @@ TEST_F(TestSvd, 4DCase) {
       &qnp1);
   RunTestSvdCase(
       dten_4d_s,
+      1, 3,
+      0, 1, d_s*2,
+      &qnp1);
+
+  RunTestSvdCase(
+      zten_4d_s,
+      2, 2,
+      0, 1, (d_s*3)*(d_s*3),
+      &qn0);
+  RunTestSvdCase(
+      zten_4d_s,
+      2, 2,
+      0, 1, (d_s*3),
+      &qn0);
+  RunTestSvdCase(
+      zten_4d_s,
+      2, 2,
+      0, 1, (d_s*3)*(d_s*3),
+      &qnp1);
+  RunTestSvdCase(
+      zten_4d_s,
+      2, 2,
+      0, 1, (d_s*3),
+      &qnp1);
+  RunTestSvdCase(
+      zten_4d_s,
+      1, 3,
+      0, 1, d_s*3,
+      &qn0);
+  RunTestSvdCase(
+      zten_4d_s,
+      1, 3,
+      0, 1, d_s*2,
+      &qn0);
+  RunTestSvdCase(
+      zten_4d_s,
+      1, 3,
+      0, 1, d_s*3,
+      &qnp1);
+  RunTestSvdCase(
+      zten_4d_s,
       1, 3,
       0, 1, d_s*2,
       &qnp1);
