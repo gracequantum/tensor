@@ -395,6 +395,20 @@ void LinearCombine(
     const std::vector<GQTensor<TenElemType> *> &,
     GQTensor<TenElemType> *);
 
+inline void LinearCombine(
+    const std::size_t size,
+    const double *dcoefs,
+    const std::vector<GQTensor<GQTEN_Complex> *> &zts,
+    GQTensor<GQTEN_Complex> *res) {
+  auto zcoefs = new GQTEN_Complex [size];
+  for (size_t i = 0; i < size; ++i) {
+    zcoefs[i] = dcoefs[i];
+  }
+  LinearCombine(size, zcoefs, zts, res);
+  delete [] zcoefs;
+}
+
+
 // Tensor SVD.
 template <typename TenElemType>
 void Svd(
