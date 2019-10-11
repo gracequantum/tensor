@@ -270,6 +270,7 @@ void RunTestRandQNBlockCase(QNBlock<ElemType> &qnblk) {
   srand(0);
   qnblk.Random();
   GtestArrayEq(rand_array, qnblk.cdata(), size);
+  delete [] rand_array;
 }
 
 

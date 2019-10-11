@@ -192,13 +192,12 @@ GQTensor<ElemType> GQTensor<ElemType>::operator+(const GQTensor &rhs) {
       if (lhs_blk->QNSectorSetHash() == prhs_blk->QNSectorSetHash()) {
         assert(lhs_blk->size == prhs_blk->size);
         auto added_blk = new QNBlock<ElemType>(lhs_blk->qnscts);
-        auto added_data = new ElemType [lhs_blk->size];
+        auto added_data = added_blk->data();
         auto lhs_blk_data = lhs_blk->cdata();
         auto rhs_blk_data = prhs_blk->cdata();
         for (long i = 0; i < lhs_blk->size; ++i) {
           added_data[i] = lhs_blk_data[i] + rhs_blk_data[i];
         }
-        added_blk->data() = added_data;
         added_t.blocks().push_back(added_blk);
         has_blk = true;
         break;
