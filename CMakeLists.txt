@@ -35,17 +35,6 @@ endif()
 
 option(GQTEN_OPENMP_PARALLEL "Build OpenMP support." OFF)
 
-option(GQTEN_MPI_PARALLEL "Build MPI support." OFF)
-if(GQTEN_MPI_PARALLEL)
-  add_definitions(-DGQTEN_MPI_PARALLEL)
-  set(GQTEN_OPENMP_PARALLEL ON)
-endif()
-
-option(GQTEN_MPI_DEV_MODE "Print more informations for distributed parallelization." OFF)
-if(GQTEN_MPI_DEV_MODE)
-  add_definitions(-DGQTEN_MPI_DEV_MODE)
-endif()
-
 option(GQTEN_TIMING_MODE "Timing mode." OFF)
 if(GQTEN_TIMING_MODE)
   add_definitions(-DGQTEN_TIMING_MODE)
@@ -115,15 +104,9 @@ if(GQTEN_OPENMP_PARALLEL)
   endif()
 endif()
 
-# Find MPI
-if(GQTEN_MPI_PARALLEL)
-  find_package(MPI REQUIRED)
-endif()
-
 
 # Installation path
-set(GQTEN_BIN_DEST "${CMAKE_INSTALL_PREFIX}/bin")
-set(GQTEN_INCLUDE_DEST "${CMAKE_INSTALL_PREFIX}/include/gqten")
+set(GQTEN_INCLUDE_DEST "${CMAKE_INSTALL_PREFIX}/include")
 set(GQTEN_LIB_DEST "${CMAKE_INSTALL_PREFIX}/lib")
 
 
@@ -134,11 +117,6 @@ add_subdirectory(external)
 set(GQTEN_HEADER_PATH "${PROJECT_SOURCE_DIR}/include")
 set(GQTEN_SRC_PATH "${PROJECT_SOURCE_DIR}/src")
 add_subdirectory(src lib)
-
-# Build binary.
-if(GQTEN_MPI_PARALLEL)
-  add_subdirectory(app bin)
-endif()
 
 
 # Unittests

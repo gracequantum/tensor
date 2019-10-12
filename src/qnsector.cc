@@ -6,7 +6,7 @@
 * Description: GraceQ/tensor project. Implementation details about quantum number sector.
 */
 #include "gqten/gqten.h"
-#include "vec_hash.h"
+#include "gqten/detail/vec_hash.h"
 
 #include <vector>
 #include <iostream>

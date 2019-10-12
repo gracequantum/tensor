@@ -12,23 +12,14 @@
 #include <string>
 #include <vector>
 #include <fstream>
-
 #include <cmath>
 
-#ifdef GQTEN_MPI_PARALLEL
-#include "mpi.h"
-#endif
+#include "gqten/detail/fwd_dcl.h"
+#include "gqten/detail/consts.h"
+#include "gqten/detail/value_t.h"
 
 
 namespace gqten {
-
-
-// GQTensor storage file suffix.
-const std::string kGQTenFileSuffix = "gqten";
-// Double numerical error.
-const double kDoubleEpsilon = 1.0E-15;
-// Default tensor transpose threads number.
-const int kTensorTransposeDefaultNumThreads = 4;
 
 
 // Quantum number.
@@ -205,23 +196,17 @@ std::ofstream &bfwrite(std::ofstream &, const Index &);
 
 
 // Dense block labeled by the quantum number.
+template <typename ElemType>
 class QNBlock : public QNSectorSet {
 // Binary I/O.
-friend std::ifstream &bfread(std::ifstream &, QNBlock &);
-friend std::ofstream &bfwrite(std::ofstream &, const QNBlock &);
+friend std::ifstream &bfread<ElemType>(std::ifstream &, QNBlock<ElemType> &);
+friend std::ofstream &bfwrite<ElemType>(std::ofstream &, const QNBlock<ElemType> &);
 // Some functions called by tensor numerical functions to use the private constructor.
-friend std::vector<QNBlock *> BlocksCtrctBatch(
+friend std::vector<QNBlock<ElemType> *> BlocksCtrctBatch<ElemType>(
     const std::vector<long> &, const std::vector<long> &,
-    const double,
-    const std::vector<QNBlock *> &, const std::vector<QNBlock *> &);
-#ifdef GQTEN_MPI_PARALLEL
-friend std::vector<QNBlock *> GQTEN_MPI_BlocksCtrctBatch(
-    const std::vector<long> &, const std::vector<long> &,
-    const double,
-    const std::vector<QNBlock *> &, const std::vector<QNBlock *> &,
-    MPI_Comm, const int);
-#endif
-
+    const ElemType,
+    const std::vector<QNBlock<ElemType> *> &,
+    const std::vector<QNBlock<ElemType> *> &);
 
 public:
   QNBlock(void) = default;
@@ -236,12 +221,12 @@ public:
   ~QNBlock(void) override;
   
   // Element getter and setter.
-  const double &operator()(const std::vector<long> &) const;
-  double &operator()(const std::vector<long> &);
+  const ElemType &operator()(const std::vector<long> &) const;
+  ElemType &operator()(const std::vector<long> &);
 
   // Data access.
-  const double *cdata(void) const { return data_; }   // constant reference.
-  double * &data(void) { return data_; }              // non-constant reference.
+  const ElemType *cdata(void) const { return data_; }   // constant reference.
+  ElemType * &data(void) { return data_; }              // non-constant reference.
 
   // Hash methods.
   size_t PartHash(const std::vector<long> &) const;
@@ -261,14 +246,10 @@ private:
   // It should only be intra-used.
   QNBlock(const std::vector<const QNSector *> &);
 
-  double *data_ = nullptr;    // Data in a 1D array.
+  ElemType *data_ = nullptr;    // Data in a 1D array.
   std::vector<long> data_offsets_;
   std::size_t qnscts_hash_ = 0;
 };
-
-std::ifstream &bfread(std::ifstream &, QNBlock &);
-
-std::ofstream &bfwrite(std::ofstream &, const QNBlock &);
 
 
 // Tensor with U1 symmetry.
@@ -281,9 +262,11 @@ struct BlkInterOffsetsAndQNSS {     // QNSS: QNSectorSet.
   QNSectorSet blk_qnss;
 };
 
+
+template <typename ElemType>
 class GQTensor {
-friend std::ifstream &bfread(std::ifstream &, GQTensor &);
-friend std::ofstream &bfwrite(std::ofstream &, const GQTensor &);
+friend std::ifstream &bfread<ElemType>(std::ifstream &, GQTensor<ElemType> &);
+friend std::ofstream &bfwrite<ElemType>(std::ofstream &, const GQTensor<ElemType> &);
 
 public:
   GQTensor(void) = default;
@@ -298,12 +281,14 @@ public:
   ~GQTensor(void);
 
   // Element getter and setter.
-  double Elem(const std::vector<long> &) const;     // Getter.
-  double &operator()(const std::vector<long> &);    // Setter.
+  ElemType Elem(const std::vector<long> &) const;     // Getter.
+  ElemType &operator()(const std::vector<long> &);    // Setter.
 
   // Access to the blocks.
-  const std::vector<QNBlock *> &cblocks(void) const { return blocks_; }
-  std::vector<QNBlock *> &blocks(void) { return blocks_; }
+  const std::vector<QNBlock<ElemType> *> &cblocks(void) const {
+    return blocks_;
+  }
+  std::vector<QNBlock<ElemType> *> &blocks(void) { return blocks_; }
 
   // Inplace operations.
 
@@ -315,10 +300,10 @@ public:
   void Transpose(const std::vector<long> &);
 
   // Normalize the GQTensor and return its norm.
-  double Normalize(void);
+  GQTEN_Double Normalize(void);
 
-  // Switch the direction of the indexes, complex conjugate of the element in the future.
-  void Dag(void) { for (auto &index : indexes) { index.Dag(); } }
+  // Switch the direction of the indexes, complex conjugate of the element.
+  void Dag(void);
 
   // Operators overload.
   GQTensor operator-(void) const;
@@ -334,11 +319,11 @@ public:
 
   // Public data members.
   std::vector<Index> indexes;
-  double scalar = 0.0;
+  ElemType scalar = 0.0;
   std::vector<long> shape;
 
 private:
-  std::vector<QNBlock *> blocks_;
+  std::vector<QNBlock<ElemType> *> blocks_;
 
   double Norm(void);
 
@@ -353,111 +338,177 @@ private:
 Index InverseIndex(const Index &);
 
 // For GQTensor.
-GQTensor Dag(const GQTensor &);
+template <typename ElemType>
+GQTensor<ElemType> Dag(const GQTensor<ElemType> &);
 
 // Just mock the dag. Not construct a new object.
-inline const GQTensor &MockDag(const GQTensor &t) { return t; }
+template <typename ElemType>
+inline const GQTensor<ElemType> &MockDag(const GQTensor<ElemType> &t) {
+  return t;
+}
 
-QN Div(const GQTensor &);
+template <typename ElemType>
+QN Div(const GQTensor<ElemType> &);
 
-GQTensor operator*(const GQTensor &, const double &);
+template <typename ElemType>
+GQTensor<ElemType> operator*(const GQTensor<ElemType> &, const ElemType &);
 
-GQTensor operator*(const double &, const GQTensor &);
+template <typename ElemType>
+GQTensor<ElemType> operator*(const ElemType &, const GQTensor<ElemType> &);
 
-// GQTensor I/O
-std::ifstream &bfread(std::ifstream &, GQTensor &);
-
-std::ofstream &bfwrite(std::ofstream &, const GQTensor &);
+GQTensor<GQTEN_Complex> ToComplex(const GQTensor<GQTEN_Double> &);
 
 
 // Tensor numerical functions.
 // Tensors contraction.
+template <typename TenElemType>
 void Contract(
-    const GQTensor *, const GQTensor *,
+    const GQTensor<TenElemType> *, const GQTensor<TenElemType> *,
     const std::vector<std::vector<long>> &,
-    GQTensor *);
+    GQTensor<TenElemType> *);
 
 // This API just for forward compatibility, it will be deleted soon.
-/* TODO: Remove this API. */
-GQTensor *Contract(
-    const GQTensor &, const GQTensor &,
-    const std::vector<std::vector<long>> &);
-
-#ifdef GQTEN_MPI_PARALLEL
-const char kGemmWorkerStatCont = 'c';
-
-const char kGemmWorkerStatStop = 's';
-
-void GQTEN_MPI_Contract(
-    const GQTensor *, const GQTensor *,
-    const std::vector<std::vector<long>> &,
-    GQTensor *,
-    MPI_Comm, const int);
-
-// This API just for forward compatibility, it will be deleted soon.
-/* TODO: Remove this API. */
-GQTensor *GQTEN_MPI_Contract(
-    const GQTensor &, const GQTensor &,
-    const std::vector<std::vector<long>> &,
-    MPI_Comm, const int);
-
-
-inline void MPI_SendGemmWorkerStat(
-    const char stat, const int worker, MPI_Comm comm) {
-  MPI_Send(&stat, 1, MPI_CHAR, worker, 5, comm);
+// TODO: Remove these API.
+inline DGQTensor *Contract(
+    const DGQTensor &ta, const DGQTensor &tb,
+    const std::vector<std::vector<long>> &axes_set) {
+  auto res_t = new DGQTensor();
+  Contract(&ta, &tb, axes_set, res_t);
+  return res_t;
 }
-#endif
+
+inline ZGQTensor *Contract(
+    const ZGQTensor &ta, const ZGQTensor &tb,
+    const std::vector<std::vector<long>> &axes_set) {
+  auto res_t = new ZGQTensor();
+  Contract(&ta, &tb, axes_set, res_t);
+  return res_t;
+}
+
+inline ZGQTensor *Contract(
+    const DGQTensor &ta, const ZGQTensor &tb,
+    const std::vector<std::vector<long>> &axes_set) {
+  auto res_t = new ZGQTensor();
+  auto zta = ToComplex(ta);
+  Contract(&zta, &tb, axes_set, res_t);
+  return res_t;
+}
+
+inline ZGQTensor *Contract(
+    const ZGQTensor &ta, const DGQTensor &tb,
+    const std::vector<std::vector<long>> &axes_set) {
+  auto res_t = new ZGQTensor();
+  auto ztb = ToComplex(tb);
+  Contract(&ta, &ztb, axes_set, res_t);
+  return res_t;
+}
+
 
 // Tensors linear combination.
 // Do the operation: res += (coefs[0]*ts[0] + coefs[1]*ts[1] + ...).
-/* TODO: Support scalar (rank 0) tensor case. */
+//[> TODO: Support scalar (rank 0) tensor case. <]
+template <typename TenElemType>
 void LinearCombine(
-    const std::vector<double> &,
-    const std::vector<GQTensor *> &,
-    GQTensor *);
+    const std::vector<TenElemType> &,
+    const std::vector<GQTensor<TenElemType> *> &,
+    GQTensor<TenElemType> *);
 
+template <typename TenElemType>
 void LinearCombine(
     const std::size_t,
-    const double *,
-    const std::vector<GQTensor *> &,
-    GQTensor *);
+    const TenElemType *,
+    const std::vector<GQTensor<TenElemType> *> &,
+    GQTensor<TenElemType> *);
+
+inline void LinearCombine(
+    const std::size_t size,
+    const double *dcoefs,
+    const std::vector<GQTensor<GQTEN_Complex> *> &zts,
+    GQTensor<GQTEN_Complex> *res) {
+  auto zcoefs = new GQTEN_Complex [size];
+  for (size_t i = 0; i < size; ++i) {
+    zcoefs[i] = dcoefs[i];
+  }
+  LinearCombine(size, zcoefs, zts, res);
+  delete [] zcoefs;
+}
+
 
 // Tensor SVD.
+template <typename TenElemType>
 void Svd(
-    const GQTensor *,
+    const GQTensor<TenElemType> *,
     const long, const long,
     const QN &, const QN &,
     const double, const long, const long,
-    GQTensor *, GQTensor *, GQTensor *,
+    GQTensor<TenElemType> *,
+    GQTensor<GQTEN_Double> *,
+    GQTensor<TenElemType> *,
     double *, long *);
 
 
+// These APIs just for forward compatibility, it will be deleted soon.
+// TODO: Remove these APIs.
+template <typename TenElemType>
 struct SvdRes {
   SvdRes(
-      GQTensor *u, GQTensor *s, GQTensor *v,
+      GQTensor<TenElemType> *u,
+      GQTensor<GQTEN_Double> *s,
+      GQTensor<TenElemType> *v,
       const double trunc_err, const long D) :
       u(u), s(s), v(v), trunc_err(trunc_err), D(D) {}
-  GQTensor *u;
-  GQTensor *s;
-  GQTensor *v;
+  GQTensor<TenElemType> *u;
+  GQTensor<GQTEN_Double> *s;
+  GQTensor<TenElemType> *v;
   const double trunc_err;
   const long D;
 };
 
-// This API just for forward compatibility, it will be deleted soon.
-/* TODO: Remove this API. */
-SvdRes Svd(
-    const GQTensor &,
-    const long, const long,
-    const QN &, const QN &);
 
-// This API just for forward compatibility, it will be deleted soon.
-/* TODO: Remove this API. */
-SvdRes Svd(
-    const GQTensor &,
-    const long, const long,
-    const QN &, const QN &,
-    const double, const long, const long);
+template <typename TenElemType>
+inline SvdRes<TenElemType> Svd(
+    const GQTensor<TenElemType> &t,
+    const long ldims, const long rdims,
+    const QN &ldiv, const QN &rdiv,
+    const double cutoff, const long Dmin, const long Dmax) {
+  auto pu =  new GQTensor<TenElemType>();
+  auto ps =  new GQTensor<GQTEN_Double>();
+  auto pvt = new GQTensor<TenElemType>();
+  double trunc_err;
+  long D;
+  Svd(
+      &t,
+      ldims, rdims,
+      ldiv, rdiv,
+      cutoff, Dmin, Dmax,
+      pu, ps, pvt,
+      &trunc_err, &D);
+  return SvdRes<TenElemType>(pu, ps, pvt,trunc_err, D);
+}
+
+
+template <typename TenElemType>
+inline SvdRes<TenElemType> Svd(
+    const GQTensor<TenElemType> &t,
+    const long ldims, const long rdims,
+    const QN &ldiv, const QN &rdiv) {
+  auto t_shape = t.shape;
+  long lsize = 1;
+  long rsize = 1;
+  for (std::size_t i = 0; i < t_shape.size(); ++i) {
+    if (i < ldims) {
+      lsize *= t_shape[i];
+    } else {
+      rsize *= t_shape[i];
+    }
+  }
+  auto D = ((lsize >= rsize) ? lsize : rsize);
+  return Svd(
+      t,
+      ldims, rdims,
+      ldiv, rdiv,
+      0, D, D);
+}
 
 
 // Tensor transpose function multi-thread controller.
@@ -482,4 +533,14 @@ private:
   double GetWallTime(void);
 };
 } /* gqten */ 
+
+
+// Include implementation details.
+#include "gqten/detail/qnblock_impl.h"
+#include "gqten/detail/gqtensor_impl.h"
+#include "gqten/detail/ten_ctrct_impl.h"
+#include "gqten/detail/ten_lincmb_impl.h"
+#include "gqten/detail/ten_svd_impl.h"
+
+
 #endif /* ifndef GQTEN_GQTEN_H */

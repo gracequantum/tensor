@@ -11,12 +11,23 @@
 
 #include <vector>
 
+#include "gqten/detail/value_t.h"
+
 
 namespace gqten {
 
 
-double *DenseTensorTranspose(
-    const double *,
+GQTEN_Double *DenseTensorTranspose(
+    const GQTEN_Double *,
+    const long,
+    const long,
+    const std::vector<long> &,
+    const std::vector<long> &);
+
+
+GQTEN_Complex *DenseTensorTranspose(
+    const GQTEN_Complex *,
+    const long,
     const long,
     const long,
     const std::vector<long> &,
