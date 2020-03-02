@@ -125,6 +125,10 @@ std::vector<QNBlock<TenElemType> *> BlocksCtrctBatch(
   }
 
   // Initialize data.
+#ifdef GQTEN_TIMING_MODE
+  Timer blk_match_data_init_timer("blk_match_data_init");
+  blk_match_data_init_timer.Restart();
+#endif
   // Data with size of number of blocks of tensor.
   auto ta_to_ctrct_blks = new const TenElemType *[ta_blks_num] ();
   auto tb_to_ctrct_blks = new const TenElemType *[tb_blks_num] ();
@@ -153,6 +157,10 @@ std::vector<QNBlock<TenElemType> *> BlocksCtrctBatch(
     gemm_batch_alpha_array[i] = alpha;
     gemm_batch_grp_size_array[i] = 1;
   }
+
+#ifdef GQTEN_TIMING_MODE
+  blk_match_data_init_timer.PrintElapsed();
+#endif
 
   // Assign data.
   long blk_pair_cnt = 0;
