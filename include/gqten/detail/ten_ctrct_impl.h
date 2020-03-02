@@ -88,7 +88,13 @@ std::vector<QNBlock<TenElemType> *> BlocksCtrctBatch(
   auto tb_blks_num = tb_blks.size();
   assert(ta_blks_num > 0);
   assert(tb_blks_num > 0);
+
   // Check whether need transpose.
+#ifdef GQTEN_TIMING_MODE
+  Timer blk_match_trans_chk_timer("blk_match_trans_chk");
+  blk_match_trans_chk_timer.Restart();
+#endif
+
   std::vector<long> transed_axes_a, transed_axes_b;
   bool ta_need_trans = CtrctTransChecker<TenElemType>(
                            ctrct_axes_a,
@@ -123,6 +129,10 @@ std::vector<QNBlock<TenElemType> *> BlocksCtrctBatch(
   if (blk_pairs == 0) {
     return std::vector<QNBlock<TenElemType> *>();
   }
+
+#ifdef GQTEN_TIMING_MODE
+  blk_match_trans_chk_timer.PrintElapsed();
+#endif
 
   // Initialize data.
 #ifdef GQTEN_TIMING_MODE
@@ -163,6 +173,11 @@ std::vector<QNBlock<TenElemType> *> BlocksCtrctBatch(
 #endif
 
   // Assign data.
+#ifdef GQTEN_TIMING_MODE
+  Timer blk_match_data_assign_timer("blk_match_data_assign");
+  blk_match_data_assign_timer.Restart();
+#endif
+
   long blk_pair_cnt = 0;
   for (std::size_t i = 0; i < ta_blks_num; ++i) {
     for (std::size_t j = 0; j < tb_blks_num; ++j) {
@@ -266,6 +281,7 @@ std::vector<QNBlock<TenElemType> *> BlocksCtrctBatch(
   }
 
 #ifdef GQTEN_TIMING_MODE
+  blk_match_data_assign_timer.PrintElapsed();
   blk_match_timer.PrintElapsed();
 #endif
 
