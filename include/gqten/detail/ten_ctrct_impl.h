@@ -176,6 +176,8 @@ std::vector<QNBlock<TenElemType> *> BlocksCtrctBatch(
 #ifdef GQTEN_TIMING_MODE
   Timer blk_match_data_assign_timer("blk_match_data_assign");
   Timer blk_match_data_assign_gen_new_blks_timer("blk_match_data_assign_gen_new_blks");
+  Timer blk_match_data_assign_gen_new_blks_get_new_scts_timer("blk_match_data_assign_gen_new_blks_get_new_scts");
+  Timer blk_match_data_assign_gen_new_blks_new_new_blk_timer("blk_match_data_assign_gen_new_blks_new_new_blk");
   Timer blk_match_data_assign_calc_dim_info_timer("blk_match_data_assign_calc_dim_info");
 
   blk_match_data_assign_timer.Restart();
@@ -188,12 +190,24 @@ std::vector<QNBlock<TenElemType> *> BlocksCtrctBatch(
         // Generate new blocks.
 #ifdef GQTEN_TIMING_MODE
         blk_match_data_assign_gen_new_blks_timer.Restart();
+        blk_match_data_assign_gen_new_blks_get_new_scts_timer.Restart();
 #endif
 
         auto pnew_blk_qnscts = GetPNewBlkQNScts(
                                    ta_blks[i], tb_blks[j],
                                    ctrct_axes_a, ctrct_axes_b);
+
+#ifdef GQTEN_TIMING_MODE
+        blk_match_data_assign_gen_new_blks_get_new_scts_timer.PrintElapsed(8);
+        blk_match_data_assign_gen_new_blks_new_new_blk_timer.Restart();
+#endif
+
         pnew_blks[blk_pair_cnt] = new QNBlock<TenElemType>(pnew_blk_qnscts);
+
+#ifdef GQTEN_TIMING_MODE
+        blk_match_data_assign_gen_new_blks_new_new_blk_timer.PrintElapsed(8);
+#endif
+
         // For contracting to scalar case.
         if (pnew_blks[blk_pair_cnt]->cdata() == nullptr) {
           pnew_blks[blk_pair_cnt]->data() = new TenElemType[1];
