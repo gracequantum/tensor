@@ -175,6 +175,9 @@ std::vector<QNBlock<TenElemType> *> BlocksCtrctBatch(
   // Assign data.
 #ifdef GQTEN_TIMING_MODE
   Timer blk_match_data_assign_timer("blk_match_data_assign");
+  Timer blk_match_data_assign_gen_new_blks_timer("blk_match_data_assign_gen_new_blks");
+  Timer blk_match_data_assign_calc_dim_info_timer("blk_match_data_assign_calc_dim_info");
+
   blk_match_data_assign_timer.Restart();
 #endif
 
@@ -183,6 +186,10 @@ std::vector<QNBlock<TenElemType> *> BlocksCtrctBatch(
     for (std::size_t j = 0; j < tb_blks_num; ++j) {
       if (ta_blks_part_hash_table[i] == tb_blks_part_hash_table[j]) {
         // Generate new blocks.
+#ifdef GQTEN_TIMING_MODE
+        blk_match_data_assign_gen_new_blks_timer.Restart();
+#endif
+
         auto pnew_blk_qnscts = GetPNewBlkQNScts(
                                    ta_blks[i], tb_blks[j],
                                    ctrct_axes_a, ctrct_axes_b);
@@ -192,12 +199,25 @@ std::vector<QNBlock<TenElemType> *> BlocksCtrctBatch(
           pnew_blks[blk_pair_cnt]->data() = new TenElemType[1];
         }
 
+#ifdef GQTEN_TIMING_MODE
+        blk_match_data_assign_gen_new_blks_timer.PrintElapsed(8);
+#endif
+
         // Deal with ta block.
         if (ta_to_ctrct_blks[i] == nullptr) {
           // Calculate dimensions information.
+#ifdef GQTEN_TIMING_MODE
+          blk_match_data_assign_calc_dim_info_timer.Restart();
+#endif
+
           CalcBlkCtrctDimsInfo(
               i, ta_blks[i], ctrct_axes_a,
               ta_to_ctrct_blk_saved_dims, ta_to_ctrct_blk_ctrct_dims);
+
+#ifdef GQTEN_TIMING_MODE
+          blk_match_data_assign_calc_dim_info_timer.PrintElapsed(8);
+#endif
+
           // Generate contraction data.
           if (ta_need_trans) {
 
@@ -231,9 +251,18 @@ std::vector<QNBlock<TenElemType> *> BlocksCtrctBatch(
         // Deal with tb block.
         if (tb_to_ctrct_blks[j] == nullptr) {
           // Calculate dimensions information.
+#ifdef GQTEN_TIMING_MODE
+          blk_match_data_assign_calc_dim_info_timer.Restart();
+#endif
+
           CalcBlkCtrctDimsInfo(
               j, tb_blks[j], ctrct_axes_b,
               tb_to_ctrct_blk_saved_dims, tb_to_ctrct_blk_ctrct_dims);
+
+#ifdef GQTEN_TIMING_MODE
+          blk_match_data_assign_calc_dim_info_timer.PrintElapsed(8);
+#endif
+
           // Generate contraction data.
           if (tb_need_trans) {
 
