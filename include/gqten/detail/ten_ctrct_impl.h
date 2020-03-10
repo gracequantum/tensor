@@ -199,14 +199,20 @@ std::vector<QNBlock<TenElemType> *> BlocksCtrctBatch(
 
 #ifdef GQTEN_TIMING_MODE
         blk_match_data_assign_gen_new_blks_get_new_scts_timer.PrintElapsed(8);
-        blk_match_data_assign_gen_new_blks_new_new_blk_timer.Restart();
 #endif
-
-        pnew_blks[blk_pair_cnt] = new QNBlock<TenElemType>(pnew_blk_qnscts);
 
 #ifdef GQTEN_TIMING_MODE
+        blk_match_data_assign_gen_new_blks_new_new_blk_timer.Restart();
+
+        auto pnew_blk_for_timing = new QNBlock<TenElemType>(pnew_blk_qnscts);
+
         blk_match_data_assign_gen_new_blks_new_new_blk_timer.PrintElapsed(8);
+
+        pnew_blks[blk_pair_cnt] = pnew_blk_for_timing;
+#else
+        pnew_blks[blk_pair_cnt] = new QNBlock<TenElemType>(pnew_blk_qnscts);
 #endif
+
 
         // For contracting to scalar case.
         if (pnew_blks[blk_pair_cnt]->cdata() == nullptr) {

@@ -62,6 +62,12 @@ QNBlock<ElemType>::QNBlock(const std::vector<QNSector> &init_qnscts) :
 template <typename ElemType>
 QNBlock<ElemType>::QNBlock(const std::vector<const QNSector *> &pinit_qnscts) :
     QNSectorSet(pinit_qnscts) {
+
+#ifdef GQTEN_TIMING_MODE
+    Timer qnblk_intra_construct_timer("qnblk_intra_construct");
+    qnblk_intra_construct_timer.Restart();
+#endif
+
   ndim = qnscts.size(); 
   for (auto &qnsct : qnscts) {
     shape.push_back(qnsct.dim);
@@ -71,10 +77,26 @@ QNBlock<ElemType>::QNBlock(const std::vector<const QNSector *> &pinit_qnscts) :
     for (long i = 0; i < ndim; ++i) {
       size *= shape[i];
     }
+
+#ifdef GQTEN_TIMING_MODE
+    Timer qnblk_intra_construct_new_data_timer("qnblk_intra_construct_new_data");
+    qnblk_intra_construct_new_data_timer.Restart();
+#endif
+
     data_ = new ElemType[size];    // Allocate memory. NOT INITIALIZE TO ZERO!!!
+
+#ifdef GQTEN_TIMING_MODE
+    qnblk_intra_construct_new_data_timer.PrintElapsed(8);
+#endif
+
     data_offsets_ = CalcMultiDimDataOffsets(shape);
     qnscts_hash_ = QNSectorSet::Hash();
   }
+
+#ifdef GQTEN_TIMING_MODE
+    qnblk_intra_construct_timer.PrintElapsed(8);
+#endif
+
 }
 
 
