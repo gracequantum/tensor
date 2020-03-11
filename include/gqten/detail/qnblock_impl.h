@@ -83,7 +83,8 @@ QNBlock<ElemType>::QNBlock(const std::vector<const QNSector *> &pinit_qnscts) :
     qnblk_intra_construct_new_data_timer.Restart();
 #endif
 
-    data_ = new ElemType[size];    // Allocate memory. NOT INITIALIZE TO ZERO!!!
+    //data_ = new ElemType[size];    // Allocate memory. NOT INITIALIZE TO ZERO!!!
+    data_ = (ElemType *)malloc(size * sizeof(ElemType));
 
 #ifdef GQTEN_TIMING_MODE
     qnblk_intra_construct_new_data_timer.PrintElapsed(8);
