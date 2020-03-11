@@ -40,7 +40,8 @@ GQTEN_Double *DenseTensorTranspose(
   int sizeA[dim]; for (int i = 0; i < dim; ++i) { sizeA[i] = old_shape[i]; }
   int outerSizeB[dim];
   for (int i = 0; i < dim; ++i) { outerSizeB[i] = old_shape[perm[i]]; }
-  auto transed_data = new GQTEN_Double[old_size];
+  //auto transed_data = new GQTEN_Double[old_size];
+  auto transed_data = (GQTEN_Double *)malloc(old_size * sizeof(GQTEN_Double));
   dTensorTranspose(perm, dim,
       1.0, old_data, sizeA, sizeA,
       0.0, transed_data, outerSizeB,
@@ -60,7 +61,8 @@ GQTEN_Complex *DenseTensorTranspose(
   int sizeA[dim]; for (int i = 0; i < dim; ++i) { sizeA[i] = old_shape[i]; }
   int outerSizeB[dim];
   for (int i = 0; i < dim; ++i) { outerSizeB[i] = old_shape[perm[i]]; }
-  auto transed_data = new GQTEN_Complex[old_size];
+  //auto transed_data = new GQTEN_Complex[old_size];
+  auto transed_data = (GQTEN_Complex *)malloc(old_size * sizeof(GQTEN_Complex));
   auto tentrans_plan = hptt::create_plan(perm, dim,
       1.0, old_data, sizeA, sizeA,
       0.0, transed_data, outerSizeB,

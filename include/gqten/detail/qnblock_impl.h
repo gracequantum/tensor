@@ -52,7 +52,8 @@ QNBlock<ElemType>::QNBlock(const std::vector<QNSector> &init_qnscts) :
   if (ndim != 0) {
     size = 1;       // Initialize the block size.
     for (long i = 0; i < ndim; ++i) { size *= shape[i]; }
-    data_ = new ElemType[size] ();    // Allocate memory and initialize to 0.
+    //data_ = new ElemType[size] ();    // Allocate memory and initialize to 0.
+    data_ = (ElemType *)calloc(size, sizeof(ElemType));    // Allocate memory and initialize to 0.
     data_offsets_ = CalcMultiDimDataOffsets(shape);
     qnscts_hash_ = QNSectorSet::Hash();
   }
@@ -109,7 +110,8 @@ QNBlock<ElemType>::QNBlock(const QNBlock &qnblk) :
     size(qnblk.size),
     data_offsets_(qnblk.data_offsets_),
     qnscts_hash_(qnblk.qnscts_hash_) {
-  data_ = new ElemType[size];
+  //data_ = new ElemType[size];
+  data_ = (ElemType *)malloc(size * sizeof(ElemType));
   std::memcpy(data_, qnblk.data_, size * sizeof(ElemType));
 }
 
@@ -117,9 +119,11 @@ QNBlock<ElemType>::QNBlock(const QNBlock &qnblk) :
 template <typename ElemType>
 QNBlock<ElemType> &QNBlock<ElemType>::operator=(const QNBlock &rhs) {
   // Copy data.
-  auto new_data = new ElemType [rhs.size];
+  //auto new_data = new ElemType [rhs.size];
+  auto new_data = (ElemType *)malloc(rhs.size * sizeof(ElemType));
   std::memcpy(new_data, rhs.data_, rhs.size * sizeof(ElemType));
-  delete [] data_;
+  //delete [] data_;
+  free(data_);
   data_ = new_data;
   // Copy other members.
   qnscts = rhs.qnscts;    // For the base class.
@@ -148,7 +152,8 @@ QNBlock<ElemType>::QNBlock(QNBlock &&qnblk) noexcept :
 template <typename ElemType>
 QNBlock<ElemType> &QNBlock<ElemType>::operator=(QNBlock &&rhs) noexcept {
   // Move data.
-  delete [] data_;
+  //delete [] data_;
+  free(data_);
   data_ = rhs.data_;
   rhs.data_ = nullptr;
   // Copy other members.
@@ -164,7 +169,8 @@ QNBlock<ElemType> &QNBlock<ElemType>::operator=(QNBlock &&rhs) noexcept {
 
 template <typename ElemType>
 QNBlock<ElemType>::~QNBlock(void) {
-  delete [] data_;
+  //delete [] data_;
+  free(data_);
   data_ = nullptr;
 }
 
@@ -219,7 +225,8 @@ void QNBlock<ElemType>::Transpose(const std::vector<long> &transed_axes) {
                       data_,
                       ndim, size, shape,
                       transed_axes);
-  delete[] data_;
+  //delete[] data_;
+  free(data_);
   data_ = new_data;
   shape = transed_shape;
   qnscts = transed_qnscts;
@@ -247,7 +254,8 @@ std::ifstream &bfread(std::ifstream &ifs, QNBlock<ElemType> &qnblk) {
   ifs.seekg(1, std::ios::cur);    // Skip the line break.
 
   if (qnblk.size != 0) {
-    qnblk.data_ = new ElemType[qnblk.size];
+    //qnblk.data_ = new ElemType[qnblk.size];
+    qnblk.data_ = (ElemType *)malloc(qnblk.size * sizeof(ElemType));
     ifs.read((char *) qnblk.data_, qnblk.size*sizeof(ElemType));
   }
   return ifs;
