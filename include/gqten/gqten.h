@@ -9,6 +9,13 @@
 #define GQTEN_GQTEN_H
 
 
+#define GQTEN_VERSION_MAJOR 0
+#define GQTEN_VERSION_MINOR 1
+#define GQTEN_VERSION_PATCH 0
+// GQTEN_VERSION_DEVSTR to describe the development status, for example the git branch
+#define GQTEN_VERSION_DEVSTR "dev"
+
+
 #include <string>
 #include <vector>
 #include <fstream>
