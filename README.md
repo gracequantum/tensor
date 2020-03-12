@@ -198,12 +198,12 @@ GraceQ/tensor is freely available under the [LGPL v3.0](https://www.gnu.org/lice
 ## How to cite
 
 Cite GraceQ/tensor as
-> "GraceQ/tensor: A high-performance tensor computation library for the quantum physics community", https://github.com/gracequantum/tensor .
+> R.-Y. Sun and C. Peng, "GraceQ/tensor: A high-performance tensor computation library for the quantum physics community", https://github.com/gracequantum/tensor .
 
 ## Acknowledgments
 
 The author(s) highly acknowledge the following people, project(s) and organization(s) (sorted in alphabetical order):
 
-ALPS project, Cheng Peng, Chunyu Sun, D. N. Sheng, Grace Song, Hong-Chen Jiang, itensor.org, Le Zhao, Shuo Yang, Thomas P. Devereaux, Wayne Zheng, Xiaoyu Dong, Yifan Jiang, Zheng-Yu Weng
+ALPS project, Chunyu Sun, D. N. Sheng, Grace Song, Hong-Chen Jiang, itensor.org, Le Zhao, Shuo Yang, Thomas P. Devereaux, Wayne Zheng, Xiaoyu Dong, Yifan Jiang, Yifeng Chen, Zheng-Yu Weng
 
 You can not meet this library without anyone of them. And the basic part of this library was developed when (one of) the author R. Sun was a visiting student at Stanford University. So R. Sun want to give special thanks to his co-advisors Hong-Chen Jiang, Prof. Thomas P. Devereaux and their postdoctors Yifan Jiang and Cheng Peng.
