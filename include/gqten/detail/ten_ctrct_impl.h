@@ -216,7 +216,6 @@ std::vector<QNBlock<TenElemType> *> BlocksCtrctBatch(
 
         // For contracting to scalar case.
         if (pnew_blks[blk_pair_cnt]->cdata() == nullptr) {
-          //pnew_blks[blk_pair_cnt]->data() = new TenElemType[1];
           pnew_blks[blk_pair_cnt]->data() = (TenElemType *)malloc(
                                                 1 * sizeof(TenElemType));
         }
@@ -363,17 +362,15 @@ std::vector<QNBlock<TenElemType> *> BlocksCtrctBatch(
   // Free temporary variables.
   if (ta_need_trans) {
     for (std::size_t i = 0; i < ta_blks_num; ++i) {
-      //delete[] ta_to_ctrct_blks[i];     // Delete the data.
-      free((TenElemType *)ta_to_ctrct_blks[i]);
+      free((TenElemType *)ta_to_ctrct_blks[i]);         // Const pointer convert to non-const pointer. Delete the data.
     }
   }
   if (tb_need_trans) {
     for (std::size_t i = 0; i < tb_blks_num; ++i) {
-      //delete[] tb_to_ctrct_blks[i];
       free((TenElemType *)tb_to_ctrct_blks[i]);
     }
   }
-  delete[] ta_to_ctrct_blks;            // Delete the pointers.
+  delete[] ta_to_ctrct_blks;                            // Delete the pointers.
   delete[] tb_to_ctrct_blks;
   delete[] ta_to_ctrct_blk_saved_dims;
   delete[] tb_to_ctrct_blk_saved_dims;
