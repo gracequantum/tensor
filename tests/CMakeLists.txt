@@ -65,3 +65,8 @@ add_unittest(test_ten_lincmb
 add_unittest(test_ten_svd
   test_ten_svd.cc "${MATH_LIB_COMPILE_FLAGS}"
   "" "${MATH_LIB_LINK_FLAGS}")
+
+# Test tensor expansion.
+add_unittest(test_ten_expand
+  test_ten_expand.cc "${MATH_LIB_COMPILE_FLAGS}"
+  "" "${MATH_LIB_LINK_FLAGS}")

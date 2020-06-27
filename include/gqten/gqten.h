@@ -13,7 +13,7 @@
 #define GQTEN_VERSION_MINOR 1
 #define GQTEN_VERSION_PATCH 0
 // GQTEN_VERSION_DEVSTR to describe the development status, for example the git branch
-#define GQTEN_VERSION_DEVSTR "dev"
+#define GQTEN_VERSION_DEVSTR "dev-ten-expand"
 
 
 #include <string>
@@ -518,6 +518,16 @@ inline SvdRes<TenElemType> Svd(
 }
 
 
+// Tensor expansion.
+template <typename TenElemType>
+void Expand(
+    const GQTensor<TenElemType> *,
+    const GQTensor<TenElemType> *,
+    const std::vector<size_t>,
+    GQTensor<TenElemType> *
+);
+
+
 // Tensor transpose function multi-thread controller.
 int GQTenGetTensorTransposeNumThreads(void);
 
@@ -548,6 +558,7 @@ private:
 #include "gqten/detail/ten_ctrct_impl.h"
 #include "gqten/detail/ten_lincmb_impl.h"
 #include "gqten/detail/ten_svd_impl.h"
+#include "gqten/detail/ten_expand_impl.h"
 
 
 #endif /* ifndef GQTEN_GQTEN_H */
