@@ -10,6 +10,7 @@
 
 #include <unordered_map>  // unordered_map
 #include <algorithm>      // find
+#include <iterator>       //distance
 
 namespace gqten {
 
@@ -158,9 +159,8 @@ Index ExpandIndex(
   auto qnscts_from_tb = idx_from_tb.qnscts;
   for (auto &qnsct_from_ta : qnscts_from_ta) {
     auto qnscts_from_tb_size = qnscts_from_tb.size();
-    size_t matched_qnsct_idx_in_qnscts_from_tb;
+    bool has_matched_qnsct_in_qnscts_from_tb = false;
     for (size_t j = 0; j < qnscts_from_tb_size; ++j) {
-      matched_qnsct_idx_in_qnscts_from_tb = j;
       if (qnscts_from_tb[j] == qnsct_from_ta) {
         auto expanded_qnsct = QNSector(
                                   qnsct_from_ta.qn,
@@ -170,10 +170,11 @@ Index ExpandIndex(
         ta_idx_qnsct_expand_map[qnsct_from_ta] = expanded_qnsct;
         tb_idx_qnsct_expand_map[qnscts_from_tb[j]] = expanded_qnsct;
         qnscts_from_tb.erase(qnscts_from_tb.cbegin() + j);
+        has_matched_qnsct_in_qnscts_from_tb = true;
         break;
       }
     }
-    if (matched_qnsct_idx_in_qnscts_from_tb == (qnscts_from_tb_size - 1)) {
+    if (!has_matched_qnsct_in_qnscts_from_tb) {
       expanded_qnscts.push_back(qnsct_from_ta);
       ta_idx_qnsct_expand_map[qnsct_from_ta] = qnsct_from_ta; 
     }
@@ -204,12 +205,13 @@ void ExpandSingleTen(
   for (auto pblk : pt->cblocks()) {
     std::vector<QNSector> expanded_blk_qnscts;
     for (size_t i = 0; i < ten_rank; ++i) {
-      if (
-          std::find(expand_idx_nums.cbegin(), expand_idx_nums.cend(), i) !=
-          expand_idx_nums.cend()
-      ) {   // Related dimension is expanded
+      auto poss_it = std::find(
+                         expand_idx_nums.cbegin(), expand_idx_nums.cend(), i
+                     );
+      if (poss_it != expand_idx_nums.cend()) {   // Related dimension is expanded
+        auto map_idx = std::distance(expand_idx_nums.cbegin(), poss_it);
         expanded_blk_qnscts.push_back(
-            t_idx_qnsct_expand_maps[i].at(pblk->qnscts[i])
+            t_idx_qnsct_expand_maps[map_idx].at(pblk->qnscts[i])
         );
       } else {
         expanded_blk_qnscts.push_back(pblk->qnscts[i]);
