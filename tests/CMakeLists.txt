@@ -70,3 +70,8 @@ add_unittest(test_ten_svd
 add_unittest(test_ten_expand
   test_ten_expand.cc "${MATH_LIB_COMPILE_FLAGS}"
   "" "${MATH_LIB_LINK_FLAGS}")
+
+# Test index combination.
+add_unittest(test_index_combine
+  test_index_combine.cc "${MATH_LIB_COMPILE_FLAGS}"
+  "" "${MATH_LIB_LINK_FLAGS}")

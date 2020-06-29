@@ -528,6 +528,11 @@ void Expand(
 );
 
 
+// Index combiner generator.
+template <typename TenElemType>
+GQTensor<TenElemType> IndexCombine(const Index &, const Index &);
+
+
 // Tensor transpose function multi-thread controller.
 int GQTenGetTensorTransposeNumThreads(void);
 
@@ -559,6 +564,7 @@ private:
 #include "gqten/detail/ten_lincmb_impl.h"
 #include "gqten/detail/ten_svd_impl.h"
 #include "gqten/detail/ten_expand_impl.h"
+#include "gqten/detail/index_combine_impl.h"
 
 
 #endif /* ifndef GQTEN_GQTEN_H */
