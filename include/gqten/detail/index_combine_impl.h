@@ -133,7 +133,6 @@ GQTensor<TenElemType> IndexCombine(
     } else {                                      // The QNBlock doesn't exist.
       auto pqnblk = new QNBlock<TenElemType>(combiner_qnblk_qnscts); 
       long combined_qnsct_coor = kv.second.second;
-      assert(combined_qnsct_coor == 0);
       for (long i = 0; i < combiner_qnblk_qnscts[0].dim; ++i) {
         for (long j = 0; j < combiner_qnblk_qnscts[1].dim; ++j) {
           (*pqnblk)({i, j, combined_qnsct_coor}) = 1.0;

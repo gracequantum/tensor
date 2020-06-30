@@ -18,6 +18,7 @@ QN qn0 =  QN({QNNameVal(qn_nm,  0)});
 QN qnp1 = QN({QNNameVal(qn_nm,  1)});
 QN qnp2 = QN({QNNameVal(qn_nm,  2)});
 QN qnm1 = QN({QNNameVal(qn_nm, -1)});
+QN qnm2 = QN({QNNameVal(qn_nm, -2)});
 QNSector qnsctp1 = QNSector(qnp1, 1);
 QNSector qnsctp2 = QNSector(qnp1, 2);
 QNSector qnsctm1 = QNSector(qnm1, 1);
@@ -38,4 +39,16 @@ TEST(TestIndexCombine, TestCase) {
   EXPECT_EQ(combiner.indexes[1], idx_inp1);
   EXPECT_EQ(combiner.indexes[2], Index({QNSector(qnp2, 1)}, OUT));
   EXPECT_EQ(combiner.Elem({0, 0, 0}), 1.0);
+
+  combiner = IndexCombine<GQTEN_Double>(idx_in2, idx_in2);
+  EXPECT_EQ(combiner.indexes[0], idx_in2);
+  EXPECT_EQ(combiner.indexes[1], idx_in2);
+  EXPECT_EQ(
+      combiner.indexes[2],
+      Index({QNSector(qn0, 2), QNSector(qnp2, 1), QNSector(qnm2, 1)}, OUT)
+      );
+  EXPECT_EQ(combiner.Elem({0, 0, 3}), 1.0);
+  EXPECT_EQ(combiner.Elem({0, 1, 0}), 1.0);
+  EXPECT_EQ(combiner.Elem({1, 0, 1}), 1.0);
+  EXPECT_EQ(combiner.Elem({1, 1, 2}), 1.0);
 }
