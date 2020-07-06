@@ -10,10 +10,11 @@
 
 
 #define GQTEN_VERSION_MAJOR 0
-#define GQTEN_VERSION_MINOR 1
+#define GQTEN_VERSION_MINOR 2
 #define GQTEN_VERSION_PATCH 0
+#define GQTEN_VERSION_SUFFIX "alpha"
 // GQTEN_VERSION_DEVSTR to describe the development status, for example the git branch
-#define GQTEN_VERSION_DEVSTR "dev-ten-expand"
+#define GQTEN_VERSION_DEVSTR
 
 
 #include <string>
