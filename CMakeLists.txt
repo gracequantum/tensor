@@ -8,12 +8,12 @@
 
 # CMake basic setting
 cmake_minimum_required(VERSION 3.12)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 project("GraceQ/tensor"
   DESCRIPTION "A high-performance tensor library for the quantum physics community"
   LANGUAGES CXX)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/Modules/")
 
 # Build type.
 if(NOT CMAKE_BUILD_TYPE)
