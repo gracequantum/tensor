@@ -369,7 +369,7 @@ QN Div(const GQTensor<ElemType> &t) {
   auto blks = t.cblocks();
   auto blk_num = blks.size();
   if (blk_num == 0) {
-    std::cout << "Tensor does not have a block. Retrun QN()." << std::endl;
+    std::cout << "Tensor does not have a block. Return QN()." << std::endl;
     return QN();
   }
   QN div = CalcDiv(blks[0]->qnscts, t.indexes);
