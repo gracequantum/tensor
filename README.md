@@ -179,6 +179,23 @@ The singular value spectrum cutoff policies are
 - If the spectrum touches the `cutoff` first and its number is larger than the `Dmin` but smaller than the `Dmax`, keep number of singular values which satisfies the `cutoff`.
 - If the spectrum touches the `Dmax` first but `cutoff` not satisfied, keep `Dmax` number of singular values.
 
+#### Tensor Expansion
+Expand tensor `A` and `B` to a larger tensor `C`. The indexes with the positions in the `expand_idx_nums` will be expanded from the corresponding index pair from tensor A and tensor B. The other indexes of A and B must be same with each other.
+```cpp
+GQTensor<TenElemType> A, B;
+
+// Some treatments
+
+GQTensor<TenElemType> C;
+std::vector<size_t> expand_idx_nums = {expand_idx_num1, expand_idx_num2, ...};
+Expand(
+  &A,
+  &B,
+  expand_idx_nums,
+  &C
+);
+```
+
 ## TODO list
 
 This TODO list is *not* sorted by expected completion order.
@@ -198,7 +215,17 @@ GraceQ/tensor is freely available under the [LGPL v3.0](https://www.gnu.org/lice
 ## How to cite
 
 Cite GraceQ/tensor as
-> R.-Y. Sun and C. Peng, "GraceQ/tensor: A high-performance tensor computation library for the quantum physics community", https://github.com/gracequantum/tensor .
+> Rong-Yang Sun, Cheng Peng, et al. GraceQ/tensor: A high-performance tensor computation library for the quantum physics community. https://github.com/gracequantum/tensor. For a complete list of the contributors, see CONTRIBUTORS.txt.
+
+Or use the following `bibtex` entry directly
+```
+@misc{gqten,
+  author       = "Rong-Yang Sun and Cheng Peng and others",
+  title        = "{GraceQ/tensor}: A high-performance tensor computation library for the quantum physics community",
+  howpublished = "https://github.com/gracequantum/tensor",
+  note         = "For a complete list of the contributors, see CONTRIBUTORS.txt"
+}
+```
 
 ## Acknowledgments
 
