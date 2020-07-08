@@ -1,9 +1,10 @@
-# This file contains a list of people who have made contributions to the
-# GraceQ/tensor.
-#
-# Names should be added to this file as:
-#     Name <email address>
+This file contains a list of people who have made contributions to the
+GraceQ/tensor.
+
+Names should be added to this file as:
+  Name <email address>
 
 
-Rong-Yang Sun <sun-rongyang@outlook.com>
-Cheng Peng <cpeng18@stanford.edu>
+Original GraceQ/tensor authors:
+  Rong-Yang Sun <sun-rongyang@outlook.com>
+  Cheng Peng <cpeng18@stanford.edu>
