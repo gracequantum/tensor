@@ -4,26 +4,20 @@ A high-performance tensor computation library for the quantum physics community
 _"If it isn't fast, it isn't graceful"_
 
 ## Design Goals
-
 - Clear and easy-used tensor objects for quantum physics purposes. We believe usability is also a kind of high-performance.
 - Faster tensor operation and arithmetic. Hard issues in quantum physics ask for this goal.
 - Specific optimization for kinds of HPC hardware architectures. You can use consistent APIs to handle computing power on conventional shared/distributed memory computing systems and heterogeneous (especially for GPU) computing systems.
 - Designed as an infrastructure in this field.
 
 ## Features
-
 - Define a symmetry-blocked sparse real/complex tensor using explicitly consistent APIs.
 
 ## Installation
-
-To install GraceQ/tensor, you need a C++ compiler which supports C++11, [CMake](https://cmake.org/) 3.12 or higher version and [MKL](https://software.intel.com/en-us/mkl)11.0 or higher version. GraceQ/tensor library depends [hptt](https://github.com/springer13/hptt) to perform dense tensor transpose on shared memory computing system. And it has been integrated as a git submodule. So you can use the `--recurse-submodules` option to clone it recursively.
-
+To install GraceQ/tensor, you need a C++ compiler which supports C++11, [CMake](https://cmake.org/) 3.12 or higher version and [MKL](https://software.intel.com/en-us/mkl)11.0 or higher version. Use the following command to pull the source code.
 ```
-git clone --recurse-submodules https://github.com/gracequantum/tensor.git gqten
+git clone https://github.com/gracequantum/tensor.git gqten
 ```
-
 Then you can use the CMake tool to build the library.
-
 ```
 cd gqten
 mkdir build && cd build
@@ -31,11 +25,9 @@ cmake .. -DCMAKE_INSTALL_PREFIX=<your_gqten_installation_root>
 make
 make install
 ```
-
-GraceQ/tensor build and install hptt library using the same CMake setting by default. If you want to use external hptt library, set `GQTEN_USE_EXTERNAL_HPTT_LIB=ON`.
+GraceQ/tensor library depends [hptt](https://github.com/springer13/hptt) to perform dense tensor transpose on shared memory computing system and has integrated it at `external/hptt`. GraceQ/tensor build and install hptt library using the same CMake setting by default. If you want to use external hptt library, set `GQTEN_USE_EXTERNAL_HPTT_LIB=ON`.
 
 GraceQ/tensor uses [Google Test](https://github.com/google/googletest) as its unittest framework. You should install the Google Test first and then turn on the `GQTEN_BUILD_UNITTEST` option. After the building process, run the unittests by
-
 ```
 make test
 ```
@@ -49,24 +41,19 @@ Set `GQTEN_TIMING_MODE=ON` to turn on the timing mode when you build the library
 
 
 ## Minimal tutorial
-
 ### Using GraceQ/tensor
-
 It is easy to use the GraceQ/tensor.
-
 ```cpp
 #include "gqten/gqten.h"
 using namespace gqten;
 ```
 
 When you compile your program, you can use following compile flags to gain the best performance.
-
 ```
 -std=c++11 -g -O3 -DNDEBUG
 ```
 
 GraceQ/tensor needs hptt and MKL during linking process. So you should use the following statements when you link the library.
-
 ```
 -lgqten -lhptt <your_mkl_linking_flags>
 ```
@@ -74,7 +61,6 @@ GraceQ/tensor needs hptt and MKL during linking process. So you should use the f
 We highly recommend that you use [MKL Link Line Advisor](https://software.intel.com/en-us/articles/intel-mkl-link-line-advisor/) to set `<your_mkl_linking_flags>`.
 
 ### Symmetry-blocked sparse tensor object
-
 The central object in `GraceQ/tensor` is its symmetry-blocked sparse tensor, `GQTensor`. It is designed as a class template, `GQTensor<TenElemType>` with a template parameter `TenElemType` which sets the type of the tensor element. Real number(`GQTEN_Double`) and complex number(`GQTEN_Complex`) are supported now. `GQTensor` only supports U1 symmetry up to now. Users will use another template parameter to set the type of the symmetry in the future.
 
 As an example, we will create ![S^z](https://latex.codecogs.com/svg.latex?S%5Ez) and ![S^y](https://latex.codecogs.com/svg.latex?S%5Ey) operators living in a two-dimensional spin 1/2 Hilbert space.
@@ -109,9 +95,7 @@ sy_op({1, 0}) = GQTEN_Complex(0,  0.5);
 ```
 
 ### Tensor numerical functions
-
 #### Contraction
-
 Tensor contraction is implemented as a _numpy-like_ API in GraceQ/tensor. The following example performs ![C=AcdotB](https://latex.codecogs.com/svg.latex?C%20%3D%20A%20%5Ccdot%20B) matrices dot product using the tensor contraction.
 ```cpp
 // Treat ta and tb ...
@@ -126,7 +110,6 @@ Contract(
 ```
 
 #### Linear combination
-
 Tensor linear combination is defined as
 
 ![T_{res}=T_{res}+acdotA+bcdotB+ccdotC+cdots](https://latex.codecogs.com/svg.latex?T_%7Bres%7D%20%3D%20T_%7Bres%7D%20&plus;%20a%20%5Ccdot%20A%20&plus;%20b%20%5Ccdot%20B%20&plus;%20c%20%5Ccdot%20C%20&plus;%20%5Ccdots)
@@ -145,7 +128,6 @@ LinearCombine(
 ```
 
 #### Singular value decomposition with cutoff
-
 GraceQ/tensor performs the generic tensor SVD with singular value spectrum cutoff by some constraints using the following API.
 ```cpp
 GQTensor<TenElemType> t;
@@ -196,8 +178,8 @@ Expand(
 );
 ```
 
-## TODO list
 
+## TODO list
 This TODO list is *not* sorted by expected completion order.
 
 - Support non-symmetry tensor objects and their related numerical functions under consistent APIs.
@@ -209,12 +191,11 @@ This TODO list is *not* sorted by expected completion order.
 
 
 ## License
-
 GraceQ/tensor is freely available under the [LGPL v3.0](https://www.gnu.org/licenses/lgpl-3.0.en.html) licence.
 
-## How to cite
 
-Cite GraceQ/tensor as
+## How to cite
+You can cite the GraceQ/tensor where you use it as a support to this library. Please cite GraceQ/tensor as
 > Rong-Yang Sun, Cheng Peng, et al. GraceQ/tensor: A high-performance tensor computation library for the quantum physics community. https://github.com/gracequantum/tensor. For a complete list of the contributors, see CONTRIBUTORS.txt.
 
 Or use the following `bibtex` entry directly
@@ -227,10 +208,10 @@ Or use the following `bibtex` entry directly
 }
 ```
 
-## Acknowledgments
 
+## Acknowledgments
 The author(s) highly acknowledge the following people, project(s) and organization(s) (sorted in alphabetical order):
 
 ALPS project, Chunyu Sun, D. N. Sheng, Grace Song, Hong-Chen Jiang, itensor.org, Le Zhao, Shuo Yang, Thomas P. Devereaux, Wayne Zheng, Xiaoyu Dong, Yifan Jiang, Yifeng Chen, Zheng-Yu Weng
 
-You can not meet this library without anyone of them. And the basic part of this library was developed when (one of) the author R. Sun was a visiting student at Stanford University. So R. Sun want to give special thanks to his co-advisors Hong-Chen Jiang, Prof. Thomas P. Devereaux and their postdoctors Yifan Jiang and Cheng Peng.
+You can not meet this library without anyone of them. And the basic part of this library was developed when (one of) the author Rong-Yang Sun was a visiting student at Stanford University. So R.-Y. Sun want to give special thanks to his co-advisors Hong-Chen Jiang, Prof. Thomas P. Devereaux and their postdoctors Yifan Jiang and Cheng Peng.
