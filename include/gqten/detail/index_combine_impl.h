@@ -59,8 +59,9 @@ using QNDimMap = std::unordered_map<QN, long, QNHashFunc>;
  */
 template <typename TenElemType>
 GQTensor<TenElemType> IndexCombine(
-    const Index &idx1,    ///< The first Index to be combined.
-    const Index &idx2     ///< The second Index to be combined.
+    const Index &idx1,                ///< The first Index to be combined.
+    const Index &idx2,                ///< The second Index to be combined.
+    const std::string &new_idx_dir    ///< The direction of the combined index.
 ) {
   // Calculate combined QNSectors information.
   auto idx1_dir = idx1.dir;
@@ -88,6 +89,9 @@ GQTensor<TenElemType> IndexCombine(
         }
       } else {
         exit(1);
+      }
+      if (new_idx_dir == IN) {
+        combined_qn = -combined_qn;
       }
       auto poss_it = qn_dim_map.find(combined_qn);
       long combined_dim = qnsct_from_idx1.dim * qnsct_from_idx2.dim;
@@ -148,7 +152,7 @@ GQTensor<TenElemType> IndexCombine(
   for (auto &kv : qn_dim_map) {
     combined_qnscts.push_back(QNSector(kv.first, kv.second));
   }
-  Index combined_idx = Index(combined_qnscts, OUT);
+  Index combined_idx = Index(combined_qnscts, new_idx_dir);
   GQTensor<TenElemType> combiner({idx1, idx2, combined_idx});
   for (auto &kv : qnscts_pqnblk_map) {
     (combiner.blocks()).push_back(kv.second);

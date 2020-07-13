@@ -40,12 +40,31 @@ TEST(TestIndexCombine, TestCase) {
   EXPECT_EQ(combiner.indexes[2], Index({QNSector(qnp2, 1)}, OUT));
   EXPECT_EQ(combiner.Elem({0, 0, 0}), 1.0);
 
+  combiner = IndexCombine<GQTEN_Double>(idx_inp1, idx_inp1, IN);
+  EXPECT_EQ(Div(combiner), qn0);
+  EXPECT_EQ(combiner.indexes[0], idx_inp1);
+  EXPECT_EQ(combiner.indexes[1], idx_inp1);
+  EXPECT_EQ(combiner.indexes[2], Index({QNSector(qnm2, 1)}, IN));
+  EXPECT_EQ(combiner.Elem({0, 0, 0}), 1.0);
+
   combiner = IndexCombine<GQTEN_Double>(idx_in2, idx_in2);
   EXPECT_EQ(combiner.indexes[0], idx_in2);
   EXPECT_EQ(combiner.indexes[1], idx_in2);
   EXPECT_EQ(
       combiner.indexes[2],
       Index({QNSector(qn0, 2), QNSector(qnp2, 1), QNSector(qnm2, 1)}, OUT)
+      );
+  EXPECT_EQ(combiner.Elem({0, 0, 3}), 1.0);
+  EXPECT_EQ(combiner.Elem({0, 1, 0}), 1.0);
+  EXPECT_EQ(combiner.Elem({1, 0, 1}), 1.0);
+  EXPECT_EQ(combiner.Elem({1, 1, 2}), 1.0);
+
+  combiner = IndexCombine<GQTEN_Double>(idx_in2, idx_in2, IN);
+  EXPECT_EQ(combiner.indexes[0], idx_in2);
+  EXPECT_EQ(combiner.indexes[1], idx_in2);
+  EXPECT_EQ(
+      combiner.indexes[2],
+      Index({QNSector(qn0, 2), QNSector(qnm2, 1), QNSector(qnp2, 1)}, IN)
       );
   EXPECT_EQ(combiner.Elem({0, 0, 3}), 1.0);
   EXPECT_EQ(combiner.Elem({0, 1, 0}), 1.0);

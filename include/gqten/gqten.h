@@ -531,7 +531,11 @@ void Expand(
 
 // Index combiner generator.
 template <typename TenElemType>
-GQTensor<TenElemType> IndexCombine(const Index &, const Index &);
+GQTensor<TenElemType> IndexCombine(
+    const Index &,
+    const Index &,
+    const std::string &new_idx_dir = OUT
+);
 
 
 // Tensor transpose function multi-thread controller.
