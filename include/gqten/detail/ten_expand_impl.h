@@ -91,13 +91,13 @@ void Expand(
     const std::vector<size_t> expand_idx_nums,  ///< Index numbers which index to be expanded.
     GQTensor<TenElemType> *ptc                  ///< Pointer to expanded tensor C.
 ) {
-  assert(pta->shape.size() == ptb->shape.size());   // To be expanded tensors should have the same rank.
-#ifndef NDEBUG                                      // Indexes of the to be expanded tensors should have the same directions.
+  assert(pta->shape.size() == ptb->shape.size());                             // To be expanded tensors should have the same rank.
+#ifndef NDEBUG                                                                // Indexes of the to be expanded tensors should have the same directions.
   for (size_t i = 0; i < pta->shape.size(); i++) {
     assert(pta->indexes[i].dir == ptb->indexes[i].dir);
   }
 #endif /* ifndef NDEBUG */
-  assert(Div(*pta) == Div(*ptb));                   // To be expanded tensors should have the same quantum number divergence.
+  assert(Div(*pta) == Div(*ptb) || Div(*pta) == QN() || Div(*ptb) == QN());   // To be expanded tensors should have the same quantum number divergence or a null quantum number divergence QN().
   // Expand indexes
   QNSctExpandMapVec ta_idx_qnsct_expand_maps, tb_idx_qnsct_expand_maps;
   auto expanded_idxs = ExpandIdxs(
