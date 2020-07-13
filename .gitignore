@@ -1,8 +1,8 @@
 # Dir
-GTensor-python-demo/
 build/
 test/
 
 # File
 *swp
 *swo
+.DS_Store
