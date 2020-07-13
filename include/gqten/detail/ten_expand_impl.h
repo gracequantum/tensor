@@ -10,7 +10,13 @@
 
 #include <unordered_map>  // unordered_map
 #include <algorithm>      // find
-#include <iterator>       //distance
+#include <iterator>       // distance
+
+#include <assert.h>       // assert
+
+#ifdef Release
+  #define NDEBUG
+#endif
 
 namespace gqten {
 
@@ -85,6 +91,13 @@ void Expand(
     const std::vector<size_t> expand_idx_nums,  ///< Index numbers which index to be expanded.
     GQTensor<TenElemType> *ptc                  ///< Pointer to expanded tensor C.
 ) {
+  assert(pta->shape.size() == ptb->shape.size());   // To be expanded tensors should have the same rank.
+#ifndef NDEBUG                                      // Indexes of the to be expanded tensors should have the same directions.
+  for (size_t i = 0; i < pta->shape.size(); i++) {
+    assert(pta->indexes[i].dir == ptb->indexes[i].dir);
+  }
+#endif /* ifndef NDEBUG */
+  assert(Div(*pta) == Div(*ptb));                   // To be expanded tensors should have the same quantum number divergence.
   // Expand indexes
   QNSctExpandMapVec ta_idx_qnsct_expand_maps, tb_idx_qnsct_expand_maps;
   auto expanded_idxs = ExpandIdxs(
@@ -103,11 +116,13 @@ void Expand(
       ta_idx_qnsct_expand_maps, Down,
       ta_expanded
   );
+  assert(Div(ta_expanded) == Div(*pta));
   ExpandSingleTen(
       ptb, expand_idx_nums,
       tb_idx_qnsct_expand_maps, Up,
       tb_expanded
   );
+  assert(Div(tb_expanded) == Div(*ptb));
 
   // Sum A_expanded and B_expanded to obtain final result
   (*ptc) = ta_expanded + tb_expanded;
@@ -161,7 +176,7 @@ Index ExpandIndex(
     auto qnscts_from_tb_size = qnscts_from_tb.size();
     bool has_matched_qnsct_in_qnscts_from_tb = false;
     for (size_t j = 0; j < qnscts_from_tb_size; ++j) {
-      if (qnscts_from_tb[j] == qnsct_from_ta) {
+      if (qnscts_from_tb[j].qn == qnsct_from_ta.qn) {
         auto expanded_qnsct = QNSector(
                                   qnsct_from_ta.qn,
                                   qnsct_from_ta.dim + qnscts_from_tb[j].dim

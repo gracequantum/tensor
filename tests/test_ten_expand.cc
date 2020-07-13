@@ -28,6 +28,7 @@ Index idx_outm1 = Index({qnsctm1}, OUT);
 Index idx_outm2 = Index({qnsctm2}, OUT);
 Index idx_outp1 = Index({qnsctp1}, OUT);
 Index idx_in2 = Index({qnsctm1, qnsctp1}, IN);
+Index idx_in4 = Index({qnsctm2, qnsctp2}, IN);
 Index idx_out2 = Index({qnsctm1, qnsctp1}, OUT);
 
 
@@ -62,4 +63,11 @@ TEST(TestExpand, TestCase) {
   ten4({0, 0}) = 1.0;
   ten4({0, 1}) = 1.0;
   RunTestTenExpansionCase(ten3, ten3, {1}, ten4);
+
+  DGQTensor ten5 = DGQTensor({idx_in4, idx_out2});
+  ten5({0, 0}) = 1.0;
+  ten5({1, 0}) = 1.0;
+  ten5({2, 1}) = 1.0;
+  ten5({3, 1}) = 1.0;
+  RunTestTenExpansionCase(ten2, ten2, {0}, ten5);
 }
