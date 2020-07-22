@@ -178,6 +178,20 @@ Expand(
 );
 ```
 
+### Utilities for tensor manipulations
+#### Index combiner
+You can generate an Index combiner from two `Index`.
+```cpp
+Index index_1, index_2;
+auto combined_index_direction = IN;     // or OUT. Define the direction of the combined index.
+
+GQTensor<TenElemType> combiner = IndexCombine<TenElemType>(
+                                     index_1, index_2,
+                                     combined_index_direction
+                                 );
+```
+To combine two specific indexes of a tensor, you can create the corresponding combiner and contract the tensor with the combiner.
+
 
 ## TODO list
 This TODO list is *not* sorted by expected completion order.
