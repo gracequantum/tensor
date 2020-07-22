@@ -162,7 +162,7 @@ The singular value spectrum cutoff policies are
 - If the spectrum touches the `Dmax` first but `cutoff` not satisfied, keep `Dmax` number of singular values.
 
 #### Tensor Expansion
-Expand tensor `A` and `B` to a larger tensor `C`. The indexes with the positions in the `expand_idx_nums` will be expanded from the corresponding index pair from tensor A and tensor B. The other indexes of A and B must be same with each other.
+Expand tensor `A` and `B`, who have the same quantum number divergences or one (two) of them has (have) null (`QN()`) quantum number divergence(s), to a larger tensor `C`. The indexes with the positions in the `expand_idx_nums` will be expanded from the corresponding index pair from tensor A and tensor B. The other indexes of A and B must be same with each other.
 ```cpp
 GQTensor<TenElemType> A, B;
 
