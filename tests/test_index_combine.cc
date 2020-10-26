@@ -32,42 +32,46 @@ Index idx_in2 = Index({qnsctm1, qnsctp1}, IN);
 Index idx_out2 = Index({qnsctm1, qnsctp1}, OUT);
 
 
+template <typename CombinerElemT>
+void TestCombinerIntraStruct(const GQTensor<CombinerElemT> &combiner) {
+  auto combiner_dag = Dag(combiner);
+  GQTensor<CombinerElemT> res;
+  Contract(&combiner, &combiner_dag, {{0, 1}, {0, 1}}, &res);
+  EXPECT_EQ(res.shape.size(), 2);
+  EXPECT_EQ(res.shape[0], res.shape[1]);
+  EXPECT_EQ(res.shape[0], combiner.indexes[0].dim * combiner.indexes[1].dim);
+  for (int i = 0; i < res.shape[0]; ++i) {
+    for (int j = 0; j < res.shape[1]; ++j) {
+      if (i == j) {
+        EXPECT_EQ(res.Elem({i, j}), 1.0);
+      } else {
+        EXPECT_EQ(res.Elem({i, j}), 0.0);
+      }
+    }
+  }
+}
+
+
 TEST(TestIndexCombine, TestCase) {
   auto combiner = IndexCombine<GQTEN_Double>(idx_inp1, idx_inp1);
   EXPECT_EQ(Div(combiner), qn0);
   EXPECT_EQ(combiner.indexes[0], idx_inp1);
   EXPECT_EQ(combiner.indexes[1], idx_inp1);
-  EXPECT_EQ(combiner.indexes[2], Index({QNSector(qnp2, 1)}, OUT));
-  EXPECT_EQ(combiner.Elem({0, 0, 0}), 1.0);
+  TestCombinerIntraStruct(combiner);
 
   combiner = IndexCombine<GQTEN_Double>(idx_inp1, idx_inp1, IN);
   EXPECT_EQ(Div(combiner), qn0);
   EXPECT_EQ(combiner.indexes[0], idx_inp1);
   EXPECT_EQ(combiner.indexes[1], idx_inp1);
-  EXPECT_EQ(combiner.indexes[2], Index({QNSector(qnm2, 1)}, IN));
-  EXPECT_EQ(combiner.Elem({0, 0, 0}), 1.0);
+  TestCombinerIntraStruct(combiner);
 
   combiner = IndexCombine<GQTEN_Double>(idx_in2, idx_in2);
   EXPECT_EQ(combiner.indexes[0], idx_in2);
   EXPECT_EQ(combiner.indexes[1], idx_in2);
-  EXPECT_EQ(
-      combiner.indexes[2],
-      Index({QNSector(qn0, 2), QNSector(qnp2, 1), QNSector(qnm2, 1)}, OUT)
-      );
-  EXPECT_EQ(combiner.Elem({0, 0, 3}), 1.0);
-  EXPECT_EQ(combiner.Elem({0, 1, 0}), 1.0);
-  EXPECT_EQ(combiner.Elem({1, 0, 1}), 1.0);
-  EXPECT_EQ(combiner.Elem({1, 1, 2}), 1.0);
+  TestCombinerIntraStruct(combiner);
 
   combiner = IndexCombine<GQTEN_Double>(idx_in2, idx_in2, IN);
   EXPECT_EQ(combiner.indexes[0], idx_in2);
   EXPECT_EQ(combiner.indexes[1], idx_in2);
-  EXPECT_EQ(
-      combiner.indexes[2],
-      Index({QNSector(qn0, 2), QNSector(qnm2, 1), QNSector(qnp2, 1)}, IN)
-      );
-  EXPECT_EQ(combiner.Elem({0, 0, 3}), 1.0);
-  EXPECT_EQ(combiner.Elem({0, 1, 0}), 1.0);
-  EXPECT_EQ(combiner.Elem({1, 0, 1}), 1.0);
-  EXPECT_EQ(combiner.Elem({1, 1, 2}), 1.0);
+  TestCombinerIntraStruct(combiner);
 }
