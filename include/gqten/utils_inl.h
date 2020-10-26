@@ -5,8 +5,8 @@
 * 
 * Description: GraceQ/tensor project. Inline utility functions used by template headers.
 */
-#ifndef GQTEN_DETAIL_UTILS_INL_H
-#define GQTEN_DETAIL_UTILS_INL_H
+#ifndef GQTEN_UTILS_INL_H
+#define GQTEN_UTILS_INL_H
 
 
 #include <vector>
@@ -14,9 +14,9 @@
 #include <complex>
 #include <cmath>
 
-#include "gqten/detail/fwd_dcl.h"
-#include "gqten/detail/consts.h"
-#include "gqten/detail/value_t.h"
+#include "gqten/fwd_dcl.h"
+#include "gqten/consts.h"
+#include "gqten/value_t.h"
 
 
 namespace gqten {
@@ -231,4 +231,4 @@ inline void GQTenFree(GQTensor<TenElemType> *pt) {
   for (auto &pblk : pt->blocks()) { delete pblk; }
 }
 } /* gqten */
-#endif /* ifndef GQTEN_DETAIL_UTILS_INL_H */
+#endif /* ifndef GQTEN_UTILS_INL_H */

@@ -5,8 +5,8 @@
 * 
 * Description: GraceQ/tensor project. Forward declarations.
 */
-#ifndef GQTEN_DETAIL_FWD_DCL_H
-#define GQTEN_DETAIL_FWD_DCL_H
+#ifndef GQTEN_FWD_DCL_H
+#define GQTEN_FWD_DCL_H
 
 
 #include <fstream>
@@ -51,4 +51,4 @@ std::ifstream &bfread(std::ifstream &, GQTensor<ElemType> &);
 template <typename ElemType>
 std::ofstream &bfwrite(std::ofstream &, const GQTensor<ElemType> &);
 } /* gqten */ 
-#endif /* ifndef GQTEN_DETAIL_FWD_DCL_H */
+#endif /* ifndef GQTEN_FWD_DCL_H */

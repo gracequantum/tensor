@@ -5,8 +5,8 @@
 * 
 * Description: GraceQ/tensor project. Constants used by this library.
 */
-#ifndef GQTEN_DETAIL_CONSTS_H
-#define GQTEN_DETAIL_CONSTS_H
+#ifndef GQTEN_CONSTS_H
+#define GQTEN_CONSTS_H
 
 
 #include <string>
@@ -24,4 +24,4 @@ const double kDoubleEpsilon = 1.0E-15;
 // Default tensor transpose threads number.
 const int kTensorTransposeDefaultNumThreads = 4;
 } /* gqten */ 
-#endif /* ifndef GQTEN_DETAIL_CONSTS_H */
+#endif /* ifndef GQTEN_CONSTS_H */

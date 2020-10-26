@@ -11,7 +11,7 @@
 
 #include <vector>
 
-#include "gqten/detail/value_t.h"
+#include "gqten/value_t.h"
 
 
 namespace gqten {

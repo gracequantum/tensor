@@ -13,7 +13,7 @@
 
 #include "testing_utils.h"
 #include "gqten/gqten.h"
-#include "gqten/detail/ten_linalg_wrapper.h"
+#include "gqten/manipulation/ten_linalg_wrapper.h"
 #include "utils.h"
 
 #include "mkl.h"    // Included after other header file. Because GraceQ needs redefine MKL_Complex16 to gqten::GQTEN_Complex .

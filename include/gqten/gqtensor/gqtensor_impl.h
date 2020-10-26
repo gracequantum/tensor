@@ -15,7 +15,7 @@
 #include <cmath>
 
 #include "gqten/gqten.h"
-#include "gqten/detail/utils_inl.h"
+#include "gqten/utils_inl.h"
 
 #ifdef Release
   #define NDEBUG

@@ -5,13 +5,13 @@
 * 
 * Description: GraceQ/tensor project. Forward declarations for implementing tensor contraction.
 */
-#ifndef GQTEN_DETAIL_TEN_CTRCT_FWD_H
-#define GQTEN_DETAIL_TEN_CTRCT_FWD_H
+#ifndef GQTEN_MANIPULATION_TEN_CTRCT_FWD_H
+#define GQTEN_MANIPULATION_TEN_CTRCT_FWD_H
 
 
 #include <vector>
 
-#include "gqten/detail/fwd_dcl.h"
+#include "gqten/fwd_dcl.h"
 
 
 namespace gqten {
@@ -49,4 +49,4 @@ template <typename TenElemType>
 std::vector<std::size_t> GenBlksPartHashTable(
     const std::vector<QNBlock<TenElemType> *> &, const std::vector<long> &);
 } /* gqten */ 
-#endif /* ifndef GQTEN_DETAIL_TEN_CTRCT_FWD_H */
+#endif /* ifndef GQTEN_MANIPULATION_TEN_CTRCT_FWD_H */

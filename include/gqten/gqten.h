@@ -22,9 +22,9 @@
 #include <fstream>
 #include <cmath>
 
-#include "gqten/detail/fwd_dcl.h"
-#include "gqten/detail/consts.h"
-#include "gqten/detail/value_t.h"
+#include "gqten/fwd_dcl.h"
+#include "gqten/consts.h"
+#include "gqten/value_t.h"
 
 
 namespace gqten {
@@ -559,17 +559,17 @@ private:
 
   double GetWallTime(void);
 };
-} /* gqten */ 
+} /* gqten */
 
 
 // Include implementation details.
-#include "gqten/detail/qnblock_impl.h"
-#include "gqten/detail/gqtensor_impl.h"
-#include "gqten/detail/ten_ctrct_impl.h"
-#include "gqten/detail/ten_lincmb_impl.h"
-#include "gqten/detail/ten_svd_impl.h"
-#include "gqten/detail/ten_expand_impl.h"
-#include "gqten/detail/index_combine_impl.h"
+#include "gqten/gqtensor/qnblock_impl.h"
+#include "gqten/gqtensor/gqtensor_impl.h"
+#include "gqten/manipulation/ten_ctrct_impl.h"
+#include "gqten/manipulation/ten_lincmb_impl.h"
+#include "gqten/manipulation/ten_svd_impl.h"
+#include "gqten/manipulation/ten_expand_impl.h"
+#include "gqten/manipulation/index_combine_impl.h"
 
 
 #endif /* ifndef GQTEN_GQTEN_H */

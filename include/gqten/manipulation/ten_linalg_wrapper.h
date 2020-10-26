@@ -5,14 +5,14 @@
 * 
 * Description: GraceQ/tensor project. Linear algebra function wrappers.
 */
-#ifndef GQTEN_DETAIL_TEN_LINALG_WRAPPER_H
-#define GQTEN_DETAIL_TEN_LINALG_WRAPPER_H
+#ifndef GQTEN_MANIPULATION_TEN_LINALG_WRAPPER_H
+#define GQTEN_MANIPULATION_TEN_LINALG_WRAPPER_H
 
 
 #include <iostream>
 #include <vector>
 
-#include "gqten/detail/value_t.h"
+#include "gqten/value_t.h"
 
 #define MKL_Complex16 gqten::GQTEN_Complex
 #include "mkl.h"
@@ -218,4 +218,4 @@ inline RawSvdRes<GQTEN_Complex> MatSvd(
   return raw_svd_res;
 }
 } /* gqten */
-#endif /* ifndef GQTEN_DETAIL_TEN_LINALG_WRAPPER_H */
+#endif /* ifndef GQTEN_MANIPULATION_TEN_LINALG_WRAPPER_H */

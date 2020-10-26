@@ -5,13 +5,13 @@
 * 
 * Description: GraceQ/tensor project. Type definitions used by this library.
 */
-#ifndef GQTEN_DETAIL_VALUE_T_H
-#define GQTEN_DETAIL_VALUE_T_H
+#ifndef GQTEN_VALUE_T_H
+#define GQTEN_VALUE_T_H
 
 
 #include <complex>
 
-#include "gqten/detail/fwd_dcl.h"
+#include "gqten/fwd_dcl.h"
 
 
 namespace gqten {
@@ -29,4 +29,4 @@ using ZGQTensor = GQTensor<GQTEN_Complex>;
 #define MKL_Complex16 gqten::GQTEN_Complex
 
 
-#endif /* ifndef GQTEN_DETAIL_VALUE_T_H */
+#endif /* ifndef GQTEN_VALUE_T_H */

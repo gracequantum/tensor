@@ -12,7 +12,7 @@
 #include <vector>
 #include <complex>
 
-#include "gqten/detail/fwd_dcl.h"
+#include "gqten/fwd_dcl.h"
 
 
 namespace gqten {

@@ -7,8 +7,8 @@
 */
 #include <assert.h>
 
-#include "gqten/detail/fwd_dcl.h"
-#include "gqten/detail/ten_linalg_wrapper.h"
+#include "gqten/fwd_dcl.h"
+#include "gqten/manipulation/ten_linalg_wrapper.h"
 
 #ifdef Release
   #define NDEBUG

@@ -9,8 +9,8 @@
 #include <numeric>
 
 #include "gqten/gqten.h"
-#include "gqten/detail/utils_inl.h"
-#include "gqten/detail/ten_linalg_wrapper.h"
+#include "gqten/utils_inl.h"
+#include "gqten/manipulation/ten_linalg_wrapper.h"
 
 
 namespace gqten {

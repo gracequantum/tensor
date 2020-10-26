@@ -11,9 +11,9 @@
 #include <vector>
 #include <algorithm>
 
-#include "gqten/detail/fwd_dcl.h"
-#include "gqten/detail/ten_ctrct_fwd.h"
-#include "gqten/detail/ten_linalg_wrapper.h"
+#include "gqten/fwd_dcl.h"
+#include "gqten/manipulation/ten_ctrct_fwd.h"
+#include "gqten/manipulation/ten_linalg_wrapper.h"
 
 #include "mkl.h"    // Included after other header file. Because GraceQ needs redefine MKL_Complex16 to gqten::GQTEN_Complex .
 
