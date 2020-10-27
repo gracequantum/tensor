@@ -11,7 +11,7 @@
 
 #include "gtest/gtest.h"
 #include "gqten/gqten.h"
-#include "gqten/utils_inl.h"
+#include "gqten/utility/utils_inl.h"
 #include "testing_utils.h"
 
 

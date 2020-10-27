@@ -13,7 +13,7 @@
 
 #include "gtest/gtest.h"
 
-#include "gqten/value_t.h"
+#include "gqten/framework/value_t.h"
 
 #include "mkl.h"    // Included after other header file. Because GraceQ needs redefine MKL_Complex16 to gqten::GQTEN_Complex .
 

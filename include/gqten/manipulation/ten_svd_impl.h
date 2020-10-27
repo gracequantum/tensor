@@ -9,7 +9,7 @@
 #include <numeric>
 
 #include "gqten/gqten.h"
-#include "gqten/utils_inl.h"
+#include "gqten/utility/utils_inl.h"
 #include "gqten/manipulation/ten_linalg_wrapper.h"
 
 

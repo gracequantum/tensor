@@ -12,7 +12,7 @@
 #include <iostream>
 #include <vector>
 
-#include "gqten/value_t.h"
+#include "gqten/framework/value_t.h"
 
 #define MKL_Complex16 gqten::GQTEN_Complex
 #include "mkl.h"

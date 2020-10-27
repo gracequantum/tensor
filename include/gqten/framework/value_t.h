@@ -5,8 +5,8 @@
 * 
 * Description: GraceQ/tensor project. Type definitions used by this library.
 */
-#ifndef GQTEN_VALUE_T_H
-#define GQTEN_VALUE_T_H
+#ifndef GQTEN_FRAMEWORK_VALUE_T_H
+#define GQTEN_FRAMEWORK_VALUE_T_H
 
 
 #include <complex>
@@ -29,4 +29,4 @@ using ZGQTensor = GQTensor<GQTEN_Complex>;
 #define MKL_Complex16 gqten::GQTEN_Complex
 
 
-#endif /* ifndef GQTEN_VALUE_T_H */
+#endif /* ifndef GQTEN_FRAMEWORK_VALUE_T_H */

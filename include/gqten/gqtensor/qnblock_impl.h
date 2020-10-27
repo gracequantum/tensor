@@ -13,8 +13,8 @@
 #include <cstring>
 
 #include "gqten/gqten.h"
-#include "gqten/vec_hash.h"
-#include "gqten/utils_inl.h"
+#include "gqten/framework/vec_hash.h"
+#include "gqten/utility/utils_inl.h"
 
 #ifdef Release
   #define NDEBUG

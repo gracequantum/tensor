@@ -7,7 +7,7 @@
 */
 #include "gtest/gtest.h"
 #include "gqten/gqten.h"
-#include "gqten/vec_hash.h"
+#include "gqten/framework/vec_hash.h"
 
 #include <string>
 #include <fstream>

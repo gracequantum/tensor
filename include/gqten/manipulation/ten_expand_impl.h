@@ -6,7 +6,7 @@
 * Description: GraceQ/tensor project. Implementation details for tensor expansion.
 */
 #include "gqten/gqten.h"
-#include "gqten/utils_inl.h"
+#include "gqten/utility/utils_inl.h"
 
 #include <unordered_map>  // unordered_map
 #include <algorithm>      // find

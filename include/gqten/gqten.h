@@ -23,8 +23,8 @@
 #include <cmath>
 
 #include "gqten/fwd_dcl.h"
-#include "gqten/consts.h"
-#include "gqten/value_t.h"
+#include "gqten/framework/consts.h"
+#include "gqten/framework/value_t.h"
 
 
 namespace gqten {

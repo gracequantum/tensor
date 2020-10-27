@@ -6,8 +6,8 @@
 * Description: GraceQ/tensor project. Calculate the hash value of a vector
 *              whose item has a method called Hash().
 */
-#ifndef GQTEN_VEC_HASH_H
-#define GQTEN_VEC_HASH_H
+#ifndef GQTEN_FRAMEWORK_VEC_HASH_H
+#define GQTEN_FRAMEWORK_VEC_HASH_H
 
 #define _HASH_XXPRIME_1 ((size_t)11400714785074694791ULL)
 #define _HASH_XXPRIME_2 ((size_t)14029467366897019727ULL)
@@ -67,4 +67,4 @@ size_t VecStdTypeHasher(const std::vector<T> &vec) {
   return hash_val;
 }
 } /* gqten */ 
-#endif /* ifndef GQTEN_VEC_HASH_H */
+#endif /* ifndef GQTEN_FRAMEWORK_VEC_HASH_H */
