@@ -1,6 +1,7 @@
 # Dir
 build/
 test/
+build_doc/
 
 # File
 *swp
