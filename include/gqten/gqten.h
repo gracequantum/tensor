@@ -30,50 +30,50 @@
 namespace gqten {
 
 
-// Quantum number.
-struct QNNameVal {
-  QNNameVal() = default;
-  QNNameVal(const std::string &nm, const long val): name(nm), val(val) {}
+//// Quantum number.
+//struct QNNameVal {
+  //QNNameVal() = default;
+  //QNNameVal(const std::string &nm, const long val): name(nm), val(val) {}
 
-  std::string name;
-  long val;
-};
+  //std::string name;
+  //long val;
+//};
 
-class QN {
-friend std::ifstream &bfread(std::ifstream &, QN &);
-friend std::ofstream &bfwrite(std::ofstream &, const QN &);
+//class QN {
+//friend std::ifstream &bfread(std::ifstream &, QN &);
+//friend std::ofstream &bfwrite(std::ofstream &, const QN &);
 
-public:
-  QN(void);
-  QN(const std::vector<QNNameVal> &);
-  QN(const std::vector<long> &);
+//public:
+  //QN(void);
+  //QN(const std::vector<QNNameVal> &);
+  //QN(const std::vector<long> &);
 
-  QN(const QN &);
-  QN &operator=(const QN &);
+  //QN(const QN &);
+  //QN &operator=(const QN &);
 
-  std::size_t Hash(void) const;
+  //std::size_t Hash(void) const;
 
-  QN operator-(void) const;
-  QN &operator+=(const QN &);
+  //QN operator-(void) const;
+  //QN &operator+=(const QN &);
 
-private:
-  std::vector<long> values_;
-  std::size_t hash_;
+//private:
+  //std::vector<long> values_;
+  //std::size_t hash_;
 
-  std::size_t CalcHash(void) const;
-};
+  //std::size_t CalcHash(void) const;
+//};
 
-QN operator+(const QN &, const QN &);
+//QN operator+(const QN &, const QN &);
 
-QN operator-(const QN &, const QN &);
+//QN operator-(const QN &, const QN &);
 
-bool operator==(const QN &, const QN &);
+//bool operator==(const QN &, const QN &);
 
-bool operator!=(const QN &, const QN &);
+//bool operator!=(const QN &, const QN &);
 
-std::ifstream &bfread(std::ifstream &, QN &);
+//std::ifstream &bfread(std::ifstream &, QN &);
 
-std::ofstream &bfwrite(std::ofstream &, const QN &);
+//std::ofstream &bfwrite(std::ofstream &, const QN &);
 
 
 // Quantum number sector.

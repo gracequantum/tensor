@@ -116,7 +116,7 @@ add_subdirectory(external)
 # Build library.
 set(GQTEN_HEADER_PATH "${PROJECT_SOURCE_DIR}/include")
 set(GQTEN_SRC_PATH "${PROJECT_SOURCE_DIR}/src")
-add_subdirectory(src lib)
+#add_subdirectory(src lib)
 
 
 # Unittests

@@ -33,45 +33,49 @@ macro(add_unittest
 endmacro()
 
 
-# Test quantum number object.
-add_unittest(test_qn test_qn.cc "" "" "${MATH_LIB_LINK_FLAGS}")
+## Test quantum number related objects
+# Test quantum number vaules
+add_unittest(test_qnval_u1 "test_gqtensor/test_qnval/test_qnval_u1.cc" "" "" "")
+# Test quantum number
+add_unittest(test_qn "test_gqtensor/test_qn.cc" "" "" "")
 
-# Test quantum number sector object.
-add_unittest(test_qnsector test_qnsector.cc "" "" "${MATH_LIB_LINK_FLAGS}")
 
-# Test quantum number sector set object.
-add_unittest(test_qnsectorset test_qnsectorset.cc "" "" "${MATH_LIB_LINK_FLAGS}")
+## Test quantum number sector object.
+#add_unittest(test_qnsector test_qnsector.cc "" "" "${MATH_LIB_LINK_FLAGS}")
 
-# Test index object.
-add_unittest(test_index test_index.cc "" "" "${MATH_LIB_LINK_FLAGS}")
+## Test quantum number sector set object.
+#add_unittest(test_qnsectorset test_qnsectorset.cc "" "" "${MATH_LIB_LINK_FLAGS}")
 
-# Test dense block labeled by the quantum numbers, QNBlock.
-add_unittest(test_qnblock test_qnblock.cc "" "" "${MATH_LIB_LINK_FLAGS}")
+## Test index object.
+#add_unittest(test_index test_index.cc "" "" "${MATH_LIB_LINK_FLAGS}")
 
-# Test tensor with U1 symmetry, GQTensor.
-add_unittest(test_gqtensor test_gqtensor.cc "" "" "${MATH_LIB_LINK_FLAGS}")
+## Test dense block labeled by the quantum numbers, QNBlock.
+#add_unittest(test_qnblock test_qnblock.cc "" "" "${MATH_LIB_LINK_FLAGS}")
 
-# Test tensor numerical functions.
-# Test tensor contraction.
-add_unittest(test_ten_ctrct
-  test_ten_ctrct.cc "${MATH_LIB_COMPILE_FLAGS}"
-  "" "${MATH_LIB_LINK_FLAGS}")
-# Test tensor linear combination.
-add_unittest(test_ten_lincmb
-  test_ten_lincmb.cc "${MATH_LIB_COMPILE_FLAGS}"
-  "" "${MATH_LIB_LINK_FLAGS}")
+## Test tensor with U1 symmetry, GQTensor.
+#add_unittest(test_gqtensor test_gqtensor.cc "" "" "${MATH_LIB_LINK_FLAGS}")
 
-# Test tensor SVD.
-add_unittest(test_ten_svd
-  test_ten_svd.cc "${MATH_LIB_COMPILE_FLAGS}"
-  "" "${MATH_LIB_LINK_FLAGS}")
+## Test tensor numerical functions.
+## Test tensor contraction.
+#add_unittest(test_ten_ctrct
+  #test_ten_ctrct.cc "${MATH_LIB_COMPILE_FLAGS}"
+  #"" "${MATH_LIB_LINK_FLAGS}")
+## Test tensor linear combination.
+#add_unittest(test_ten_lincmb
+  #test_ten_lincmb.cc "${MATH_LIB_COMPILE_FLAGS}"
+  #"" "${MATH_LIB_LINK_FLAGS}")
 
-# Test tensor expansion.
-add_unittest(test_ten_expand
-  test_ten_expand.cc "${MATH_LIB_COMPILE_FLAGS}"
-  "" "${MATH_LIB_LINK_FLAGS}")
+## Test tensor SVD.
+#add_unittest(test_ten_svd
+  #test_ten_svd.cc "${MATH_LIB_COMPILE_FLAGS}"
+  #"" "${MATH_LIB_LINK_FLAGS}")
 
-# Test index combination.
-add_unittest(test_index_combine
-  test_index_combine.cc "${MATH_LIB_COMPILE_FLAGS}"
-  "" "${MATH_LIB_LINK_FLAGS}")
+## Test tensor expansion.
+#add_unittest(test_ten_expand
+  #test_ten_expand.cc "${MATH_LIB_COMPILE_FLAGS}"
+  #"" "${MATH_LIB_LINK_FLAGS}")
+
+## Test index combination.
+#add_unittest(test_index_combine
+  #test_index_combine.cc "${MATH_LIB_COMPILE_FLAGS}"
+  #"" "${MATH_LIB_LINK_FLAGS}")
