@@ -13,10 +13,26 @@
 #include <random>
 
 
-inline int RandInt(const int min, const int max) {
+template <typename IntT>
+inline IntT RandomInteger(const IntT min, const IntT max) {
   std::random_device rd;
   std::mt19937 gen(rd());
-  std::uniform_int_distribution<int> distrib(min, max);
+  std::uniform_int_distribution<IntT> distrib(min, max);
   return distrib(gen);
+}
+
+
+inline int RandInt(const int min, const int max) {
+  return RandomInteger(min, max);
+}
+
+
+inline size_t RandUnsignedInt(const size_t min, const size_t max) {
+  return RandomInteger(min, max);
+}
+
+
+inline size_t RandUnsignedInt(const size_t max) {
+  return RandUnsignedInt(0, max);
 }
 #endif /* ifndef TESTS_TESTING_UTILITY_H */

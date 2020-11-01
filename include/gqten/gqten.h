@@ -76,37 +76,37 @@ namespace gqten {
 //std::ofstream &bfwrite(std::ofstream &, const QN &);
 
 
-// Quantum number sector.
-class QNSector {
-friend std::ifstream &bfread(std::ifstream &, QNSector &);
-friend std::ofstream &bfwrite(std::ofstream &, const QNSector &);
+//// Quantum number sector.
+//class QNSector {
+//friend std::ifstream &bfread(std::ifstream &, QNSector &);
+//friend std::ofstream &bfwrite(std::ofstream &, const QNSector &);
 
-public:
-  QNSector(const QN &qn, const long dim) : qn(qn), dim(dim) {
-    hash_ = CalcHash();
-  }
-  QNSector(void) : QNSector(QN(), 0) {}
+//public:
+  //QNSector(const QN &qn, const long dim) : qn(qn), dim(dim) {
+    //hash_ = CalcHash();
+  //}
+  //QNSector(void) : QNSector(QN(), 0) {}
 
-  QNSector(const QNSector &qns) : qn(qns.qn), dim(qns.dim), hash_(qns.hash_) {}
-  QNSector &operator=(const QNSector &rhs);
+  //QNSector(const QNSector &qns) : qn(qns.qn), dim(qns.dim), hash_(qns.hash_) {}
+  //QNSector &operator=(const QNSector &rhs);
 
-  size_t Hash(void) const { return hash_; }
+  //size_t Hash(void) const { return hash_; }
 
-  QN qn;
-  long dim;
+  //QN qn;
+  //long dim;
 
-private:
-  size_t CalcHash(void) const { return qn.Hash() ^ dim; }
-  size_t hash_;
-};
+//private:
+  //size_t CalcHash(void) const { return qn.Hash() ^ dim; }
+  //size_t hash_;
+//};
 
-bool operator==(const QNSector &, const QNSector &);
+//bool operator==(const QNSector &, const QNSector &);
 
-bool operator!=(const QNSector &, const QNSector &);
+//bool operator!=(const QNSector &, const QNSector &);
 
-std::ifstream &bfread(std::ifstream &, QNSector &);
+//std::ifstream &bfread(std::ifstream &, QNSector &);
 
-std::ofstream &bfwrite(std::ofstream &, const QNSector &);
+//std::ofstream &bfwrite(std::ofstream &, const QNSector &);
 
 
 // Quantum number sector set.

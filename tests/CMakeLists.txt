@@ -39,9 +39,8 @@ add_unittest(test_qnval_u1 "test_gqtensor/test_qnval/test_qnval_u1.cc" "" "" "")
 # Test quantum number
 add_unittest(test_qn "test_gqtensor/test_qn.cc" "" "" "")
 
-
 ## Test quantum number sector object.
-#add_unittest(test_qnsector test_qnsector.cc "" "" "${MATH_LIB_LINK_FLAGS}")
+add_unittest(test_qnsct "test_gqtensor/test_qnsct.cc" "" "" "")
 
 ## Test quantum number sector set object.
 #add_unittest(test_qnsectorset test_qnsectorset.cc "" "" "${MATH_LIB_LINK_FLAGS}")
