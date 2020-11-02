@@ -46,7 +46,7 @@ public:
   }
 
   // Override for Hashable base class
-  std::size_t Hash(void) const override { return hasher_(val_); }
+  size_t Hash(void) const override { return hasher_(val_); }
 
   // Override for Streamable base class
   void StreamRead(std::istream &is) override { is >> val_; }
