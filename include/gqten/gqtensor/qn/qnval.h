@@ -57,13 +57,6 @@ public:
   Add the other quantum number value to this quantum number value.
   */
   virtual void AddAssign(const QNVal *) = 0;
-
-
-  virtual bool operator==(const QNVal &rhs) {
-    return this->Hash() == rhs.Hash();
-  }
-
-  virtual bool operator!=(const QNVal &rhs) { return !(*this == rhs); }
 };
 
 using QNValPtrVec = std::vector<QNVal *>;

@@ -87,10 +87,6 @@ public:
   */
   size_t dim(void) const { return dim_; }
 
-  bool operator==(const QNSector &rhs) const { return hash_ == rhs.hash_; }
-
-  bool operator!=(const QNSector &rhs) const { return !(*this == rhs); }
-
   size_t Hash(void) const override { return hash_; }
 
   void StreamRead(std::istream &is) override {

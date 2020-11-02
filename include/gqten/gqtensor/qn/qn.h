@@ -82,9 +82,6 @@ public:
   }
   QN operator-(const QN &rhs) const { return (*this) + (-rhs); }
 
-  bool operator==(const QN &rhs) const { return hash_ == rhs.hash_; }
-  bool operator!=(const QN &rhs) const { return !(*this == rhs); }
-
   size_t Hash(void) const override { return hash_; }
 
   void StreamRead(std::istream &) override;

@@ -31,6 +31,26 @@ public:
 
   /// Return the hash value of the object.
   virtual size_t Hash(void) const = 0;
+
+  /**
+  Basic equal to operator overload.
+
+  @param rhs Another Hashable object.
+
+  @return Comparison result.
+  */
+  virtual bool operator==(const Hashable &rhs) const {
+    return Hash() == rhs.Hash();
+  }
+
+  /**
+  Basic not equal to operator overload.
+
+  @param rhs Another Hashable object.
+
+  @return Comparison result.
+  */
+  virtual bool operator!=(const Hashable &rhs) const { return !(*this == rhs); }
 };
 
 
