@@ -109,98 +109,98 @@ namespace gqten {
 //std::ofstream &bfwrite(std::ofstream &, const QNSector &);
 
 
-// Quantum number sector set.
-class QNSectorSet {
-public:
-  QNSectorSet(void) {}
-  QNSectorSet(const std::vector<QNSector> &qnscts) : qnscts(qnscts) {}
-  QNSectorSet(const std::vector<const QNSector*> &);
+//// Quantum number sector set.
+//class QNSectorSet {
+//public:
+  //QNSectorSet(void) {}
+  //QNSectorSet(const std::vector<QNSector> &qnscts) : qnscts(qnscts) {}
+  //QNSectorSet(const std::vector<const QNSector*> &);
 
-  QNSectorSet(const QNSectorSet &qnss) : qnscts(qnss.qnscts) {}
+  //QNSectorSet(const QNSectorSet &qnss) : qnscts(qnss.qnscts) {}
 
-  virtual ~QNSectorSet() = default;
+  //virtual ~QNSectorSet() = default;
 
-  virtual size_t Hash(void) const;
+  //virtual size_t Hash(void) const;
 
-  std::vector<QNSector> qnscts;
-};
+  //std::vector<QNSector> qnscts;
+//};
 
-bool operator==(const QNSectorSet &, const QNSectorSet &);
+//bool operator==(const QNSectorSet &, const QNSectorSet &);
 
-bool operator!=(const QNSectorSet &, const QNSectorSet &);
+//bool operator!=(const QNSectorSet &, const QNSectorSet &);
 
 
-// Index.
-#define NDIR "NDIR"
-#define IN "IN"
-#define OUT "OUT"
+//// Index.
+//#define NDIR "NDIR"
+//#define IN "IN"
+//#define OUT "OUT"
 
-struct InterOffsetQnsct {
-  InterOffsetQnsct(const long &inter_offset, const QNSector &qnsct) :
-      inter_offset(inter_offset), qnsct(qnsct) {}
-  long inter_offset;
-  QNSector qnsct;
-};
+//struct InterOffsetQnsct {
+  //InterOffsetQnsct(const long &inter_offset, const QNSector &qnsct) :
+      //inter_offset(inter_offset), qnsct(qnsct) {}
+  //long inter_offset;
+  //QNSector qnsct;
+//};
 
-class Index : public QNSectorSet {
-friend std::ifstream &bfread(std::ifstream &, Index &);
-friend std::ofstream &bfwrite(std::ofstream &, const Index &);
+//class Index : public QNSectorSet {
+//friend std::ifstream &bfread(std::ifstream &, Index &);
+//friend std::ofstream &bfwrite(std::ofstream &, const Index &);
 
-public:
-  Index(void) : QNSectorSet(), dim(0), dir(NDIR), tag("") {}
+//public:
+  //Index(void) : QNSectorSet(), dim(0), dir(NDIR), tag("") {}
 
-  Index(
-      const std::vector<QNSector> &qnscts,
-      const std::string &dir,
-      const std::string &tag) : QNSectorSet(qnscts), dir(dir), tag(tag) {
-    dim = CalcDim(); 
-  }
-  Index(const std::vector<QNSector> &qnscts) : Index(qnscts, NDIR, "") {}
-  Index(const std::vector<QNSector> &qnscts, const std::string &dir) :
-      Index(qnscts, dir, "") {}
+  //Index(
+      //const std::vector<QNSector> &qnscts,
+      //const std::string &dir,
+      //const std::string &tag) : QNSectorSet(qnscts), dir(dir), tag(tag) {
+    //dim = CalcDim(); 
+  //}
+  //Index(const std::vector<QNSector> &qnscts) : Index(qnscts, NDIR, "") {}
+  //Index(const std::vector<QNSector> &qnscts, const std::string &dir) :
+      //Index(qnscts, dir, "") {}
 
-  Index(const Index &index) :
-      QNSectorSet(index.qnscts),
-      dim(index.dim), dir(index.dir), tag(index.tag) {}
-  Index &operator=(const Index &rhs) {
-    qnscts = rhs.qnscts;
-    dim = rhs.dim;
-    dir = rhs.dir;
-    tag = rhs.tag;
-    return *this;
-  }
+  //Index(const Index &index) :
+      //QNSectorSet(index.qnscts),
+      //dim(index.dim), dir(index.dir), tag(index.tag) {}
+  //Index &operator=(const Index &rhs) {
+    //qnscts = rhs.qnscts;
+    //dim = rhs.dim;
+    //dir = rhs.dir;
+    //tag = rhs.tag;
+    //return *this;
+  //}
 
-  size_t Hash(void) const override;
-  InterOffsetQnsct CoorInterOffsetAndQnsct(const long) const;
+  //size_t Hash(void) const override;
+  //InterOffsetQnsct CoorInterOffsetAndQnsct(const long) const;
 
-  // Inplace operations.
-  void Dag(void) {
-    if (dir == IN) {
-      dir = OUT;
-    } else if (dir == OUT) {
-      dir = IN;
-    }
-  }
+  //// Inplace operations.
+  //void Dag(void) {
+    //if (dir == IN) {
+      //dir = OUT;
+    //} else if (dir == OUT) {
+      //dir = IN;
+    //}
+  //}
 
-  // Operators overloading.
-  bool operator==(const Index &rhs) const { return  Hash() ==  rhs.Hash(); }
+  //// Operators overloading.
+  //bool operator==(const Index &rhs) const { return  Hash() ==  rhs.Hash(); }
 
-  long CalcDim(void) {
-    long dim = 0;
-    for (auto &qnsct : qnscts) {
-      dim += qnsct.dim;
-    }
-    return dim;
-  }
+  //long CalcDim(void) {
+    //long dim = 0;
+    //for (auto &qnsct : qnscts) {
+      //dim += qnsct.dim;
+    //}
+    //return dim;
+  //}
 
-  long dim;
-  std::string dir;
-  std::string tag;
-};
+  //long dim;
+  //std::string dir;
+  //std::string tag;
+//};
 
-std::ifstream &bfread(std::ifstream &, Index &);
+//std::ifstream &bfread(std::ifstream &, Index &);
 
-std::ofstream &bfwrite(std::ofstream &, const Index &);
+//std::ofstream &bfwrite(std::ofstream &, const Index &);
 
 
 // Dense block labeled by the quantum number.
@@ -342,8 +342,8 @@ private:
 
 
 // GQTensor objects operations.
-// For Index.
-Index InverseIndex(const Index &);
+//// For Index.
+//Index InverseIndex(const Index &);
 
 // For GQTensor.
 template <typename ElemType>

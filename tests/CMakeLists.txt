@@ -46,7 +46,7 @@ add_unittest(test_qnsct "test_gqtensor/test_qnsct.cc" "" "" "")
 #add_unittest(test_qnsectorset test_qnsectorset.cc "" "" "${MATH_LIB_LINK_FLAGS}")
 
 ## Test index object.
-#add_unittest(test_index test_index.cc "" "" "${MATH_LIB_LINK_FLAGS}")
+add_unittest(test_index "test_gqtensor/test_index.cc" "" "" "")
 
 ## Test dense block labeled by the quantum numbers, QNBlock.
 #add_unittest(test_qnblock test_qnblock.cc "" "" "${MATH_LIB_LINK_FLAGS}")
