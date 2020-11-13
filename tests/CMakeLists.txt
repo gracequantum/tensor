@@ -20,7 +20,6 @@ macro(add_unittest
       PRIVATE ${GQTEN_SRC_PATH}
       PRIVATE ${CFLAGS})
     target_link_libraries(${TEST_NAME}
-      gqten
       GTest::GTest GTest::Main
       ${hptt_LIBRARY}
       "${LINK_LIBS}" "${LINK_LIB_FLAGS}")
