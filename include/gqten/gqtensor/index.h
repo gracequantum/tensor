@@ -16,12 +16,20 @@
 #define GQTEN_GQTENSOR_INDEX_H
 
 
+#include "gqten/framework/value_t.h"            // CoorsT
 #include "gqten/framework/bases/hashable.h"     // Hashable
 #include "gqten/framework/bases/streamable.h"   // Streamable
 #include "gqten/framework/vec_hash.h"           // VecHasher
 #include "gqten/gqtensor/qnsct.h"               // QNSectorVec
 
 #include <functional>     // std::hash
+
+#include <assert.h>     // assert
+
+
+#ifdef Release
+  #define NDEBUG
+#endif
 
 
 namespace gqten {
@@ -92,7 +100,45 @@ public:
   /**
   Get the direction of the Index.
   */
-  GQTenIndexDirType GetDir(void) { return dir_; }
+  GQTenIndexDirType GetDir(void) const { return dir_; }
+
+  /**
+  Get the number of qnsectors of the Index.
+  */
+  size_t GetQNSctNum(void) const { return qnscts_.size(); }
+
+  /**
+  Get a quantum number sector using sector coordinate.
+
+  @param sct_coor The sector coordinate of the quantum number sector.
+  */
+  const QNSector<QNT> &GetQNSct(const size_t sct_coor) const {
+    return qnscts_[sct_coor];
+  }
+
+  /**
+  Calculate block coordinate and data coordinate from corresponding actual coordinate.
+
+  @param coor The actual coordinate.
+
+  @return Block coordinate and data coordinate pair.
+  */
+  std::pair<size_t, size_t> CoorToBlkCoorDataCoor(const size_t coor) const {
+    assert(coor < dim_);
+    size_t residue_coor = coor;
+    size_t blk_coor, data_coor;
+    for (size_t i = 0; i < qnscts_.size(); ++i) {
+      auto qnsct_dim = qnscts_[i].dim();
+      if (residue_coor < qnsct_dim) {
+        blk_coor = i;
+        data_coor = qnscts_[i].CoorToDataCoor(residue_coor);
+        break;
+      } else {
+        residue_coor -= qnsct_dim;
+      }
+    }
+    return std::make_pair(blk_coor, data_coor);
+  }
 
   /**
   Inverse the direction of the Index.
@@ -173,6 +219,54 @@ IndexT InverseIndex(const IndexT &idx) {
   IndexT inv_idx(idx);
   inv_idx.Inverse();
   return inv_idx;
+}
+
+
+template <typename QNT>
+using IndexVec = std::vector<Index<QNT>>;
+
+
+/**
+Calculate the number of quantum number sectors of Index from a vector of Index.
+
+@param indexes A vector of Index.
+*/
+template <typename IndexVecT>
+std::vector<size_t> CalcQNSctNumOfIdxs(const IndexVecT &indexes) {
+  std::vector<size_t> qnsct_num_of_idxes;
+  for (auto &index : indexes) {
+    qnsct_num_of_idxes.push_back(index.GetQNSctNum());
+  }
+  return qnsct_num_of_idxes;
+}
+
+
+/**
+Calculate quantum number divergence for a vector of Index and a given block coordinates.
+*/
+template <typename QNT>
+QNT CalcDiv(const IndexVec<QNT> &indexes, const CoorsT &blk_coors) {
+  assert(indexes.size() == blk_coors.size());
+  QNT div, qnflux;
+  auto ndim = indexes.size();
+  for (size_t i = 0; i < ndim; ++i) {
+    auto index = indexes[i];
+    if (index.GetDir() == GQTenIndexDirType::IN) {
+      qnflux = -index.GetQNSct(blk_coors[i]).GetQn();
+    } else if (index.GetDir() == GQTenIndexDirType::OUT) {
+      qnflux = index.GetQNSct(blk_coors[i]).GetQn();
+    }
+    if (ndim == 1) {
+      return qnflux;
+    } else {
+      if (i == 0) {
+        div = qnflux;
+      } else {
+        div += qnflux;
+      }
+    }
+  }
+  return div;
 }
 } /* gqten */
 #endif /* ifndef GQTEN_GQTENSOR_INDEX_H */

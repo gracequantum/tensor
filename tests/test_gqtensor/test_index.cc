@@ -60,6 +60,24 @@ TEST_F(TestIndex, Dimension) {
 }
 
 
+TEST_F(TestIndex, CoorToBlkCoorDataCoor) {
+  auto coor1 = RandUnsignedInt(dgnc_1 - 1);
+  auto blk_coor_data_coor_1 = idx_1sct_in.CoorToBlkCoorDataCoor(coor1);
+  EXPECT_EQ(blk_coor_data_coor_1.first, 0);
+  EXPECT_EQ(blk_coor_data_coor_1.second, coor1);
+
+  auto coor2 = RandUnsignedInt((dgnc_1 + dgnc_2) - 1);
+  auto blk_coor_data_coor_2 = idx_2sct_out.CoorToBlkCoorDataCoor(coor2);
+  if (blk_coor_data_coor_2.first == 0) {
+    EXPECT_EQ(blk_coor_data_coor_2.second, coor2);
+  } else if (blk_coor_data_coor_2.first == 1) {
+    EXPECT_EQ(blk_coor_data_coor_2.second, coor2 - dgnc_1);
+  } else {    // Block coordinate must be 0 or 1.
+    EXPECT_TRUE(false);
+  }
+}
+
+
 TEST_F(TestIndex, Hashable) {
   EXPECT_TRUE(idx_default.Hash() == idx_default.Hash());
   EXPECT_TRUE(idx_default.Hash() != idx_1sct_in.Hash());

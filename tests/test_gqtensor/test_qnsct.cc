@@ -58,6 +58,12 @@ TEST_F(TestQNSector, BasicInfo) {
   EXPECT_EQ(qnsct1_default.dim(), 0);
   EXPECT_EQ(qnsct1.dim(), 1 * dgnc_1);
   EXPECT_EQ(qnsct2.dim(), 1 * dgnc_2);
+  for (size_t i = 0; i < qnsct1.dim(); ++i) {
+    EXPECT_EQ(qnsct1.CoorToDataCoor(i), i);
+  }
+  for (size_t i = 0; i < qnsct2.dim(); ++i) {
+    EXPECT_EQ(qnsct2.CoorToDataCoor(i), i);
+  }
 }
 
 

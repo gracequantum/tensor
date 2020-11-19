@@ -9,14 +9,20 @@
 #define GQTEN_UTILITY_UTILS_INL_H
 
 
+#include "gqten/framework/value_t.h"    // CoorsT, ShapeT
+#include "gqten/framework/consts.h"
+
 #include <vector>
 #include <numeric>
 #include <complex>
 #include <cmath>
 
-#include "gqten/fwd_dcl.h"
-#include "gqten/framework/consts.h"
-#include "gqten/framework/value_t.h"
+#include <assert.h>     // assert
+
+
+#ifdef Release
+  #define NDEBUG
+#endif
 
 
 namespace gqten {
@@ -40,13 +46,44 @@ T CalcCartProd(T v) {
 }
 
 
+inline std::vector<CoorsT> GenAllCoors(const ShapeT &shape) {
+  std::vector<CoorsT> each_coors(shape.size());
+  for (size_t i = 0; i < shape.size(); ++i) {
+    for (size_t j = 0; j < shape[i]; ++j) {
+      each_coors[i].push_back(j);
+    }
+  }
+  return CalcCartProd(each_coors);
+}
+
+
+inline std::vector<size_t> CalcMultiDimDataOffsets(const ShapeT &shape) {
+  auto ndim = shape.size();
+  if (ndim == 0) { return {}; }
+  std::vector<size_t> offsets(ndim);
+  offsets[ndim - 1] = 1;
+  if (ndim >= 2) {
+    size_t offset = 1;
+    // TODO: Ugly for loop.
+    for (size_t i = ndim - 2; true; --i) {
+      offset *= shape[i+1];
+      offsets[i] = offset;
+      if (i == 0) { break; }
+    }
+  }
+  return offsets;
+}
+
+
 // Calculate offset for the effective one dimension array.
-inline long CalcEffOneDimArrayOffset(
-    const std::vector<long> &coors,
-    const long ndim,
-    const std::vector<long> &data_offsets) {
-  long offset = 0;
-  for (long i = 0; i < ndim; ++i) {
+inline size_t CalcEffOneDimArrayOffset(
+    const CoorsT &coors,
+    const std::vector<size_t> &data_offsets
+) {
+  assert(coors.size() == data_offsets.size());
+  size_t ndim = coors.size();
+  size_t offset = 0;
+  for (size_t i = 0; i < ndim; ++i) {
     offset += coors[i] * data_offsets[i];
   }
   return offset;
@@ -170,40 +207,40 @@ inline std::vector<TenElemType> NormVec(const std::vector<TenElemType> &v) {
 }
 
 
-template <typename MatElemType>
-inline MatElemType *MatGetRows(
-    const MatElemType *mat, const long &rows, const long &cols,
-    const long &from, const long &num_rows) {
-  auto new_size = num_rows*cols;
-  auto new_mat = new MatElemType [new_size];
-  std::memcpy(new_mat, mat+(from*cols), new_size*sizeof(MatElemType));
-  return new_mat;
-}
+//template <typename MatElemType>
+//inline MatElemType *MatGetRows(
+    //const MatElemType *mat, const long &rows, const long &cols,
+    //const long &from, const long &num_rows) {
+  //auto new_size = num_rows*cols;
+  //auto new_mat = new MatElemType [new_size];
+  //std::memcpy(new_mat, mat+(from*cols), new_size*sizeof(MatElemType));
+  //return new_mat;
+//}
 
 
-template <typename MatElemType>
-inline void MatGetRows(
-    const MatElemType *mat, const long &rows, const long &cols,
-    const long &from, const long &num_rows,
-    MatElemType *new_mat) {
-  auto new_size = num_rows*cols;
-  std::memcpy(new_mat, mat+(from*cols), new_size*sizeof(MatElemType));
-}
+//template <typename MatElemType>
+//inline void MatGetRows(
+    //const MatElemType *mat, const long &rows, const long &cols,
+    //const long &from, const long &num_rows,
+    //MatElemType *new_mat) {
+  //auto new_size = num_rows*cols;
+  //std::memcpy(new_mat, mat+(from*cols), new_size*sizeof(MatElemType));
+//}
 
 
-template <typename MatElemType>
-inline void MatGetCols(
-    const MatElemType *mat, const long rows, const long cols,
-    const long from, const long num_cols,
-    MatElemType *new_mat) {
-  long offset = from;
-  long new_offset = 0;
-  for (long i = 0; i < rows; ++i) {
-    std::memcpy(new_mat+new_offset, mat+offset, num_cols*sizeof(MatElemType));
-    offset += cols;
-    new_offset += num_cols;
-  }
-}
+//template <typename MatElemType>
+//inline void MatGetCols(
+    //const MatElemType *mat, const long rows, const long cols,
+    //const long from, const long num_cols,
+    //MatElemType *new_mat) {
+  //long offset = from;
+  //long new_offset = 0;
+  //for (long i = 0; i < rows; ++i) {
+    //std::memcpy(new_mat+new_offset, mat+offset, num_cols*sizeof(MatElemType));
+    //offset += cols;
+    //new_offset += num_cols;
+  //}
+//}
 
 
 template <typename MatElemType>
@@ -225,10 +262,10 @@ inline void GenDiagMat(
 }
 
 
-// Free the resources of a GQTensor.
-template <typename TenElemType>
-inline void GQTenFree(GQTensor<TenElemType> *pt) {
-  for (auto &pblk : pt->blocks()) { delete pblk; }
-}
+//// Free the resources of a GQTensor.
+//template <typename TenElemType>
+//inline void GQTenFree(GQTensor<TenElemType> *pt) {
+  //for (auto &pblk : pt->blocks()) { delete pblk; }
+//}
 } /* gqten */
 #endif /* ifndef GQTEN_UTILITY_UTILS_INL_H */

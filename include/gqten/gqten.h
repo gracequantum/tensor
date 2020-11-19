@@ -203,61 +203,61 @@ namespace gqten {
 //std::ofstream &bfwrite(std::ofstream &, const Index &);
 
 
-// Dense block labeled by the quantum number.
-template <typename ElemType>
-class QNBlock : public QNSectorSet {
-// Binary I/O.
-friend std::ifstream &bfread<ElemType>(std::ifstream &, QNBlock<ElemType> &);
-friend std::ofstream &bfwrite<ElemType>(std::ofstream &, const QNBlock<ElemType> &);
-// Some functions called by tensor numerical functions to use the private constructor.
-friend std::vector<QNBlock<ElemType> *> BlocksCtrctBatch<ElemType>(
-    const std::vector<long> &, const std::vector<long> &,
-    const ElemType,
-    const std::vector<QNBlock<ElemType> *> &,
-    const std::vector<QNBlock<ElemType> *> &);
+//// Dense block labeled by the quantum number.
+//template <typename ElemType>
+//class QNBlock : public QNSectorSet {
+//// Binary I/O.
+//friend std::ifstream &bfread<ElemType>(std::ifstream &, QNBlock<ElemType> &);
+//friend std::ofstream &bfwrite<ElemType>(std::ofstream &, const QNBlock<ElemType> &);
+//// Some functions called by tensor numerical functions to use the private constructor.
+//friend std::vector<QNBlock<ElemType> *> BlocksCtrctBatch<ElemType>(
+    //const std::vector<long> &, const std::vector<long> &,
+    //const ElemType,
+    //const std::vector<QNBlock<ElemType> *> &,
+    //const std::vector<QNBlock<ElemType> *> &);
 
-public:
-  QNBlock(void) = default;
-  QNBlock(const std::vector<QNSector> &);
+//public:
+  //QNBlock(void) = default;
+  //QNBlock(const std::vector<QNSector> &);
 
-  QNBlock(const QNBlock &);
-  QNBlock &operator=(const QNBlock &);
+  //QNBlock(const QNBlock &);
+  //QNBlock &operator=(const QNBlock &);
   
-  QNBlock(QNBlock &&) noexcept;
-  QNBlock &operator=(QNBlock &&) noexcept;
+  //QNBlock(QNBlock &&) noexcept;
+  //QNBlock &operator=(QNBlock &&) noexcept;
 
-  ~QNBlock(void) override;
+  //~QNBlock(void) override;
   
-  // Element getter and setter.
-  const ElemType &operator()(const std::vector<long> &) const;
-  ElemType &operator()(const std::vector<long> &);
+  //// Element getter and setter.
+  //const ElemType &operator()(const std::vector<long> &) const;
+  //ElemType &operator()(const std::vector<long> &);
 
-  // Data access.
-  const ElemType *cdata(void) const { return data_; }   // constant reference.
-  ElemType * &data(void) { return data_; }              // non-constant reference.
+  //// Data access.
+  //const ElemType *cdata(void) const { return data_; }   // constant reference.
+  //ElemType * &data(void) { return data_; }              // non-constant reference.
 
-  // Hash methods.
-  size_t PartHash(const std::vector<long> &) const;
-  size_t QNSectorSetHash(void) const { return qnscts_hash_; }
+  //// Hash methods.
+  //size_t PartHash(const std::vector<long> &) const;
+  //size_t QNSectorSetHash(void) const { return qnscts_hash_; }
 
-  // Inplace operations.
-  void Random(void);
-  void Transpose(const std::vector<long> &);
+  //// Inplace operations.
+  //void Random(void);
+  //void Transpose(const std::vector<long> &);
 
-  // Public data members.
-  long ndim = 0;              // Number of dimensions.
-  std::vector<long> shape;    // Shape of the block.
-  long size = 0;              // Total number of elements in this block.
+  //// Public data members.
+  //long ndim = 0;              // Number of dimensions.
+  //std::vector<long> shape;    // Shape of the block.
+  //long size = 0;              // Total number of elements in this block.
 
-private:
-  // NOTE: For performance reason, this constructor will NOT initialize the data_ to 0!!!
-  // It should only be intra-used.
-  QNBlock(const std::vector<const QNSector *> &);
+//private:
+  //// NOTE: For performance reason, this constructor will NOT initialize the data_ to 0!!!
+  //// It should only be intra-used.
+  //QNBlock(const std::vector<const QNSector *> &);
 
-  ElemType *data_ = nullptr;    // Data in a 1D array.
-  std::vector<long> data_offsets_;
-  std::size_t qnscts_hash_ = 0;
-};
+  //ElemType *data_ = nullptr;    // Data in a 1D array.
+  //std::vector<long> data_offsets_;
+  //std::size_t qnscts_hash_ = 0;
+//};
 
 
 // Tensor with U1 symmetry.

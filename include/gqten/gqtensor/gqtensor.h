@@ -1,0 +1,350 @@
+// SPDX-License-Identifier: LGPL-3.0-only
+/*
+* Author: Rongyang Sun <sun-rongyang@outlook.com>
+* Creation Date: 2020-11-13 16:18
+*
+* Description: GraceQ/tensor project. Symmetry-blocked sparse tensor.
+*/
+
+/**
+@file gqtensor.h
+@brief Symmetry-blocked sparse tensor.
+*/
+#ifndef GQTEN_GQTENSOR_GQTENSOR_H
+#define GQTEN_GQTENSOR_GQTENSOR_H
+
+
+#include "gqten/framework/value_t.h"                                // CoorsT, ShapeT
+#include "gqten/framework/bases/streamable.h"                       // Streamable
+#include "gqten/gqtensor/index.h"                                   // IndexVec, GetQNSctNumOfIdxs, CalcDiv
+#include "gqten/gqtensor/blk_spar_data_ten/blk_spar_data_ten.h"     // BlockSparseDataTensor
+#include "gqten/utility/utils_inl.h"                                // GenAllCoors, Rand
+
+#include <vector>       // vector
+#include <iostream>     // cout, endl
+#include <iterator>     // next
+
+#include <assert.h>     // assert
+
+
+#ifdef Release
+  #define NDEBUG
+#endif
+
+
+namespace gqten {
+
+
+/**
+Symmetry-blocked sparse tensor.
+
+@tparam ElemT Type of the tensor element.
+@tparam QNT   Type of the quantum number.
+*/
+template <typename ElemT, typename QNT>
+//class GQTensor : public Streamable {
+class GQTensor {
+public:
+  // Constructors and destructor.
+  /// Default constructor.
+  GQTensor(void) = default;
+  GQTensor(const IndexVec<QNT> &);
+  GQTensor(const GQTensor &);
+  GQTensor &operator=(const GQTensor &);
+  /// Destroy a GQTensor.
+  ~GQTensor(void) { delete pblk_spar_data_ten_; }
+
+  // Get or check basic properties of the GQTensor.
+  /// Get rank of the GQTensor.
+  size_t Rank(void) const { return rank_; }
+
+  /// Get the size of the GQTensor.
+  size_t size(void) const { return size_; }
+
+  /// Get indexes of the GQTensor.
+  const IndexVec<QNT> &GetIndexes(void) const { return indexes_; }
+
+  /// Get the shape of the GQTensor.
+  const ShapeT &GetShape(void) const { return shape_; }
+
+  /// Get the number of quantum number block contained by this GQTensor.
+  size_t GetQNBlkNum(void) const {
+    if (IsScalar() || IsDefault()) { return 0; }
+    return pblk_spar_data_ten_->GetBlkIdxDataBlkMap().size();
+  }
+
+  /// Check whether the tensor is a scalar.
+  bool IsScalar(void) const { return (rank_ == 0) && (size_ == 1); }
+
+  /// Check whether the tensor is created by the default constructor.
+  bool IsDefault(void) const { return size_ == 0; }
+
+  // Calculate properties of the GQTensor.
+  QNT Div(void) const;
+
+  // Element getter and setter.
+  ElemT GetElem(const std::vector<size_t> &) const;
+  void SetElem(const std::vector<size_t> &, const ElemT);
+  struct GQTensorElementAccessDeref;
+  GQTensorElementAccessDeref operator[](std::vector<size_t> coors) {
+    return GQTensorElementAccessDeref(*this, coors);
+  }
+
+  // Inplace operations.
+  void Random(const QNT &);
+
+  // Operators overload.
+  bool operator==(const GQTensor &) const;
+  bool operator!=(const GQTensor &rhs) const { return !(*this == rhs); }
+
+
+private:
+  /// The rank of the GQTensor.
+  size_t rank_ = 0;
+  /// The shape of the GQTensor.
+  ShapeT shape_;
+  /// The total number of elements f the GQTensor.
+  size_t size_ = 0;
+
+  /// Indexes of the GQTensor.
+  IndexVec<QNT> indexes_;
+  /// The pointer which point to block sparse data tensor.
+  BlockSparseDataTensor<ElemT, QNT> *pblk_spar_data_ten_ = nullptr;
+
+  /// The value of the rank 0 tensor (scalar).
+  ElemT scalar_ = 0.0;
+
+  ShapeT CalcShape_(void) const {
+    ShapeT shape(indexes_.size());
+    for (size_t i = 0; i < rank_; ++i) {
+      shape[i] = indexes_[i].dim();
+    }
+    return shape;
+  }
+
+  size_t CalcSize_(void) const {
+    size_t size = 1;
+    for (auto dim : shape_) { size *= dim; }
+    return size;
+  }
+
+  std::pair<CoorsT, CoorsT> CoorsToBlkCoorsDataCoors_(
+      const CoorsT &coors
+  ) const {
+    assert(coors.size() == rank_);
+    CoorsT blk_coors, data_coors;
+    for (size_t i = 0; i < coors.size(); ++i) {
+      auto blk_coor_data_coor = indexes_[i].CoorToBlkCoorDataCoor(coors[i]);
+      blk_coors.push_back(blk_coor_data_coor.first);
+      data_coors.push_back(blk_coor_data_coor.second);
+    }
+    return make_pair(blk_coors, data_coors);
+  }
+};
+
+
+/**
+Create an empty GQTensor using indexes.
+
+@param indexes Vector of Index of the tensor.
+*/
+template <typename ElemT, typename QNT>
+GQTensor<ElemT, QNT>::GQTensor(
+    const IndexVec<QNT> &indexes
+) : indexes_(indexes) {
+  rank_ = indexes_.size();
+  shape_ = CalcShape_();
+  size_ = CalcSize_();
+  if (!IsScalar()) {
+    pblk_spar_data_ten_ = new BlockSparseDataTensor<ElemT, QNT>(&indexes_);
+  }
+}
+
+
+/**
+Copy a GQTensor.
+
+@param gqten Another GQTensor.
+*/
+template <typename ElemT, typename QNT>
+GQTensor<ElemT, QNT>::GQTensor(const GQTensor &gqten) :
+    rank_(gqten.rank_),
+    shape_(gqten.shape_),
+    size_(gqten.size_),
+    indexes_(gqten.indexes_) {
+  if (!IsScalar()) {
+    pblk_spar_data_ten_ = new BlockSparseDataTensor<ElemT, QNT>(
+                              *gqten.pblk_spar_data_ten_
+                          );
+    pblk_spar_data_ten_->pgqten_indexes = &indexes_;
+  } else {
+    scalar_ = gqten.scalar_;
+  }
+}
+
+
+/**
+Assign a GQTensor.
+
+@param rhs Another GQTensor.
+*/
+template <typename ElemT, typename QNT>
+GQTensor<ElemT, QNT> &GQTensor<ElemT, QNT>::operator=(const GQTensor &rhs) {
+  rank_ = rhs.rank_;
+  shape_ = rhs.shape_;
+  size_ = rhs.size_;
+  indexes_ = rhs.indexes_;
+  if (!IsScalar()) {
+    delete pblk_spar_data_ten_;
+    pblk_spar_data_ten_ = new BlockSparseDataTensor<ElemT, QNT>(
+                              *rhs.pblk_spar_data_ten_
+                          );
+    pblk_spar_data_ten_->pgqten_indexes = &indexes_;
+  } else {
+    scalar_ = rhs.scalar_;
+  }
+  return *this;
+}
+
+
+template <typename ElemT, typename QNT>
+struct GQTensor<ElemT, QNT>:: GQTensorElementAccessDeref {
+  GQTensor &this_ten;
+  std::vector<size_t> coors;
+
+  GQTensorElementAccessDeref(
+      GQTensor &gqten,
+      const std::vector<size_t> &coors
+  ) : this_ten(gqten), coors(coors) {}
+
+  operator ElemT() const {
+    return this_ten.GetElem(coors);
+  }
+
+  ElemT &operator=(const ElemT elem) {
+    this_ten.SetElem(coors, elem);
+  }
+};
+
+
+/**
+Calculate the quantum number divergence of the GQTensor.
+
+@return The quantum number divergence.
+*/
+template <typename ElemT, typename QNT>
+QNT GQTensor<ElemT, QNT>::Div(void) const {
+  if (IsScalar()) {
+    std::cout << "Tensor is rank 0 (a scalar). Return QN()." << std::endl;
+    return QNT();
+  }
+  auto blk_idx_data_blk_map = pblk_spar_data_ten_->GetBlkIdxDataBlkMap();
+  auto blk_num = blk_idx_data_blk_map.size();
+  if (blk_num == 0) {
+    std::cout << "Tensor does not have a block. Return QN()." << std::endl;
+    return QNT();
+  }
+  auto beg_it = blk_idx_data_blk_map.begin();
+  auto div = CalcDiv(indexes_, beg_it->second.blk_coors);
+  for (auto it = std::next(beg_it); it != blk_idx_data_blk_map.end(); ++it) {
+    auto blk_i_div = CalcDiv(indexes_, it->second.blk_coors);
+    if (blk_i_div != div) {
+      std::cout << "Tensor does not have a special divergence. Return QN()."
+                << std::endl;
+      return QNT();
+    }
+  }
+  return div;
+}
+
+
+/**
+Get the tensor element using its coordinates.
+
+@coors The coordinates of the tensor element. An empty vector for scalar.
+*/
+template <typename ElemT, typename QNT>
+ElemT GQTensor<ElemT, QNT>::GetElem(const std::vector<size_t> &coors) const {
+  assert(coors.size() == rank_);
+  if (IsScalar()) { return scalar_; }
+  auto blk_coors_data_coors = CoorsToBlkCoorsDataCoors_(coors);
+  return pblk_spar_data_ten_->ElemGet(blk_coors_data_coors);
+}
+
+
+/**
+Set the tensor element using its coordinates.
+
+@param coors The coordinates of the tensor element. An empty vector for scalar.
+@param elem The value of the tensor element.
+*/
+template <typename ElemT, typename QNT>
+void GQTensor<ElemT, QNT>::SetElem(
+    const std::vector<size_t> &coors,
+    const ElemT elem
+) {
+  assert(coors.size() == rank_);
+  if (IsScalar()) {
+    scalar_ = elem;
+  } else {
+    auto blk_coors_data_coors = CoorsToBlkCoorsDataCoors_(coors);
+    pblk_spar_data_ten_->ElemSet(blk_coors_data_coors, elem);
+  }
+}
+
+
+/**
+Equivalence check.
+
+@param rhs The GQTensor at the right hand side.
+
+@return Equivalence check result.
+*/
+template <typename ElemT, typename QNT>
+bool GQTensor<ElemT, QNT>::operator==(const GQTensor &rhs) const {
+  // Default check
+  if (IsDefault()) {
+    if (rhs.IsDefault()) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  // Scalar check
+  if (IsScalar() && rhs.IsScalar() && scalar_ != rhs.scalar_) { return false; }
+  if (IsScalar()) {
+    if (rhs.IsScalar() && scalar_ == rhs.scalar_) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  // Indexes check
+  if (indexes_ != rhs.indexes_) { return false; }
+  // Block sparse data tensor check
+  return (*pblk_spar_data_ten_ == *rhs.pblk_spar_data_ten_);
+}
+
+
+/**
+Random set tensor elements in [0, 1] with given quantum number divergence.
+Original data of this tensor will be destroyed.
+
+@param div Target quantum number divergence.
+*/
+template <typename ElemT, typename QNT>
+void GQTensor<ElemT, QNT>::Random(const QNT &div) {
+  if (IsScalar() && (div == QNT())) {
+    Rand(scalar_);
+    return;
+  }
+  pblk_spar_data_ten_->Clear();
+  for (auto &blk_coors : GenAllCoors(pblk_spar_data_ten_->blk_shape)) {
+    if (CalcDiv(indexes_, blk_coors) == div) {
+      pblk_spar_data_ten_->DataBlkCreate(blk_coors, false);     // NO allocate memory on this stage.
+    }
+  }
+  pblk_spar_data_ten_->Random();
+}
+} /* gqten */
+#endif /* ifndef GQTEN_GQTENSOR_GQTENSOR_H */

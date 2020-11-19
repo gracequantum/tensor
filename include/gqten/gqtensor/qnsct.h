@@ -21,6 +21,13 @@
 
 #include <vector>     // vector
 
+#include <assert.h>     // assert
+
+
+#ifdef Release
+  #define NDEBUG
+#endif
+
 
 namespace gqten {
 
@@ -86,6 +93,20 @@ public:
   the linear space represented.
   */
   size_t dim(void) const { return dim_; }
+
+  /**
+  Calculate the coordinate in the degeneracy space (data coordinate) from the
+  actual coordinate in the linear space represented by this quantum number
+  sector.
+
+  @param coor Coordinate in the linear space.
+
+  @return Coordinate in the degeneracy spaece.
+  */
+  size_t CoorToDataCoor(const size_t coor) const {
+    assert(coor < dim_);
+    return coor % dgnc_;
+  }
 
   size_t Hash(void) const override { return hash_; }
 
