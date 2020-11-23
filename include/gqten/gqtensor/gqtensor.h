@@ -18,7 +18,7 @@
 #include "gqten/framework/bases/streamable.h"                       // Streamable
 #include "gqten/gqtensor/index.h"                                   // IndexVec, GetQNSctNumOfIdxs, CalcDiv
 #include "gqten/gqtensor/blk_spar_data_ten/blk_spar_data_ten.h"     // BlockSparseDataTensor
-#include "gqten/utility/utils_inl.h"                                // GenAllCoors, Rand, Reorder
+#include "gqten/utility/utils_inl.h"                                // GenAllCoors, Rand, Reorder, CalcScalarNorm
 
 #include <vector>       // vector
 #include <iostream>     // cout, endl
@@ -101,6 +101,7 @@ public:
   // Inplace operations.
   void Random(const QNT &);
   void Transpose(const std::vector<size_t> &);
+  GQTEN_Double Normalize(void);
 
   // Operators overload.
   bool operator==(const GQTensor &) const;
@@ -416,7 +417,8 @@ template <typename ElemT, typename QNT>
 void GQTensor<ElemT, QNT>::Transpose(
     const std::vector<size_t> &transed_idxes_order
 ) {
-  if (rank_ == 0) { return; }   // For default or scalar tensor
+  if (IsDefault() || IsScalar()) { return; }
+
   assert(transed_idxes_order.size() == rank_);
   // Give a shorted order, do nothing
   if (std::is_sorted(transed_idxes_order.begin(), transed_idxes_order.end())) {
@@ -425,6 +427,27 @@ void GQTensor<ElemT, QNT>::Transpose(
   Reorder(shape_, transed_idxes_order);
   Reorder(indexes_, transed_idxes_order);
   pblk_spar_data_ten_->Transpose(transed_idxes_order);
+}
+
+
+/**
+Normalize the tensor and return its norm.
+
+@return The norm before the normalization.
+*/
+template <typename ElemT, typename QNT>
+GQTEN_Double GQTensor<ElemT, QNT>::Normalize(void) {
+  if (IsDefault()) {
+    std::cout << "Default GQTensor cannot be normailzed!" << std::endl;
+    exit(1);
+  } else if (IsScalar()) {
+    GQTEN_Double norm = CalcScalarNorm(scalar_);
+    scalar_ /= norm;
+    return norm;
+  } else {
+    GQTEN_Double norm = pblk_spar_data_ten_->Normalize();
+    return norm;
+  }
 }
 } /* gqten */
 #endif /* ifndef GQTEN_GQTENSOR_GQTENSOR_H */

@@ -15,7 +15,7 @@
 #include <vector>
 #include <numeric>
 #include <complex>
-#include <cmath>
+#include <cmath>        // abs
 #include <algorithm>    // swap
 
 #include <assert.h>     // assert
@@ -28,6 +28,23 @@
 
 namespace gqten {
 
+
+//// Algorithms
+// Inplace reorder a vector.
+template <typename T>
+void Reorder(std::vector<T> &v, const std::vector<size_t> &order) {
+  std::vector<size_t> indices(order);
+  for (size_t i = 0; i < indices.size(); ++i) {
+    auto current = i;
+    while (i != indices[current]) {
+      auto next = indices[current];
+      std::swap(v[current], v[next]);
+      indices[current] = current;
+      current = next;
+    }
+    indices[current] = current;
+ }
+}
 
 // Calculate Cartesian product.
 template<typename T>
@@ -91,6 +108,7 @@ inline size_t CalcEffOneDimArrayOffset(
 }
 
 
+//// Equivalence check
 inline bool DoubleEq(const GQTEN_Double a, const GQTEN_Double b) {
   if (std::abs(a-b) < kDoubleEpsilon) {
     return true;
@@ -139,6 +157,7 @@ inline bool ArrayEq(
 }
 
 
+//// Random
 inline GQTEN_Double drand(void) {
   return GQTEN_Double(rand()) / RAND_MAX;
 }
@@ -167,6 +186,27 @@ inline ElemType RandT() {
 }
 
 
+//// Math
+inline GQTEN_Double CalcScalarNorm2(GQTEN_Double d) {
+  return d * d;
+}
+
+
+inline GQTEN_Double CalcScalarNorm2(GQTEN_Complex z) {
+  return std::norm(z);
+}
+
+
+inline GQTEN_Double CalcScalarNorm(GQTEN_Double d) {
+  return std::abs(d);
+}
+
+
+inline GQTEN_Double CalcScalarNorm(GQTEN_Complex z) {
+  return std::sqrt(CalcScalarNorm2(z));
+}
+
+
 inline GQTEN_Double Conj(GQTEN_Double d) {
   return d;
 }
@@ -174,20 +214,6 @@ inline GQTEN_Double Conj(GQTEN_Double d) {
 
 inline GQTEN_Complex Conj(GQTEN_Complex z) {
   return std::conj(z);
-}
-
-
-template<typename T>
-inline std::vector<T> SliceFromBegin(const std::vector<T> &v, size_t to) {
-  auto first = v.cbegin();
-  return std::vector<T>(first, first+to);
-}
-
-
-template<typename T>
-inline std::vector<T> SliceFromEnd(const std::vector<T> &v, size_t to) {
-  auto last = v.cend();
-  return std::vector<T>(last-to, last);
 }
 
 
@@ -205,6 +231,21 @@ inline std::vector<TenElemType> NormVec(const std::vector<TenElemType> &v) {
   std::vector<TenElemType> res(v.size());
   for (size_t i = 0; i < v.size(); ++i) { res[i] = v[i] / sum; }
   return res;
+}
+
+
+//// Matrix operation
+template<typename T>
+inline std::vector<T> SliceFromBegin(const std::vector<T> &v, size_t to) {
+  auto first = v.cbegin();
+  return std::vector<T>(first, first+to);
+}
+
+
+template<typename T>
+inline std::vector<T> SliceFromEnd(const std::vector<T> &v, size_t to) {
+  auto last = v.cend();
+  return std::vector<T>(last-to, last);
 }
 
 
@@ -244,23 +285,23 @@ inline std::vector<TenElemType> NormVec(const std::vector<TenElemType> &v) {
 //}
 
 
-template <typename MatElemType>
-inline MatElemType *MatGetCols(
-    const MatElemType *mat, const long rows, const long cols,
-    const long from, const long num_cols) {
-  auto new_size = num_cols * rows;
-  auto new_mat = new MatElemType [new_size];
-  MatGetCols(mat, rows, cols, from, num_cols, new_mat);
-  return new_mat;
-}
+//template <typename MatElemType>
+//inline MatElemType *MatGetCols(
+    //const MatElemType *mat, const long rows, const long cols,
+    //const long from, const long num_cols) {
+  //auto new_size = num_cols * rows;
+  //auto new_mat = new MatElemType [new_size];
+  //MatGetCols(mat, rows, cols, from, num_cols, new_mat);
+  //return new_mat;
+//}
 
 
-inline void GenDiagMat(
-    const double *diag_v, const long &diag_v_dim, double *full_mat) {
-  for (long i = 0; i < diag_v_dim; ++i) {
-    *(full_mat + (i*diag_v_dim + i)) = diag_v[i];
-  }
-}
+//inline void GenDiagMat(
+    //const double *diag_v, const long &diag_v_dim, double *full_mat) {
+  //for (long i = 0; i < diag_v_dim; ++i) {
+    //*(full_mat + (i*diag_v_dim + i)) = diag_v[i];
+  //}
+//}
 
 
 //// Free the resources of a GQTensor.
@@ -270,19 +311,5 @@ inline void GenDiagMat(
 //}
 
 
-template <typename T>
-void Reorder(std::vector<T> &v, const std::vector<size_t> &order) {
-  std::vector<size_t> indices(order);
-  for (size_t i = 0; i < indices.size(); ++i) {
-    auto current = i;
-    while (i != indices[current]) {
-      auto next = indices[current];
-      std::swap(v[current], v[next]);
-      indices[current] = current;
-      current = next;
-    }
-    indices[current] = current;
- }
-}
 } /* gqten */
 #endif /* ifndef GQTEN_UTILITY_UTILS_INL_H */

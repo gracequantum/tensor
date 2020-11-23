@@ -20,9 +20,10 @@
 #include "gqten/gqtensor/index.h"                                         // IndexVec, CalcQNSctNumOfIdxs
 #include "gqten/gqtensor/blk_spar_data_ten/data_blk.h"                    // DataBlk
 #include "gqten/gqtensor/blk_spar_data_ten/raw_data_operation_tasks.h"    // RawDataTransposeTask
-#include "gqten/utility/utils_inl.h"                                      // CalcEffOneDimArrayOffset, CalcMultiDimDataOffsets, Rand, Reorder
+#include "gqten/utility/utils_inl.h"                                      // CalcEffOneDimArrayOffset, CalcMultiDimDataOffsets, Rand, Reorder, CalcScalarNorm2
 
-#include <map>    // map
+#include <map>      // map
+#include <cmath>    // sqrt
 
 #include <stdlib.h>     // malloc
 #include <string.h>     // memcpy, memset
@@ -67,6 +68,7 @@ public:
   void Allocate(void);
   void Random(void);
   void Transpose(const std::vector<size_t> &);
+  GQTEN_Double Normalize(void);
 
   // Operators overload
   bool operator==(const BlockSparseDataTensor &) const;
@@ -126,12 +128,16 @@ private:
   /// Ordered map from block index to data block for existed blocks.
   BlkIdxDataBlkMap blk_idx_data_blk_map_;
 
+  // Private data block operations.
+  void DataBlkClear_(void);
+
   // Raw data operations.
   void RawDataFree_(void);
   void RawDataAlloc_(const size_t);
   void RawDataInsert_(const size_t, const size_t, const bool init = false);
   void RawDataRand_(void);
   void RawDataTranspose_(const std::vector<RawDataTransposeTask> &);
+  GQTEN_Double RawDataNormalize_(void);
 };
 
 
@@ -305,11 +311,21 @@ BlockSparseDataTensor<ElemT, QNT>::DataBlkInsert(
 
 
 /**
+Clear data blocks and reset raw_data_size_.
+*/
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::DataBlkClear_(void) {
+  blk_idx_data_blk_map_.clear();
+  raw_data_size_ = 0;
+}
+
+
+/**
 Clear all contents of this block sparse data tensor.
 */
 template <typename ElemT, typename QNT>
 void BlockSparseDataTensor<ElemT, QNT>::Clear(void) {
-  blk_idx_data_blk_map_.clear();
+  DataBlkClear_();
   RawDataFree_();
 }
 
@@ -387,6 +403,17 @@ void BlockSparseDataTensor<ElemT, QNT>::Transpose(
   // Transpose the raw data.
   RawDataTransposeTask::SortTasksByOriginalBlkIdx(raw_data_trans_tasks);
   RawDataTranspose_(raw_data_trans_tasks);
+}
+
+
+/**
+Normalize the data tensor and return its norm.
+
+@return The norm before the normalization.
+*/
+template <typename ElemT, typename QNT>
+GQTEN_Double BlockSparseDataTensor<ElemT, QNT>::Normalize(void) {
+  return RawDataNormalize_();
 }
 
 
@@ -525,6 +552,25 @@ void BlockSparseDataTensor<ElemT, QNT>::RawDataTranspose_(
   }
   free(pactual_raw_data_);
   pactual_raw_data_ = ptransed_actual_raw_data;
+}
+
+
+/**
+Normalize the raw data array.
+
+@return The norm before normalization.
+*/
+template <typename ElemT, typename QNT>
+GQTEN_Double BlockSparseDataTensor<ElemT, QNT>::RawDataNormalize_(void) {
+  GQTEN_Double norm2 = 0.0;
+  for (size_t i = 0; i < actual_raw_data_size_; ++i) {
+    norm2 += CalcScalarNorm2(pactual_raw_data_[i]);
+  }
+  auto norm = std::sqrt(norm2);
+  for (size_t i = 0; i < actual_raw_data_size_; ++i) {
+    pactual_raw_data_[i] /= norm;
+  }
+  return norm;
 }
 } /* gqten */
 #endif /* ifndef GQTEN_GQTENSOR_BLK_SPAR_DATA_TEN_BLK_SPAR_DATA_TEN_H */

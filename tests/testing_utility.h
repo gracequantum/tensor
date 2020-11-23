@@ -16,6 +16,9 @@
 #include <random>
 
 
+const double kEpsilon = 1.0E-12;
+
+
 template <typename IntT>
 inline IntT RandomInteger(const IntT min, const IntT max) {
   std::random_device rd;

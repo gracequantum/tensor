@@ -592,3 +592,53 @@ TEST_F(TestGQTensor, TestTranspose) {
   RunTestGQTensorTransposeCase(zten_3d_s, {1, 0, 2});
   RunTestGQTensorTransposeCase(zten_3d_s, {2, 0, 1});
 }
+
+
+template <typename GQTensorT>
+void RunTestGQTensorNormalizeCase(GQTensorT &t) {
+  auto norm2 = 0.0;
+  for (auto &coors : GenAllCoors(t.GetShape())) {
+    norm2 += std::norm(t.GetElem(coors));
+  }
+  auto norm = t.Normalize();
+  EXPECT_DOUBLE_EQ(norm, std::sqrt(norm2));
+
+  norm2 = 0.0;
+  for (auto &coors : GenAllCoors(t.GetShape())) {
+    norm2 += std::norm(t.GetElem(coors));
+  }
+  EXPECT_NEAR(norm2, 1.0, kEpsilon);
+}
+
+
+TEST_F(TestGQTensor, TestNormalize) {
+  dten_scalar.Random(U1QN());
+  auto dscalar = dten_scalar.GetElem({});
+  auto dnorm = dten_scalar.Normalize();
+  EXPECT_DOUBLE_EQ(dnorm, std::abs(dscalar));
+  EXPECT_DOUBLE_EQ(dten_scalar.GetElem({}), 1.0);
+
+  dten_1d_s.Random(qn0);
+  RunTestGQTensorNormalizeCase(dten_1d_s);
+  dten_1d_s.Random(qnp1);
+  RunTestGQTensorNormalizeCase(dten_1d_s);
+  dten_2d_s.Random(qn0);
+  RunTestGQTensorNormalizeCase(dten_2d_s);
+  dten_3d_s.Random(qn0);
+  RunTestGQTensorNormalizeCase(dten_3d_s);
+
+  zten_scalar.Random(U1QN());
+  auto zscalar = zten_scalar.GetElem({});
+  auto znorm = zten_scalar.Normalize();
+  EXPECT_DOUBLE_EQ(znorm, std::abs(zscalar));
+  EXPECT_DOUBLE_EQ(zten_scalar.GetElem({}), 1.0);
+
+  zten_1d_s.Random(qn0);
+  RunTestGQTensorNormalizeCase(zten_1d_s);
+  zten_1d_s.Random(qnp1);
+  RunTestGQTensorNormalizeCase(zten_1d_s);
+  zten_2d_s.Random(qn0);
+  RunTestGQTensorNormalizeCase(zten_2d_s);
+  zten_3d_s.Random(qn0);
+  RunTestGQTensorNormalizeCase(zten_3d_s);
+}
