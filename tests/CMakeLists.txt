@@ -6,6 +6,7 @@
 #  Description: GraceQ/tensor project. CMake file to control unittest.
 # 
 if(NOT GQTEN_USE_EXTERNAL_HPTT_LIB)
+  set(hptt_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/external/hptt/include")
   set(hptt_LIBRARY "${CMAKE_BINARY_DIR}/external/hptt/libhptt.a")
 endif()
 
@@ -18,7 +19,8 @@ macro(add_unittest
     target_include_directories(${TEST_NAME}
       PRIVATE ${GQTEN_HEADER_PATH}
       PRIVATE ${GQTEN_SRC_PATH}
-      PRIVATE ${CFLAGS})
+      PRIVATE ${CFLAGS}
+      PRIVATE ${hptt_INCLUDE_DIR})
     target_link_libraries(${TEST_NAME}
       GTest::GTest GTest::Main
       ${hptt_LIBRARY}
@@ -51,7 +53,7 @@ add_unittest(test_index "test_gqtensor/test_index.cc" "" "" "")
 #add_unittest(test_qnblock test_qnblock.cc "" "" "${MATH_LIB_LINK_FLAGS}")
 
 ## Test symmetry-blocked sparse tensor, GQTensor.
-add_unittest(test_gqtensor "test_gqtensor/test_gqtensor.cc" "" "" "")
+add_unittest(test_gqtensor "test_gqtensor/test_gqtensor.cc" "" "" "${MATH_LIB_LINK_FLAGS}")
 
 ## Test tensor numerical functions.
 ## Test tensor contraction.

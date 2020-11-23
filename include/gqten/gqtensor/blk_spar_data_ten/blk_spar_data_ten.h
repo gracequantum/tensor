@@ -14,19 +14,24 @@
 #define GQTEN_GQTENSOR_BLK_SPAR_DATA_TEN_BLK_SPAR_DATA_TEN_H
 
 
-#include "gqten/framework/value_t.h"                      // CoorsT, ShapeT
-#include "gqten/framework/bases/streamable.h"             // Streamable
-#include "gqten/gqtensor/index.h"                         // IndexVec, CalcQNSctNumOfIdxs
-#include "gqten/gqtensor/blk_spar_data_ten/data_blk.h"    // DataBlk
-#include "gqten/utility/utils_inl.h"                      // CalcEffOneDimArrayOffset, CalcMultiDimDataOffsets, Rand
+#include "gqten/framework/value_t.h"                                      // CoorsT, ShapeT
+#include "gqten/framework/bases/streamable.h"                             // Streamable
+#include "gqten/framework/hp_numeric/ten_trans.h"                         // TensorTranspose
+#include "gqten/gqtensor/index.h"                                         // IndexVec, CalcQNSctNumOfIdxs
+#include "gqten/gqtensor/blk_spar_data_ten/data_blk.h"                    // DataBlk
+#include "gqten/gqtensor/blk_spar_data_ten/raw_data_operation_tasks.h"    // RawDataTransposeTask
+#include "gqten/utility/utils_inl.h"                                      // CalcEffOneDimArrayOffset, CalcMultiDimDataOffsets, Rand, Reorder
 
-#include <map>        // map
+#include <map>    // map
 
 #include <stdlib.h>     // malloc
 #include <string.h>     // memcpy, memset
 
 
 namespace gqten {
+
+
+// Some helpers
 
 
 /**
@@ -55,12 +60,13 @@ public:
 
   // Data block level operations.
   typename BlkIdxDataBlkMap::iterator
-  DataBlkCreate(const CoorsT &blk_coors, const bool alloc_mem = true);
+  DataBlkInsert(const CoorsT &blk_coors, const bool alloc_mem = true);
 
   // Global level operations.
   void Clear(void);
   void Allocate(void);
   void Random(void);
+  void Transpose(const std::vector<size_t> &);
 
   // Operators overload
   bool operator==(const BlockSparseDataTensor &) const;
@@ -85,7 +91,11 @@ public:
     return blk_idx_data_blk_map_;
   }
 
+  static void ResetDataOffset(BlkIdxDataBlkMap &);
 
+
+  /// Rank of the tensor.
+  size_t ten_rank = 0;
   /// Block shape.
   ShapeT blk_shape;
   /// Block multi-dimension data offsets;
@@ -121,6 +131,7 @@ private:
   void RawDataAlloc_(const size_t);
   void RawDataInsert_(const size_t, const size_t, const bool init = false);
   void RawDataRand_(void);
+  void RawDataTranspose_(const std::vector<RawDataTransposeTask> &);
 };
 
 
@@ -135,6 +146,7 @@ template <typename ElemT, typename QNT>
 BlockSparseDataTensor<ElemT, QNT>::BlockSparseDataTensor(
     const IndexVec<QNT> *pgqten_indexes
 ) : pgqten_indexes(pgqten_indexes) {
+  ten_rank = pgqten_indexes->size();
   blk_shape = CalcQNSctNumOfIdxs(*pgqten_indexes);
   blk_multi_dim_offsets = CalcMultiDimDataOffsets(blk_shape);
 }
@@ -149,6 +161,7 @@ template <typename ElemT, typename QNT>
 BlockSparseDataTensor<ElemT, QNT>::BlockSparseDataTensor(
     const BlockSparseDataTensor &bsdt
 ) :
+    ten_rank(bsdt.ten_rank),
     blk_shape(bsdt.blk_shape),
     blk_multi_dim_offsets(bsdt.blk_multi_dim_offsets),
     blk_idx_data_blk_map_(bsdt.blk_idx_data_blk_map_),
@@ -171,6 +184,7 @@ template <typename ElemT, typename QNT>
 BlockSparseDataTensor<ElemT, QNT> &
 BlockSparseDataTensor<ElemT, QNT>::operator=(const BlockSparseDataTensor &rhs) {
   free(pactual_raw_data_);
+  ten_rank = rhs.ten_rank;
   blk_shape = rhs.blk_shape;
   blk_multi_dim_offsets = rhs.blk_multi_dim_offsets;
   blk_idx_data_blk_map_ = rhs.blk_idx_data_blk_map_;
@@ -241,7 +255,7 @@ void BlockSparseDataTensor<ElemT, QNT>::ElemSet(
                                  BlkCoorsToBlkIdx(blk_coors_data_coors.first)
                              );
   if (blk_idx_data_blk_it == blk_idx_data_blk_map_.end()) {
-    blk_idx_data_blk_it = DataBlkCreate(blk_coors_data_coors.first);
+    blk_idx_data_blk_it = DataBlkInsert(blk_coors_data_coors.first);
   }
   size_t inblk_data_idx = blk_idx_data_blk_it->second.DataCoorsToInBlkDataIdx(
                               blk_coors_data_coors.second
@@ -251,7 +265,7 @@ void BlockSparseDataTensor<ElemT, QNT>::ElemSet(
 
 
 /**
-Create a new data block. User can decide whether allocate the memory.
+Insert a new data block. User can decide whether allocate the memory.
 
 @param blk_coors Block coordinates of the new data block.
 @param alloc_mem Whether allocate the memory and set them to 0.
@@ -262,7 +276,7 @@ Create a new data block. User can decide whether allocate the memory.
 */
 template <typename ElemT, typename QNT>
 typename BlockSparseDataTensor<ElemT, QNT>::BlkIdxDataBlkMap::iterator
-BlockSparseDataTensor<ElemT, QNT>::DataBlkCreate(
+BlockSparseDataTensor<ElemT, QNT>::DataBlkInsert(
     const CoorsT &blk_coors, const bool alloc_mem
 ) {
   auto blk_idx = BlkCoorsToBlkIdx(blk_coors);
@@ -318,6 +332,78 @@ void BlockSparseDataTensor<ElemT, QNT>::Random(void) {
     RawDataAlloc_(raw_data_size_);
   }
   RawDataRand_();
+}
+
+
+/**
+Transpose the block sparse data tensor.
+
+@param transed_idxes_order Transposed order of indexes.
+*/
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::Transpose(
+    const std::vector<size_t> &transed_idxes_order
+) {
+  assert(transed_idxes_order.size() == blk_shape.size());
+  // Give a shorted order, do nothing
+  if (std::is_sorted(transed_idxes_order.begin(), transed_idxes_order.end())) {
+    return;
+  }
+
+  Reorder(blk_shape, transed_idxes_order);
+  blk_multi_dim_offsets = CalcMultiDimDataOffsets(blk_shape);
+
+  std::vector<RawDataTransposeTask> raw_data_trans_tasks;
+  BlkIdxDataBlkMap transed_blk_idx_data_blk_map;
+  for (auto &blk_idx_data_blk : blk_idx_data_blk_map_) {
+    DataBlk<QNT> transed_data_blk(blk_idx_data_blk.second);
+    transed_data_blk.Transpose(transed_idxes_order);
+    auto transed_data_blk_idx = BlkCoorsToBlkIdx(transed_data_blk.blk_coors);
+    transed_blk_idx_data_blk_map[transed_data_blk_idx] = transed_data_blk;
+    raw_data_trans_tasks.push_back(
+        RawDataTransposeTask(
+            ten_rank,
+            transed_idxes_order,
+            blk_idx_data_blk.first,
+            blk_idx_data_blk.second.shape,
+            blk_idx_data_blk.second.data_offset,
+            transed_data_blk_idx,
+            transed_data_blk.shape
+        )
+    );
+  }
+
+  // Calculate and set data offset of each transposed data block.
+  ResetDataOffset(transed_blk_idx_data_blk_map);
+  RawDataTransposeTask::SortTasksByTranspoedBlkIdx(raw_data_trans_tasks);
+  size_t trans_task_idx = 0;
+  for (auto &blk_idx_data_blk : transed_blk_idx_data_blk_map) {
+    raw_data_trans_tasks[trans_task_idx].transed_data_offset =
+        blk_idx_data_blk.second.data_offset;
+    trans_task_idx++;
+  }
+  // Update block index <-> data block map.
+  blk_idx_data_blk_map_ = transed_blk_idx_data_blk_map;
+  // Transpose the raw data.
+  RawDataTransposeTask::SortTasksByOriginalBlkIdx(raw_data_trans_tasks);
+  RawDataTranspose_(raw_data_trans_tasks);
+}
+
+
+/**
+Re-calculate and reset the data offset of each data block in a BlkIdxDataBlkMap.
+
+@param blk_idx_data_blk_map A block index <-> data block mapping.
+*/
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::ResetDataOffset(
+    BlkIdxDataBlkMap &blk_idx_data_blk_map
+) {
+  size_t data_offset = 0;
+  for (auto &blk_idx_data_blk : blk_idx_data_blk_map) {
+    blk_idx_data_blk.second.data_offset = data_offset;
+    data_offset += blk_idx_data_blk.second.size;
+  }
 }
 
 
@@ -417,6 +503,28 @@ void BlockSparseDataTensor<ElemT, QNT>::RawDataRand_(void) {
   for (size_t i = 0; i < actual_raw_data_size_; ++i) {
     Rand(pactual_raw_data_[i]);
   }
+}
+
+
+/**
+Tensor transpose for the 1D raw data array.
+*/
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::RawDataTranspose_(
+    const std::vector<RawDataTransposeTask> &raw_data_trans_tasks) {
+  ElemT *ptransed_actual_raw_data = (ElemT *) malloc(actual_raw_data_size_ * sizeof(ElemT));
+  for (auto &trans_task : raw_data_trans_tasks) {
+    hp_numeric::TensorTranspose(
+        trans_task.transed_order,
+        trans_task.ten_rank,
+        pactual_raw_data_ + trans_task.original_data_offset,
+        trans_task.original_shape,
+        ptransed_actual_raw_data + trans_task.transed_data_offset,
+        trans_task.transed_shape
+    );
+  }
+  free(pactual_raw_data_);
+  pactual_raw_data_ = ptransed_actual_raw_data;
 }
 } /* gqten */
 #endif /* ifndef GQTEN_GQTENSOR_BLK_SPAR_DATA_TEN_BLK_SPAR_DATA_TEN_H */

@@ -18,11 +18,12 @@
 #include "gqten/framework/bases/streamable.h"                       // Streamable
 #include "gqten/gqtensor/index.h"                                   // IndexVec, GetQNSctNumOfIdxs, CalcDiv
 #include "gqten/gqtensor/blk_spar_data_ten/blk_spar_data_ten.h"     // BlockSparseDataTensor
-#include "gqten/utility/utils_inl.h"                                // GenAllCoors, Rand
+#include "gqten/utility/utils_inl.h"                                // GenAllCoors, Rand, Reorder
 
 #include <vector>       // vector
 #include <iostream>     // cout, endl
 #include <iterator>     // next
+#include <algorithm>    // is_sorted
 
 #include <assert.h>     // assert
 
@@ -51,6 +52,8 @@ public:
   GQTensor(const IndexVec<QNT> &);
   GQTensor(const GQTensor &);
   GQTensor &operator=(const GQTensor &);
+  GQTensor(GQTensor &&) noexcept;
+  GQTensor &operator=(GQTensor &&) noexcept;
   /// Destroy a GQTensor.
   ~GQTensor(void) { delete pblk_spar_data_ten_; }
 
@@ -73,6 +76,11 @@ public:
     return pblk_spar_data_ten_->GetBlkIdxDataBlkMap().size();
   }
 
+  /// Get the pointer which point to block sparse data tensor constant.
+  const BlockSparseDataTensor<ElemT, QNT> *GetBlkSparDataTen(void) const {
+    return pblk_spar_data_ten_;
+  }
+
   /// Check whether the tensor is a scalar.
   bool IsScalar(void) const { return (rank_ == 0) && (size_ == 1); }
 
@@ -92,6 +100,7 @@ public:
 
   // Inplace operations.
   void Random(const QNT &);
+  void Transpose(const std::vector<size_t> &);
 
   // Operators overload.
   bool operator==(const GQTensor &) const;
@@ -103,7 +112,7 @@ private:
   size_t rank_ = 0;
   /// The shape of the GQTensor.
   ShapeT shape_;
-  /// The total number of elements f the GQTensor.
+  /// The total number of elements of the GQTensor.
   size_t size_ = 0;
 
   /// Indexes of the GQTensor.
@@ -172,13 +181,15 @@ GQTensor<ElemT, QNT>::GQTensor(const GQTensor &gqten) :
     shape_(gqten.shape_),
     size_(gqten.size_),
     indexes_(gqten.indexes_) {
-  if (!IsScalar()) {
+  if (gqten.IsDefault()) {
+    // Do nothing
+  } else if (gqten.IsScalar()) {
+    scalar_ = gqten.scalar_;
+  } else {
     pblk_spar_data_ten_ = new BlockSparseDataTensor<ElemT, QNT>(
                               *gqten.pblk_spar_data_ten_
                           );
     pblk_spar_data_ten_->pgqten_indexes = &indexes_;
-  } else {
-    scalar_ = gqten.scalar_;
   }
 }
 
@@ -194,14 +205,62 @@ GQTensor<ElemT, QNT> &GQTensor<ElemT, QNT>::operator=(const GQTensor &rhs) {
   shape_ = rhs.shape_;
   size_ = rhs.size_;
   indexes_ = rhs.indexes_;
-  if (!IsScalar()) {
+  if (rhs.IsDefault()) {
+    // Do nothing
+  } else if (rhs.IsScalar()) {
+    scalar_ = rhs.scalar_;
+  } else {
     delete pblk_spar_data_ten_;
     pblk_spar_data_ten_ = new BlockSparseDataTensor<ElemT, QNT>(
                               *rhs.pblk_spar_data_ten_
                           );
     pblk_spar_data_ten_->pgqten_indexes = &indexes_;
+  }
+  return *this;
+}
+
+
+/**
+Move a GQTensor.
+
+@param gqten Another GQTensor to-be moved.
+*/
+template <typename ElemT, typename QNT>
+GQTensor<ElemT, QNT>::GQTensor(GQTensor &&gqten) noexcept :
+    rank_(gqten.rank_),
+    shape_(gqten.shape_),
+    size_(gqten.size_) {
+  if (gqten.IsDefault()) {
+    // Do nothing
+  } else if (gqten.IsScalar()) {
+    scalar_ = gqten.scalar_;
   } else {
+    indexes_ = std::move(gqten.indexes_);
+    pblk_spar_data_ten_ = gqten.pblk_spar_data_ten_;
+    gqten.pblk_spar_data_ten_ = nullptr;
+  }
+}
+
+
+/**
+Move and assign a GQTensor.
+
+@param rhs Another GQTensor to-be moved.
+*/
+template <typename ElemT, typename QNT>
+GQTensor<ElemT, QNT> &GQTensor<ElemT, QNT>::operator=(GQTensor &&rhs) noexcept {
+  rank_ = rhs.rank_;
+  shape_ = rhs.shape_;
+  size_ = rhs.size_;
+  if (rhs.IsDefault()) {
+    // Do nothing
+  } else if (rhs.IsScalar()) {
     scalar_ = rhs.scalar_;
+  } else {
+    indexes_ = std::move(rhs.indexes_);
+    delete pblk_spar_data_ten_;
+    pblk_spar_data_ten_ = rhs.pblk_spar_data_ten_;
+    rhs.pblk_spar_data_ten_ = nullptr;
   }
   return *this;
 }
@@ -341,10 +400,31 @@ void GQTensor<ElemT, QNT>::Random(const QNT &div) {
   pblk_spar_data_ten_->Clear();
   for (auto &blk_coors : GenAllCoors(pblk_spar_data_ten_->blk_shape)) {
     if (CalcDiv(indexes_, blk_coors) == div) {
-      pblk_spar_data_ten_->DataBlkCreate(blk_coors, false);     // NO allocate memory on this stage.
+      pblk_spar_data_ten_->DataBlkInsert(blk_coors, false);     // NO allocate memory on this stage.
     }
   }
   pblk_spar_data_ten_->Random();
+}
+
+
+/**
+Transpose the tensor using a new indexes order.
+
+@param transed_idxes_order Transposed order of indexes.
+*/
+template <typename ElemT, typename QNT>
+void GQTensor<ElemT, QNT>::Transpose(
+    const std::vector<size_t> &transed_idxes_order
+) {
+  if (rank_ == 0) { return; }   // For default or scalar tensor
+  assert(transed_idxes_order.size() == rank_);
+  // Give a shorted order, do nothing
+  if (std::is_sorted(transed_idxes_order.begin(), transed_idxes_order.end())) {
+    return;
+  }
+  Reorder(shape_, transed_idxes_order);
+  Reorder(indexes_, transed_idxes_order);
+  pblk_spar_data_ten_->Transpose(transed_idxes_order);
 }
 } /* gqten */
 #endif /* ifndef GQTEN_GQTENSOR_GQTENSOR_H */

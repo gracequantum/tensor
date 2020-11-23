@@ -17,7 +17,7 @@
 #include "gqten/framework/value_t.h"                        // CoorsT, ShapeT
 #include "gqten/gqtensor/blk_spar_data_ten/qnblk_info.h"    // QNBlkInfo
 #include "gqten/gqtensor/index.h"                           // IndexVec
-#include "gqten/utility/utils_inl.h"                        // CalcEffOneDimArrayOffset, CalcMultiDimDataOffsets
+#include "gqten/utility/utils_inl.h"                        // CalcEffOneDimArrayOffset, CalcMultiDimDataOffsets, Reorder
 
 
 namespace gqten {
@@ -34,18 +34,6 @@ public:
   DataBlk(void) = default;
 
   /**
-  Create a data block using its block coordinates and shape. This constructor
-  will not construct corresponding quantum number block information.
-
-  @param blk_coors Block coordinates.
-  @param shape The shape of the data block.
-  */
-  DataBlk(
-      const CoorsT &blk_coors,
-      const ShapeT &shape
-  ) : blk_coors(blk_coors), shape(shape) { CalcSize(); }
-
-  /**
   Create a data block using its block coordinates and GQTensor indexes
   information. This constructor will construct the corresponding quantum number
   block information.
@@ -57,23 +45,23 @@ public:
       const CoorsT &blk_coors,
       const IndexVec<QNT> &gqten_indexes
   ) : blk_coors(blk_coors) {
-    CreateQNBlkInfo(gqten_indexes);
+    CreateQNBlkInfo_(gqten_indexes);
+    has_qnblk_info_ = true;
     shape = qnblk_info_.CalcDgncSpaceShape();
-    CalcSize();
+    CalcSize_();
   }
 
-  /**
-  Create quantum number block information for this data block.
 
-  @param gqten_indexes Indexes of the related GQTensor.
+  /**
+  Transpose the data block (only information).
+
+  @param transed_idxes_order Transposed order of indexes.
   */
-  void CreateQNBlkInfo(const IndexVec<QNT> &gqten_indexes) {
-    QNSectorVec<QNT> qnscts;
-    for (size_t i = 0; i < blk_coors.size(); ++i) {
-      auto qnsct = gqten_indexes[i].GetQNSct(blk_coors[i]);
-      qnscts.push_back(qnsct);
-    }
-    qnblk_info_ = QNBlkInfo<QNT>(qnscts);
+  void Transpose(const std::vector<size_t> &transed_idxes_order) {
+    Reorder(blk_coors, transed_idxes_order);
+    Reorder(shape, transed_idxes_order);
+
+    if (has_qnblk_info_) { qnblk_info_.Transpose(transed_idxes_order); }
   }
 
   /**
@@ -96,15 +84,31 @@ public:
   /// The start offset of this data block in the 1D data array of block sparse data tensor.
   size_t data_offset;
 
-  size_t CalcSize(void) {
+private:
+  QNBlkInfo<QNT> qnblk_info_;
+
+  /**
+  Create quantum number block information for this data block.
+
+  @param gqten_indexes Indexes of the related GQTensor.
+  */
+  void CreateQNBlkInfo_(const IndexVec<QNT> &gqten_indexes) {
+    QNSectorVec<QNT> qnscts;
+    for (size_t i = 0; i < blk_coors.size(); ++i) {
+      auto qnsct = gqten_indexes[i].GetQNSct(blk_coors[i]);
+      qnscts.push_back(qnsct);
+    }
+    qnblk_info_ = QNBlkInfo<QNT>(qnscts);
+  }
+
+  bool has_qnblk_info_ = false;
+
+  size_t CalcSize_(void) {
     if (shape.size() == 0) { return 0; }
     size = 1;
     for (auto dim : shape) { size *= dim; }
     return size;
   }
-
-private:
-  QNBlkInfo<QNT> qnblk_info_;
 };
 } /* gqten */
 #endif /* ifndef GQTEN_GQTENSOR_BLK_SPAR_DATA_TEN_DATA_BLK_H */

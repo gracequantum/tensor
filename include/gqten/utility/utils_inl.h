@@ -16,6 +16,7 @@
 #include <numeric>
 #include <complex>
 #include <cmath>
+#include <algorithm>    // swap
 
 #include <assert.h>     // assert
 
@@ -267,5 +268,21 @@ inline void GenDiagMat(
 //inline void GQTenFree(GQTensor<TenElemType> *pt) {
   //for (auto &pblk : pt->blocks()) { delete pblk; }
 //}
+
+
+template <typename T>
+void Reorder(std::vector<T> &v, const std::vector<size_t> &order) {
+  std::vector<size_t> indices(order);
+  for (size_t i = 0; i < indices.size(); ++i) {
+    auto current = i;
+    while (i != indices[current]) {
+      auto next = indices[current];
+      std::swap(v[current], v[next]);
+      indices[current] = current;
+      current = next;
+    }
+    indices[current] = current;
+ }
+}
 } /* gqten */
 #endif /* ifndef GQTEN_UTILITY_UTILS_INL_H */

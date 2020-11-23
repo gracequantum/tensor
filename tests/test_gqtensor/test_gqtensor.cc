@@ -13,7 +13,7 @@
 #include "gqten/utility/utils_inl.h"        // GenAllCoors
 
 #include "gtest/gtest.h"
-#include "../testing_utility.h"     // RandInt, RandUnsignedInt
+#include "../testing_utility.h"     // RandInt, RandUnsignedInt, TransCoors
 
 
 using namespace gqten;
@@ -33,18 +33,17 @@ struct TestGQTensor : public testing::Test {
   U1QN qnp1 = U1QN({QNCard(qn_nm, U1QNVal( 1))});
   U1QN qnp2 = U1QN({QNCard(qn_nm, U1QNVal( 2))});
   U1QN qnm1 = U1QN({QNCard(qn_nm, U1QNVal(-1))});
-  size_t d_s = 3;
-  QNSctT qnsct0_s =  QNSctT(qn0,  d_s);
-  QNSctT qnsctp1_s = QNSctT(qnp1, d_s);
-  QNSctT qnsctm1_s = QNSctT(qnm1, d_s);
-  size_t d_l = 10;
-  QNSctT qnsct0_l =  QNSctT(qn0,  d_l);
-  QNSctT qnsctp1_l = QNSctT(qnp1, d_l);
-  QNSctT qnsctm1_l = QNSctT(qnm1, d_l);
+  QNSctT qnsct0_s =  QNSctT(qn0,  4);
+  QNSctT qnsctp1_s = QNSctT(qnp1, 5);
+  QNSctT qnsctm1_s = QNSctT(qnm1, 3);
+  QNSctT qnsct0_l =  QNSctT(qn0,  10);
+  QNSctT qnsctp1_l = QNSctT(qnp1, 8);
+  QNSctT qnsctm1_l = QNSctT(qnm1, 12);
   IndexT idx_in_s =  IndexT({qnsctm1_s, qnsct0_s, qnsctp1_s}, GQTenIndexDirType::IN);
   IndexT idx_out_s = IndexT({qnsctm1_s, qnsct0_s, qnsctp1_s}, GQTenIndexDirType::OUT);
   IndexT idx_in_l =  IndexT({qnsctm1_l, qnsct0_l, qnsctp1_l}, GQTenIndexDirType::IN);
   IndexT idx_out_l = IndexT({qnsctm1_l, qnsct0_l, qnsctp1_l}, GQTenIndexDirType::OUT);
+
   DGQTensor dten_default = DGQTensor();
   DGQTensor dten_scalar = DGQTensor(IndexVec<U1QN>{});
   DGQTensor dten_1d_s = DGQTensor({idx_out_s});
@@ -494,4 +493,102 @@ TEST_F(TestGQTensor, TestEq) {
   RunTestGQTensorEqCase(zten_1d_s, zten_1d_s2, false);
   RunTestGQTensorEqCase(zten_1d_s, zten_1d_l, false);
   RunTestGQTensorEqCase(zten_1d_s, zten_2d_s, false);
+}
+
+
+template <typename GQTensorT>
+void RunTestGQTensorCopyAndMoveConstructorsCase(const GQTensorT &t) {
+  GQTensorT gqten_cpy(t);
+  EXPECT_EQ(gqten_cpy, t);
+  auto gqten_cpy2 = t;
+  EXPECT_EQ(gqten_cpy2, t);
+
+  GQTensorT gqten_tomove(t);    // Copy it.
+  GQTensorT gqten_moved(std::move(gqten_tomove));
+  EXPECT_EQ(gqten_moved, t);
+  EXPECT_EQ(gqten_tomove.GetBlkSparDataTen(), nullptr);
+  GQTensorT gqten_tomove2(t);
+  auto gqten_moved2 = std::move(gqten_tomove2);
+  EXPECT_EQ(gqten_moved2, t);
+  EXPECT_EQ(gqten_tomove2.GetBlkSparDataTen(), nullptr);
+}
+
+
+TEST_F(TestGQTensor, TestCopyAndMoveConstructors) {
+  RunTestGQTensorCopyAndMoveConstructorsCase(dten_default);
+  dten_1d_s.Random(qn0);
+  RunTestGQTensorCopyAndMoveConstructorsCase(dten_1d_s);
+  dten_2d_s.Random(qn0);
+  RunTestGQTensorCopyAndMoveConstructorsCase(dten_2d_s);
+  dten_3d_s.Random(qn0);
+  RunTestGQTensorCopyAndMoveConstructorsCase(dten_3d_s);
+
+  RunTestGQTensorCopyAndMoveConstructorsCase(zten_default);
+  zten_1d_s.Random(qn0);
+  RunTestGQTensorCopyAndMoveConstructorsCase(zten_1d_s);
+  zten_2d_s.Random(qn0);
+  RunTestGQTensorCopyAndMoveConstructorsCase(zten_2d_s);
+  zten_3d_s.Random(qn0);
+  RunTestGQTensorCopyAndMoveConstructorsCase(zten_3d_s);
+}
+
+
+template <typename GQTensorT>
+void RunTestGQTensorTransposeCase(
+    const GQTensorT &t, const std::vector<size_t> &axes) {
+  auto transed_t = t;
+  transed_t.Transpose(axes);
+  if (t.IsDefault() || t.IsScalar()) {
+    EXPECT_EQ(transed_t, t);
+  } else {
+    for (size_t i = 0; i < axes.size(); ++i) {
+      EXPECT_EQ(transed_t.GetIndexes()[i], t.GetIndexes()[axes[i]]);
+      EXPECT_EQ(transed_t.GetShape()[i], t.GetShape()[axes[i]]);
+    }
+    for (auto &coors : GenAllCoors(t.GetShape())) {
+      EXPECT_EQ(
+          transed_t.GetElem(TransCoors(coors, axes)),
+          t.GetElem(coors)
+      );
+    }
+  }
+}
+
+
+TEST_F(TestGQTensor, TestTranspose) {
+  RunTestGQTensorTransposeCase(dten_default, {});
+  dten_1d_s.Random(qn0);
+  RunTestGQTensorTransposeCase(dten_1d_s, {0});
+  dten_2d_s.Random(qn0);
+  RunTestGQTensorTransposeCase(dten_2d_s, {0, 1});
+  RunTestGQTensorTransposeCase(dten_2d_s, {1, 0});
+  dten_2d_s.Random(qnp1);
+  RunTestGQTensorTransposeCase(dten_2d_s, {0, 1});
+  RunTestGQTensorTransposeCase(dten_2d_s, {1, 0});
+  dten_3d_s.Random(qn0);
+  RunTestGQTensorTransposeCase(dten_3d_s, {0, 1, 2});
+  RunTestGQTensorTransposeCase(dten_3d_s, {1, 0, 2});
+  RunTestGQTensorTransposeCase(dten_3d_s, {2, 0, 1});
+  dten_3d_s.Random(qnp1);
+  RunTestGQTensorTransposeCase(dten_3d_s, {0, 1, 2});
+  RunTestGQTensorTransposeCase(dten_3d_s, {1, 0, 2});
+  RunTestGQTensorTransposeCase(dten_3d_s, {2, 0, 1});
+
+  RunTestGQTensorTransposeCase(zten_default, {});
+  zten_1d_s.Random(qn0);
+  RunTestGQTensorTransposeCase(zten_1d_s, {0});
+  zten_2d_s.Random(qn0);
+  RunTestGQTensorTransposeCase(zten_2d_s, {0, 1});
+  RunTestGQTensorTransposeCase(zten_2d_s, {1, 0});
+  zten_2d_s.Random(qnp1);
+  RunTestGQTensorTransposeCase(zten_2d_s, {0, 1});
+  RunTestGQTensorTransposeCase(zten_2d_s, {1, 0});
+  zten_3d_s.Random(qn0);
+  RunTestGQTensorTransposeCase(zten_3d_s, {0, 1, 2});
+  RunTestGQTensorTransposeCase(zten_3d_s, {1, 0, 2});
+  RunTestGQTensorTransposeCase(zten_3d_s, {2, 0, 1});
+  zten_3d_s.Random(qnp1);
+  RunTestGQTensorTransposeCase(zten_3d_s, {0, 1, 2});
+  RunTestGQTensorTransposeCase(zten_3d_s, {1, 0, 2});
+  RunTestGQTensorTransposeCase(zten_3d_s, {2, 0, 1});
 }

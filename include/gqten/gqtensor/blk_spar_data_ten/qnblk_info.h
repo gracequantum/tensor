@@ -16,6 +16,7 @@
 
 #include "gqten/framework/value_t.h"    // CoorsT, ShapeT
 #include "gqten/gqtensor/qnsct.h"       // QNSectorVec
+#include "gqten/utility/utils_inl.h"    // Reorder
 
 
 namespace gqten {
@@ -45,7 +46,13 @@ public:
   }
 
   size_t PartHash(const CoorsT &) const;
-  void Transpose(const CoorsT &);
+
+  /**
+  Transpose quantum number sectors.
+  */
+  void Transpose(const std::vector<size_t> &transed_idxes_order) {
+    Reorder(qnscts, transed_idxes_order);
+  }
 
   QNSectorVec<QNT> qnscts;
 };

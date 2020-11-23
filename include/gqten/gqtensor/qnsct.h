@@ -133,9 +133,5 @@ private:
 
 template <typename QNT>
 using QNSectorVec = std::vector<QNSector<QNT>>;
-
-
-template <typename QNT>
-using ConstQNSectorPtrVec = std::vector<const QNSector<QNT> *>;
 } /* gqten */
 #endif /* ifndef GQTEN_GQTENSOR_QNSCT_H */
