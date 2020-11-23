@@ -207,12 +207,12 @@ inline GQTEN_Double CalcScalarNorm(GQTEN_Complex z) {
 }
 
 
-inline GQTEN_Double Conj(GQTEN_Double d) {
+inline GQTEN_Double CalcConj(GQTEN_Double d) {
   return d;
 }
 
 
-inline GQTEN_Complex Conj(GQTEN_Complex z) {
+inline GQTEN_Complex CalcConj(GQTEN_Complex z) {
   return std::conj(z);
 }
 

@@ -18,7 +18,7 @@
 #include "gqten/framework/bases/streamable.h"                       // Streamable
 #include "gqten/gqtensor/index.h"                                   // IndexVec, GetQNSctNumOfIdxs, CalcDiv
 #include "gqten/gqtensor/blk_spar_data_ten/blk_spar_data_ten.h"     // BlockSparseDataTensor
-#include "gqten/utility/utils_inl.h"                                // GenAllCoors, Rand, Reorder, CalcScalarNorm
+#include "gqten/utility/utils_inl.h"                                // GenAllCoors, Rand, Reorder, CalcScalarNorm, CalcConj
 
 #include <vector>       // vector
 #include <iostream>     // cout, endl
@@ -102,6 +102,7 @@ public:
   void Random(const QNT &);
   void Transpose(const std::vector<size_t> &);
   GQTEN_Double Normalize(void);
+  void Dag(void);
 
   // Operators overload.
   bool operator==(const GQTensor &) const;
@@ -448,6 +449,40 @@ GQTEN_Double GQTensor<ElemT, QNT>::Normalize(void) {
     GQTEN_Double norm = pblk_spar_data_ten_->Normalize();
     return norm;
   }
+}
+
+
+/**
+Switch the direction of the indexes, complex conjugate of the elements.
+*/
+template <typename ElemT, typename QNT>
+void GQTensor<ElemT, QNT>::Dag(void) {
+  if (IsDefault()) {
+    std::cout << "Default GQTensor cannot be daggered!" << std::endl;
+    exit(1);
+  } else if (IsScalar()) {
+    scalar_ = CalcConj(scalar_);
+  } else {
+    for (auto &index : indexes_) { index.Inverse(); }
+    pblk_spar_data_ten_->Conj();
+  }
+}
+
+
+// Helper functions.
+
+/**
+Calculate dagger of a GQTensor.
+
+@param t A GQTensor \f$ T \f$.
+
+@return Daggered \f$ T^{\dagger} \f$.
+*/
+template <typename GQTensorT>
+GQTensorT Dag(const GQTensorT &t) {
+  GQTensorT t_dag(t);
+  t_dag.Dag();
+  return t_dag;
 }
 } /* gqten */
 #endif /* ifndef GQTEN_GQTENSOR_GQTENSOR_H */

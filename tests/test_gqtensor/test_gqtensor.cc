@@ -642,3 +642,41 @@ TEST_F(TestGQTensor, TestNormalize) {
   zten_3d_s.Random(qn0);
   RunTestGQTensorNormalizeCase(zten_3d_s);
 }
+
+
+template <typename GQTensorT>
+void RunTestGQTensorDagCase(const GQTensorT &t) {
+  if (t.IsDefault()) {
+    // Do nothing
+  } else if (t.IsScalar()) {
+    auto t_dag = Dag(t);
+    EXPECT_EQ(t_dag.GetElem({}), std::conj(t.GetElem({})));
+  } else {
+    auto t_dag = Dag(t);
+    for (size_t i = 0; i < t.Rank(); ++i) {
+      EXPECT_EQ(t_dag.GetIndexes()[i], InverseIndex(t.GetIndexes()[i]));
+    }
+    for (auto &coor : GenAllCoors(t.GetShape())) {
+      EXPECT_EQ(t_dag.GetElem(coor), std::conj(t.GetElem(coor)));
+    }
+  }
+}
+
+
+TEST_F(TestGQTensor, TestDag) {
+  RunTestGQTensorDagCase(dten_default);
+  dten_1d_s.Random(qn0);
+  RunTestGQTensorDagCase(dten_1d_s);
+  dten_2d_s.Random(qn0);
+  RunTestGQTensorDagCase(dten_2d_s);
+  dten_3d_s.Random(qn0);
+  RunTestGQTensorDagCase(dten_3d_s);
+
+  RunTestGQTensorDagCase(zten_default);
+  zten_1d_s.Random(qn0);
+  RunTestGQTensorDagCase(zten_1d_s);
+  zten_2d_s.Random(qn0);
+  RunTestGQTensorDagCase(zten_2d_s);
+  zten_3d_s.Random(qn0);
+  RunTestGQTensorDagCase(zten_3d_s);
+}

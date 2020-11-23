@@ -20,7 +20,7 @@
 #include "gqten/gqtensor/index.h"                                         // IndexVec, CalcQNSctNumOfIdxs
 #include "gqten/gqtensor/blk_spar_data_ten/data_blk.h"                    // DataBlk
 #include "gqten/gqtensor/blk_spar_data_ten/raw_data_operation_tasks.h"    // RawDataTransposeTask
-#include "gqten/utility/utils_inl.h"                                      // CalcEffOneDimArrayOffset, CalcMultiDimDataOffsets, Rand, Reorder, CalcScalarNorm2
+#include "gqten/utility/utils_inl.h"                                      // CalcEffOneDimArrayOffset, CalcMultiDimDataOffsets, Rand, Reorder, CalcScalarNorm2, CalcConj
 
 #include <map>      // map
 #include <cmath>    // sqrt
@@ -69,6 +69,7 @@ public:
   void Random(void);
   void Transpose(const std::vector<size_t> &);
   GQTEN_Double Normalize(void);
+  void Conj(void);
 
   // Operators overload
   bool operator==(const BlockSparseDataTensor &) const;
@@ -138,6 +139,7 @@ private:
   void RawDataRand_(void);
   void RawDataTranspose_(const std::vector<RawDataTransposeTask> &);
   GQTEN_Double RawDataNormalize_(void);
+  void RawDataConj_(void);
 };
 
 
@@ -418,6 +420,15 @@ GQTEN_Double BlockSparseDataTensor<ElemT, QNT>::Normalize(void) {
 
 
 /**
+Complex conjugate.
+*/
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::Conj(void) {
+  RawDataConj_();
+}
+
+
+/**
 Re-calculate and reset the data offset of each data block in a BlkIdxDataBlkMap.
 
 @param blk_idx_data_blk_map A block index <-> data block mapping.
@@ -571,6 +582,21 @@ GQTEN_Double BlockSparseDataTensor<ElemT, QNT>::RawDataNormalize_(void) {
     pactual_raw_data_[i] /= norm;
   }
   return norm;
+}
+
+
+/**
+Complex conjugate for raw data.
+*/
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::RawDataConj_(void) {
+  if (std::is_same<ElemT, GQTEN_Double>::value) {
+    // Do nothing
+  } else {
+    for (size_t i = 0; i < actual_raw_data_size_; ++i) {
+      pactual_raw_data_[i] = CalcConj(pactual_raw_data_[i]);
+    }
+  }
 }
 } /* gqten */
 #endif /* ifndef GQTEN_GQTENSOR_BLK_SPAR_DATA_TEN_BLK_SPAR_DATA_TEN_H */
