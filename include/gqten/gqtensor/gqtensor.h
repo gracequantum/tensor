@@ -76,6 +76,7 @@ public:
     return pblk_spar_data_ten_->GetBlkIdxDataBlkMap().size();
   }
 
+  // TODO: Return a constant reference.
   /// Get the pointer which point to block sparse data tensor constant.
   const BlockSparseDataTensor<ElemT, QNT> *GetBlkSparDataTen(void) const {
     return pblk_spar_data_ten_;
@@ -395,7 +396,9 @@ Original data of this tensor will be destroyed.
 */
 template <typename ElemT, typename QNT>
 void GQTensor<ElemT, QNT>::Random(const QNT &div) {
-  if (IsScalar() && (div == QNT())) {
+  assert(!IsDefault());
+  if (IsScalar()) {
+    assert(div == QNT());
     Rand(scalar_);
     return;
   }
@@ -483,6 +486,48 @@ GQTensorT Dag(const GQTensorT &t) {
   GQTensorT t_dag(t);
   t_dag.Dag();
   return t_dag;
+}
+
+/**
+Calculate the quantum number divergence of a GQTensor.
+
+@param t A GQTensor.
+
+@return The quantum number divergence.
+*/
+template <typename ElemT, typename QNT>
+QNT Div(const GQTensor<ElemT, QNT> &t) {
+  assert(!t.IsDefault());
+  if (t.IsScalar()) {
+    std::cout << "Tensor is a scalar. Return empty quantum number."
+              << std::endl;
+    return QNT();
+  } else {
+    auto qnblk_num = t.GetQNBlkNum();
+    if (qnblk_num == 0) {
+      std::cout << "Tensor does not have a block. Return empty quantum number."
+                << std::endl;
+      return QNT();
+    } else {
+      auto blk_idx_data_blk_map = t.GetBlkSparDataTen()->GetBlkIdxDataBlkMap();
+      auto indexes = t.GetIndexes();
+      auto first_blk_idx_data_blk = blk_idx_data_blk_map.begin();
+      auto div = CalcDiv(indexes, first_blk_idx_data_blk->second.blk_coors);
+      for (
+          auto it = std::next(first_blk_idx_data_blk);
+          it != blk_idx_data_blk_map.end();
+          ++it
+      ) {
+        auto blki_div = CalcDiv(indexes, it->second.blk_coors);
+        if (blki_div != div) {
+          std::cout << "Tensor does not have a special divergence. Return empty quantum number."
+                    << std::endl;
+          return QNT();
+        }
+      }
+      return div;
+    }
+  }
 }
 } /* gqten */
 #endif /* ifndef GQTEN_GQTENSOR_GQTENSOR_H */
