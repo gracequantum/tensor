@@ -506,11 +506,11 @@ void RunTestGQTensorCopyAndMoveConstructorsCase(const GQTensorT &t) {
   GQTensorT gqten_tomove(t);    // Copy it.
   GQTensorT gqten_moved(std::move(gqten_tomove));
   EXPECT_EQ(gqten_moved, t);
-  EXPECT_EQ(gqten_tomove.GetBlkSparDataTen(), nullptr);
+  EXPECT_EQ(gqten_tomove.GetBlkSparDataTenPtr(), nullptr);
   GQTensorT gqten_tomove2(t);
   auto gqten_moved2 = std::move(gqten_tomove2);
   EXPECT_EQ(gqten_moved2, t);
-  EXPECT_EQ(gqten_tomove2.GetBlkSparDataTen(), nullptr);
+  EXPECT_EQ(gqten_tomove2.GetBlkSparDataTenPtr(), nullptr);
 }
 
 

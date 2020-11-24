@@ -76,9 +76,13 @@ public:
     return pblk_spar_data_ten_->GetBlkIdxDataBlkMap().size();
   }
 
-  // TODO: Return a constant reference.
+  /// Get the block sparse data tensor constant.
+  const BlockSparseDataTensor<ElemT, QNT> &GetBlkSparDataTen(void) const {
+    return *pblk_spar_data_ten_;
+  }
+
   /// Get the pointer which point to block sparse data tensor constant.
-  const BlockSparseDataTensor<ElemT, QNT> *GetBlkSparDataTen(void) const {
+  const BlockSparseDataTensor<ElemT, QNT> *GetBlkSparDataTenPtr(void) const {
     return pblk_spar_data_ten_;
   }
 
@@ -509,7 +513,7 @@ QNT Div(const GQTensor<ElemT, QNT> &t) {
                 << std::endl;
       return QNT();
     } else {
-      auto blk_idx_data_blk_map = t.GetBlkSparDataTen()->GetBlkIdxDataBlkMap();
+      auto blk_idx_data_blk_map = t.GetBlkSparDataTen().GetBlkIdxDataBlkMap();
       auto indexes = t.GetIndexes();
       auto first_blk_idx_data_blk = blk_idx_data_blk_map.begin();
       auto div = CalcDiv(indexes, first_blk_idx_data_blk->second.blk_coors);
