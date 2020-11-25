@@ -34,6 +34,7 @@ inline void VectorAddTo(
   cblas_daxpy(size, 1.0, x, 1, y, 1);
 }
 
+
 inline void VectorAddTo(
     const GQTEN_Complex *x,
     const size_t size,
@@ -41,6 +42,24 @@ inline void VectorAddTo(
 ) {
   GQTEN_Complex a(1.0);
   cblas_zaxpy(size, &a, x, 1, y, 1);
+}
+
+
+inline void VectorScale(
+    GQTEN_Double *x,
+    const size_t size,
+    const GQTEN_Double a
+) {
+  cblas_dscal(size, a, x, 1);
+}
+
+
+inline void VectorScale(
+    GQTEN_Complex *x,
+    const size_t size,
+    const GQTEN_Complex a
+) {
+  cblas_zscal(size, &a, x, 1);
 }
 } /* hp_numeric */
 } /* gqten */

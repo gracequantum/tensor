@@ -53,7 +53,7 @@ struct TestGQTensor : public testing::Test {
   DGQTensor dten_3d_s = DGQTensor({idx_in_s, idx_out_s, idx_out_s});
   DGQTensor dten_3d_l = DGQTensor({idx_in_l, idx_out_l, idx_out_l});
   ZGQTensor zten_default = ZGQTensor();
-  DGQTensor zten_scalar = DGQTensor(IndexVec<U1QN>{});
+  ZGQTensor zten_scalar = ZGQTensor(IndexVec<U1QN>{});
   ZGQTensor zten_1d_s = ZGQTensor({idx_out_s});
   ZGQTensor zten_1d_l = ZGQTensor({idx_out_l});
   ZGQTensor zten_2d_s = ZGQTensor({idx_in_s, idx_out_s});
@@ -631,7 +631,7 @@ TEST_F(TestGQTensor, TestNormalize) {
   auto zscalar = zten_scalar.GetElem({});
   auto znorm = zten_scalar.Normalize();
   EXPECT_DOUBLE_EQ(znorm, std::abs(zscalar));
-  EXPECT_DOUBLE_EQ(zten_scalar.GetElem({}), 1.0);
+  EXPECT_COMPLEX_EQ(zten_scalar.GetElem({}), zscalar / znorm);
 
   zten_1d_s.Random(qn0);
   RunTestGQTensorNormalizeCase(zten_1d_s);
@@ -778,4 +778,47 @@ TEST_F(TestGQTensor, TestSummation) {
   ZGQTensor zten_3d_s2(zten_3d_s);
   zten_3d_s2.Random(qnp1);
   RunTestGQTensorSumCase(zten_3d_s1, zten_3d_s2);
+}
+
+
+template <typename ElemT, typename QNT>
+void RunTestGQTensorDotMultiCase(
+    const GQTensor<ElemT, QNT> &t, const ElemT scalar) {
+  auto multied_t = scalar * t;
+  GQTensor<ElemT, QNT> multied_t2(t);
+  multied_t2 *= scalar;
+  for (auto &coors : GenAllCoors(t.GetShape())) {
+    GtestNear(multied_t.GetElem(coors), scalar * t.GetElem(coors), kEpsilon);
+    GtestNear(multied_t2.GetElem(coors), scalar * t.GetElem(coors), kEpsilon);
+  }
+}
+
+
+TEST_F(TestGQTensor, TestDotMultiplication) {
+  dten_scalar.Random(U1QN());
+  auto rand_d = drand();
+  auto multied_ten = rand_d * dten_scalar;
+  EXPECT_DOUBLE_EQ(multied_ten.GetElem({}), rand_d * dten_scalar.GetElem({}));
+
+  dten_1d_s.Random(qn0);
+  RunTestGQTensorDotMultiCase(dten_1d_s, drand());
+  dten_2d_s.Random(qn0);
+  RunTestGQTensorDotMultiCase(dten_2d_s, drand());
+  dten_3d_s.Random(qn0);
+  RunTestGQTensorDotMultiCase(dten_3d_s, drand());
+
+  zten_scalar.Random(U1QN());
+  auto rand_z = zrand();
+  auto multied_ten_z = rand_z * zten_scalar;
+  EXPECT_COMPLEX_EQ(
+      multied_ten_z.GetElem({}),
+      rand_z * zten_scalar.GetElem({})
+  );
+
+  zten_1d_s.Random(qn0);
+  RunTestGQTensorDotMultiCase(zten_1d_s, zrand());
+  zten_2d_s.Random(qn0);
+  RunTestGQTensorDotMultiCase(zten_2d_s, zrand());
+  zten_3d_s.Random(qn0);
+  RunTestGQTensorDotMultiCase(zten_3d_s, zrand());
 }

@@ -76,6 +76,7 @@ public:
       const BlockSparseDataTensor &
   );
   void AddAndAssignIn(const BlockSparseDataTensor &);
+  void MultiplyByScalar(const ElemT);
 
   // Operators overload
   bool operator==(const BlockSparseDataTensor &) const;
@@ -140,6 +141,7 @@ private:
 
   // Raw data operations.
   void RawDataFree_(void);
+  void RawDataDiscard_(void);
   void RawDataAlloc_(const size_t);
   void RawDataInsert_(const size_t, const size_t, const bool init = false);
   void RawDataRand_(void);
@@ -147,7 +149,7 @@ private:
   GQTEN_Double RawDataNormalize_(void);
   void RawDataConj_(void);
   void RawDataCopy_(const std::vector<RawDataCopyTask> &, const ElemT *);
-  void RawDataDiscard_(void);
+  void RawDataMultiplyByScalar_(const ElemT);
 };
 
 
@@ -570,6 +572,17 @@ void BlockSparseDataTensor<ElemT, QNT>::AddAndAssignIn(
 
 
 /**
+Multiply this block sparse data tensor by a scalar.
+
+@param s A scalar.
+*/
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::MultiplyByScalar(const ElemT s) {
+  RawDataMultiplyByScalar_(s);
+}
+
+
+/**
 Re-calculate and reset the data offset of each data block in a BlkIdxDataBlkMap.
 
 @param blk_idx_data_blk_map A block index <-> data block mapping.
@@ -619,6 +632,18 @@ Release the raw data, set the pointer to null, set the size to 0.
 template <typename ElemT, typename QNT>
 void BlockSparseDataTensor<ElemT, QNT>::RawDataFree_(void) {
   free(pactual_raw_data_);
+  pactual_raw_data_ = nullptr;
+  actual_raw_data_size_ = 0;
+}
+
+
+/**
+Directly set raw data point to nullptr and set actual raw data size to 0.
+
+@note The memory may leak!!
+*/
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::RawDataDiscard_(void) {
   pactual_raw_data_ = nullptr;
   actual_raw_data_size_ = 0;
 }
@@ -744,6 +769,9 @@ void BlockSparseDataTensor<ElemT, QNT>::RawDataConj_(void) {
 /**
 Copy a piece of raw data from another place. You can decided whether add this
 piece on the original one.
+
+@param raw_data_copy_tasks Raw data copy task list.
+@param psrc_raw_data The pointer to source data.
 */
 template <typename ElemT, typename QNT>
 void BlockSparseDataTensor<ElemT, QNT>::RawDataCopy_(
@@ -769,14 +797,15 @@ void BlockSparseDataTensor<ElemT, QNT>::RawDataCopy_(
 
 
 /**
-Directly set raw data point to nullptr and set actual raw data size to 0.
+Multiply the raw data by a scalar.
 
-@note The memory may leak!!
+@param s A scalar.
 */
 template <typename ElemT, typename QNT>
-void BlockSparseDataTensor<ElemT, QNT>::RawDataDiscard_(void) {
-  pactual_raw_data_ = nullptr;
-  actual_raw_data_size_ = 0;
+void BlockSparseDataTensor<ElemT, QNT>::RawDataMultiplyByScalar_(
+    const ElemT s
+) {
+  hp_numeric::VectorScale(pactual_raw_data_, actual_raw_data_size_, s);
 }
 } /* gqten */
 #endif /* ifndef GQTEN_GQTENSOR_BLK_SPAR_DATA_TEN_BLK_SPAR_DATA_TEN_H */

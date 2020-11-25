@@ -115,6 +115,8 @@ public:
 
   GQTensor operator+(const GQTensor &) const;
   GQTensor &operator+=(const GQTensor &);
+  GQTensor operator*(const ElemT) const;
+  GQTensor& operator*=(const ElemT);
 
 
 private:
@@ -160,6 +162,29 @@ private:
     return make_pair(blk_coors, data_coors);
   }
 };
+
+// Out-of-class declaration and definition.
+template <typename GQTensorT>
+GQTensorT Dag(const GQTensorT &);
+
+template <typename ElemT, typename QNT>
+QNT Div(const GQTensor<ElemT, QNT> &);
+
+template <typename ElemT, typename QNT>
+GQTensor<ElemT, QNT> operator*(
+    const GQTEN_Double scalar,
+    const GQTensor<ElemT, QNT> &t
+) {
+  return t * scalar;
+}
+
+template <typename ElemT, typename QNT>
+GQTensor<ElemT, QNT> operator*(
+    const GQTEN_Complex scalar,
+    const GQTensor<ElemT, QNT> &t
+) {
+  return t * scalar;
+}
 
 
 /**
@@ -530,7 +555,40 @@ GQTensor<ElemT, QNT> &GQTensor<ElemT, QNT>::operator+=(const GQTensor &rhs) {
 }
 
 
-// Helper functions.
+/**
+Multiply a GQTensor by a scalar (real/complex number).
+
+@param s A scalar.
+*/
+template <typename ElemT, typename QNT>
+GQTensor<ElemT, QNT> GQTensor<ElemT, QNT>::operator*(const ElemT s) const {
+  assert(!IsDefault());
+  GQTensor<ElemT, QNT> res(*this);
+  if (IsScalar()) {
+    res.scalar_ *= s;
+  } else {
+    res.pblk_spar_data_ten_->MultiplyByScalar(s);
+  }
+  return res;
+}
+
+
+/**
+Multiply a GQTensor by a scalar (real/complex number) and assign back.
+
+@param s A scalar.
+*/
+template <typename ElemT, typename QNT>
+GQTensor<ElemT, QNT> &GQTensor<ElemT, QNT>::operator*=(const ElemT s) {
+  assert(!IsDefault());
+  if (IsScalar()) {
+    scalar_ *= s;
+  } else {
+    pblk_spar_data_ten_->MultiplyByScalar(s);
+  }
+  return *this;
+}
+
 
 /**
 Calculate dagger of a GQTensor.
