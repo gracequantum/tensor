@@ -147,7 +147,7 @@ private:
   GQTEN_Double RawDataNormalize_(void);
   void RawDataConj_(void);
   void RawDataCopy_(const std::vector<RawDataCopyTask> &, const ElemT *);
-  void RawDataSetPtrToNull_(void);
+  void RawDataDiscard_(void);
 };
 
 
@@ -512,7 +512,7 @@ void BlockSparseDataTensor<ElemT, QNT>::AddAndAssignIn(
   // Copy block index <-> data block map and save actual raw data pointer.
   BlkIdxDataBlkMap this_blk_idx_data_blk_map(blk_idx_data_blk_map_);
   ElemT *this_pactual_raw_data_ = pactual_raw_data_;
-  RawDataSetPtrToNull_();
+  RawDataDiscard_();
 
   // Create raw data copy tasks for this tensor.
   std::vector<RawDataCopyTask> raw_data_copy_tasks_this;
@@ -769,13 +769,14 @@ void BlockSparseDataTensor<ElemT, QNT>::RawDataCopy_(
 
 
 /**
-Directly set raw data point to nullptr.
+Directly set raw data point to nullptr and set actual raw data size to 0.
 
 @note The memory may leak!!
 */
 template <typename ElemT, typename QNT>
-void BlockSparseDataTensor<ElemT, QNT>::RawDataSetPtrToNull_(void) {
+void BlockSparseDataTensor<ElemT, QNT>::RawDataDiscard_(void) {
   pactual_raw_data_ = nullptr;
+  actual_raw_data_size_ = 0;
 }
 } /* gqten */
 #endif /* ifndef GQTEN_GQTENSOR_BLK_SPAR_DATA_TEN_BLK_SPAR_DATA_TEN_H */
