@@ -113,6 +113,9 @@ public:
   bool operator==(const GQTensor &) const;
   bool operator!=(const GQTensor &rhs) const { return !(*this == rhs); }
 
+  GQTensor operator+(const GQTensor &) const;
+  GQTensor &operator+=(const GQTensor &);
+
 
 private:
   /// The rank of the GQTensor.
@@ -472,6 +475,57 @@ void GQTensor<ElemT, QNT>::Dag(void) {
   } else {
     for (auto &index : indexes_) { index.Inverse(); }
     pblk_spar_data_ten_->Conj();
+  }
+}
+
+
+/**
+Add this GQTensor \f$ A \f$ and another GQTensor \f$ B \f$.
+
+@param rhs Another GQTensor \f$ B \f$.
+
+@return \f$ A + B \f$.
+*/
+template <typename ElemT, typename QNT>
+GQTensor<ElemT, QNT> GQTensor<ElemT, QNT>::operator+(
+    const GQTensor &rhs
+) const {
+  assert(!(IsDefault() || rhs.IsDefault()));
+  if (IsScalar()) {
+    assert(rhs.IsScalar());
+    GQTensor<ElemT, QNT> res(IndexVec<QNT>{});
+    res.scalar_ = scalar_ + rhs.scalar_;
+    return res;
+  } else {
+    assert(indexes_ == rhs.indexes_);
+    GQTensor<ElemT, QNT> res(indexes_);
+    res.pblk_spar_data_ten_->AddTwoBSDTAndAssignIn(
+        *pblk_spar_data_ten_,
+        *rhs.pblk_spar_data_ten_
+    );
+    return res;
+  }
+}
+
+
+/**
+Add and assign another GQTensor \f$ B \f$ to this tensor.
+
+@param rhs Another GQTensor \f$ B \f$.
+
+@return \f$ A = A + B \f$.
+*/
+template <typename ElemT, typename QNT>
+GQTensor<ElemT, QNT> &GQTensor<ElemT, QNT>::operator+=(const GQTensor &rhs) {
+  assert(!(IsDefault() || rhs.IsDefault()));
+  if (IsScalar()) {
+    assert(rhs.IsScalar());
+    scalar_ += rhs.scalar_;
+    return *this;
+  } else {
+    assert(indexes_ == rhs.indexes_);
+    pblk_spar_data_ten_->AddAndAssignIn(*rhs.pblk_spar_data_ten_);
+    return *this;
   }
 }
 

@@ -15,7 +15,7 @@
 #define GQTEN_GQTENSOR_BLK_SPAR_DATA_TEN_RAW_DATA_OPERATION_TASKS_H
 
 
-#include "gqten/framework/value_t.h"    // ShapeT
+#include "gqten/framework/value_t.h"    // ShapeT, CoorsT
 
 #include <vector>       // vector
 #include <algorithm>    // sort
@@ -24,6 +24,9 @@
 namespace gqten {
 
 
+/**
+Task for data transpose.
+*/
 struct RawDataTransposeTask {
   size_t ten_rank = 0;
 
@@ -82,6 +85,30 @@ struct RawDataTransposeTask {
         }
     );
   }
+};
+
+
+/**
+Task for data copy.
+*/
+struct RawDataCopyTask {
+  CoorsT src_blk_coors;
+  size_t src_data_offset;
+  size_t src_data_size;
+
+  size_t dest_data_offset;
+
+  bool copy_and_add;
+
+  RawDataCopyTask(
+      const CoorsT &src_blk_coors,
+      const size_t src_data_offset,
+      const size_t src_data_size,
+      const bool copy_and_add = false) :
+      src_blk_coors(src_blk_coors),
+      src_data_offset(src_data_offset),
+      src_data_size(src_data_size),
+      copy_and_add(copy_and_add) {}
 };
 } /* gqten */
 #endif /* ifndef GQTEN_GQTENSOR_BLK_SPAR_DATA_TEN_RAW_DATA_OPERATION_TASKS_H */

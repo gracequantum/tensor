@@ -714,3 +714,68 @@ TEST_F(TestGQTensor, TestDiv) {
   RunTestGQTensorDivCase(zten_3d_s, qnm1);
   RunTestGQTensorDivCase(zten_3d_s, qnp2);
 }
+
+
+template <typename GQTensorT>
+void RunTestGQTensorSumCase(const GQTensorT &lhs, const GQTensorT &rhs) {
+  auto sum1 = lhs + rhs;
+  GQTensorT sum2(lhs);
+  sum2 += rhs;
+  for (auto &coors : GenAllCoors(lhs.GetShape())) {
+    auto elem_sum = lhs.GetElem(coors) + rhs.GetElem(coors);
+    EXPECT_EQ(sum1.GetElem(coors), elem_sum);
+    EXPECT_EQ(sum2.GetElem(coors), elem_sum);
+  }
+  EXPECT_EQ(sum1, sum2);
+}
+
+
+TEST_F(TestGQTensor, TestSummation) {
+  dten_scalar.Random(U1QN());
+  RunTestGQTensorSumCase(dten_scalar, dten_scalar);
+
+  DGQTensor dten_1d_s1(dten_1d_s);
+  dten_1d_s1.Random(qn0);
+  RunTestGQTensorSumCase(dten_1d_s1, dten_1d_s1);
+  DGQTensor dten_1d_s2(dten_1d_s);
+  dten_1d_s2.Random(qnp1);
+  RunTestGQTensorSumCase(dten_1d_s1, dten_1d_s2);
+
+  DGQTensor dten_2d_s1(dten_2d_s);
+  dten_2d_s1.Random(qn0);
+  RunTestGQTensorSumCase(dten_2d_s1, dten_2d_s1);
+  DGQTensor dten_2d_s2(dten_2d_s);
+  dten_2d_s2.Random(qnp1);
+  RunTestGQTensorSumCase(dten_2d_s1, dten_2d_s2);
+
+  DGQTensor dten_3d_s1(dten_3d_s);
+  dten_3d_s1.Random(qn0);
+  RunTestGQTensorSumCase(dten_3d_s1, dten_3d_s1);
+  DGQTensor dten_3d_s2(dten_3d_s);
+  dten_3d_s2.Random(qnp1);
+  RunTestGQTensorSumCase(dten_3d_s1, dten_3d_s2);
+
+  zten_scalar.Random(U1QN());
+  RunTestGQTensorSumCase(zten_scalar, zten_scalar);
+
+  ZGQTensor zten_1d_s1(zten_1d_s);
+  zten_1d_s1.Random(qn0);
+  RunTestGQTensorSumCase(zten_1d_s1, zten_1d_s1);
+  ZGQTensor zten_1d_s2(zten_1d_s);
+  zten_1d_s2.Random(qnp1);
+  RunTestGQTensorSumCase(zten_1d_s1, zten_1d_s2);
+
+  ZGQTensor zten_2d_s1(zten_2d_s);
+  zten_2d_s1.Random(qn0);
+  RunTestGQTensorSumCase(zten_2d_s1, zten_2d_s1);
+  ZGQTensor zten_2d_s2(zten_2d_s);
+  zten_2d_s2.Random(qnp1);
+  RunTestGQTensorSumCase(zten_2d_s1, zten_2d_s2);
+
+  ZGQTensor zten_3d_s1(zten_3d_s);
+  zten_3d_s1.Random(qn0);
+  RunTestGQTensorSumCase(zten_3d_s1, zten_3d_s1);
+  ZGQTensor zten_3d_s2(zten_3d_s);
+  zten_3d_s2.Random(qnp1);
+  RunTestGQTensorSumCase(zten_3d_s1, zten_3d_s2);
+}

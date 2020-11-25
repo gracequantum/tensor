@@ -17,6 +17,7 @@
 #include "gqten/framework/value_t.h"                                      // CoorsT, ShapeT
 #include "gqten/framework/bases/streamable.h"                             // Streamable
 #include "gqten/framework/hp_numeric/ten_trans.h"                         // TensorTranspose
+#include "gqten/framework/hp_numeric/blas_level1.h"                       // VectorAddTo
 #include "gqten/gqtensor/index.h"                                         // IndexVec, CalcQNSctNumOfIdxs
 #include "gqten/gqtensor/blk_spar_data_ten/data_blk.h"                    // DataBlk
 #include "gqten/gqtensor/blk_spar_data_ten/raw_data_operation_tasks.h"    // RawDataTransposeTask
@@ -70,6 +71,11 @@ public:
   void Transpose(const std::vector<size_t> &);
   GQTEN_Double Normalize(void);
   void Conj(void);
+  void AddTwoBSDTAndAssignIn(
+      const BlockSparseDataTensor &,
+      const BlockSparseDataTensor &
+  );
+  void AddAndAssignIn(const BlockSparseDataTensor &);
 
   // Operators overload
   bool operator==(const BlockSparseDataTensor &) const;
@@ -140,6 +146,8 @@ private:
   void RawDataTranspose_(const std::vector<RawDataTransposeTask> &);
   GQTEN_Double RawDataNormalize_(void);
   void RawDataConj_(void);
+  void RawDataCopy_(const std::vector<RawDataCopyTask> &, const ElemT *);
+  void RawDataSetPtrToNull_(void);
 };
 
 
@@ -174,6 +182,7 @@ BlockSparseDataTensor<ElemT, QNT>::BlockSparseDataTensor(
     blk_multi_dim_offsets(bsdt.blk_multi_dim_offsets),
     blk_idx_data_blk_map_(bsdt.blk_idx_data_blk_map_),
     pgqten_indexes(bsdt.pgqten_indexes),
+    raw_data_size_(bsdt.raw_data_size_),
     actual_raw_data_size_(bsdt.actual_raw_data_size_) {
   if (bsdt.pactual_raw_data_ != nullptr) {
     auto data_byte_size = actual_raw_data_size_ * sizeof(ElemT);
@@ -429,6 +438,138 @@ void BlockSparseDataTensor<ElemT, QNT>::Conj(void) {
 
 
 /**
+Add two input block sparse data tensor together and assign into this tensor.
+
+@param a Block sparse data tensor A.
+@param b Block sparse data tensor B.
+*/
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::AddTwoBSDTAndAssignIn(
+    const BlockSparseDataTensor &a,
+    const BlockSparseDataTensor &b) {
+  auto blk_idx_data_blk_map_a = a.GetBlkIdxDataBlkMap();
+  std::vector<RawDataCopyTask> raw_data_copy_tasks_a;
+  for (auto &blk_idx_data_blk : blk_idx_data_blk_map_a) {
+    auto data_blk = blk_idx_data_blk.second;
+    DataBlkInsert(data_blk.blk_coors, false);
+    raw_data_copy_tasks_a.push_back(
+        RawDataCopyTask(data_blk.blk_coors, data_blk.data_offset, data_blk.size)
+    );
+  }
+
+  auto blk_idx_data_blk_map_b = b.GetBlkIdxDataBlkMap();
+  std::vector<RawDataCopyTask> raw_data_copy_tasks_b;
+  for (auto &blk_idx_data_blk : blk_idx_data_blk_map_b) {
+    auto blk_idx = blk_idx_data_blk.first;
+    auto data_blk = blk_idx_data_blk.second;
+    if (blk_idx_data_blk_map_a.find(blk_idx) != blk_idx_data_blk_map_a.end()) {
+      raw_data_copy_tasks_b.push_back(
+          RawDataCopyTask(
+              data_blk.blk_coors,
+              data_blk.data_offset,
+              data_blk.size,
+              true
+          )
+      );
+    } else {
+      DataBlkInsert(data_blk.blk_coors, false);
+      raw_data_copy_tasks_b.push_back(
+          RawDataCopyTask(
+              data_blk.blk_coors,
+              data_blk.data_offset,
+              data_blk.size
+          )
+      );
+    }
+  }
+
+  // Get data offset in destination.
+  for (auto &task : raw_data_copy_tasks_a) {
+    task.dest_data_offset = blk_idx_data_blk_map_[
+                              BlkCoorsToBlkIdx(task.src_blk_coors)
+                            ].data_offset;
+  }
+  for (auto &task : raw_data_copy_tasks_b) {
+    task.dest_data_offset = blk_idx_data_blk_map_[
+                                BlkCoorsToBlkIdx(task.src_blk_coors)
+                            ].data_offset;
+  }
+
+  Allocate();
+  RawDataCopy_(raw_data_copy_tasks_a, a.pactual_raw_data_);
+  RawDataCopy_(raw_data_copy_tasks_b, b.pactual_raw_data_);
+}
+
+
+/**
+Add another block sparse data tensor to this block sparse data tensor.
+
+@param rhs Block sparse data tensor on the right hand side.
+*/
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::AddAndAssignIn(
+    const BlockSparseDataTensor &rhs) {
+  // Copy block index <-> data block map and save actual raw data pointer.
+  BlkIdxDataBlkMap this_blk_idx_data_blk_map(blk_idx_data_blk_map_);
+  ElemT *this_pactual_raw_data_ = pactual_raw_data_;
+  RawDataSetPtrToNull_();
+
+  // Create raw data copy tasks for this tensor.
+  std::vector<RawDataCopyTask> raw_data_copy_tasks_this;
+  for (auto &blk_idx_data_blk : this_blk_idx_data_blk_map) {
+    auto data_blk = blk_idx_data_blk.second;
+    raw_data_copy_tasks_this.push_back(
+        RawDataCopyTask(data_blk.blk_coors, data_blk.data_offset, data_blk.size)
+    );
+  }
+
+  // Create raw data copy tasks for tensor on the right hand side.
+  auto blk_idx_data_blk_map_rhs = rhs.GetBlkIdxDataBlkMap();
+  std::vector<RawDataCopyTask> raw_data_copy_tasks_rhs;
+  for (auto &blk_idx_data_blk : blk_idx_data_blk_map_rhs) {
+    auto blk_idx = blk_idx_data_blk.first;
+    auto data_blk = blk_idx_data_blk.second;
+    if (blk_idx_data_blk_map_.find(blk_idx) != blk_idx_data_blk_map_.end()) {
+      raw_data_copy_tasks_rhs.push_back(
+          RawDataCopyTask(
+              data_blk.blk_coors,
+              data_blk.data_offset,
+              data_blk.size,
+              true
+          )
+      );
+    } else {
+      DataBlkInsert(data_blk.blk_coors, false);
+      raw_data_copy_tasks_rhs.push_back(
+          RawDataCopyTask(
+              data_blk.blk_coors,
+              data_blk.data_offset,
+              data_blk.size
+          )
+      );
+    }
+  }
+
+  // Get data offset in result block sparse data tensor.
+  for (auto &task : raw_data_copy_tasks_this) {
+    task.dest_data_offset = blk_idx_data_blk_map_[
+                              BlkCoorsToBlkIdx(task.src_blk_coors)
+                            ].data_offset;
+  }
+  for (auto &task : raw_data_copy_tasks_rhs) {
+    task.dest_data_offset = blk_idx_data_blk_map_[
+                                BlkCoorsToBlkIdx(task.src_blk_coors)
+                            ].data_offset;
+  }
+
+  Allocate();
+  RawDataCopy_(raw_data_copy_tasks_this, this_pactual_raw_data_);
+  free(this_pactual_raw_data_);
+  RawDataCopy_(raw_data_copy_tasks_rhs, rhs.pactual_raw_data_);
+}
+
+
+/**
 Re-calculate and reset the data offset of each data block in a BlkIdxDataBlkMap.
 
 @param blk_idx_data_blk_map A block index <-> data block mapping.
@@ -597,6 +738,44 @@ void BlockSparseDataTensor<ElemT, QNT>::RawDataConj_(void) {
       pactual_raw_data_[i] = CalcConj(pactual_raw_data_[i]);
     }
   }
+}
+
+
+/**
+Copy a piece of raw data from another place. You can decided whether add this
+piece on the original one.
+*/
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::RawDataCopy_(
+    const std::vector<RawDataCopyTask> &raw_data_copy_tasks,
+    const ElemT *psrc_raw_data
+) {
+  for (auto &task : raw_data_copy_tasks) {
+    if (task.copy_and_add) {
+      hp_numeric::VectorAddTo(
+          psrc_raw_data + task.src_data_offset,
+          task.src_data_size,
+          pactual_raw_data_ + task.dest_data_offset
+      );
+    } else {
+      memcpy(
+          pactual_raw_data_ + task.dest_data_offset,
+          psrc_raw_data + task.src_data_offset,
+          task.src_data_size * sizeof(ElemT)
+      );
+    }
+  }
+}
+
+
+/**
+Directly set raw data point to nullptr.
+
+@note The memory may leak!!
+*/
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::RawDataSetPtrToNull_(void) {
+  pactual_raw_data_ = nullptr;
 }
 } /* gqten */
 #endif /* ifndef GQTEN_GQTENSOR_BLK_SPAR_DATA_TEN_BLK_SPAR_DATA_TEN_H */
