@@ -117,6 +117,7 @@ public:
   bool operator==(const GQTensor &) const;
   bool operator!=(const GQTensor &rhs) const { return !(*this == rhs); }
 
+  GQTensor operator-(void) const;
   GQTensor operator+(const GQTensor &) const;
   GQTensor &operator+=(const GQTensor &);
   GQTensor operator*(const ElemT) const;
@@ -512,6 +513,20 @@ void GQTensor<ElemT, QNT>::Dag(void) {
     for (auto &index : indexes_) { index.Inverse(); }
     pblk_spar_data_ten_->Conj();
   }
+}
+
+
+/**
+Calculate \f$ -1 * T \f$.
+
+@return \f$ -T \f$.
+*/
+template <typename ElemT, typename QNT>
+GQTensor<ElemT, QNT> GQTensor<ElemT, QNT>::operator-(void) const {
+  assert(!IsDefault());
+  GQTensor<ElemT, QNT> res(*this);
+  res *= -1.0;
+  return res;
 }
 
 
