@@ -104,7 +104,7 @@ public:
   @return Corresponding block index.
   */
   size_t BlkCoorsToBlkIdx(const CoorsT &blk_coors) const {
-    return CalcEffOneDimArrayOffset(blk_coors, blk_multi_dim_offsets);
+    return CalcEffOneDimArrayOffset(blk_coors, blk_multi_dim_offsets_);
   }
 
   /// Get block index <-> data block map.
@@ -126,33 +126,37 @@ public:
   size_t ten_rank = 0;
   /// Block shape.
   ShapeT blk_shape;
-  /// Block multi-dimension data offsets;
-  std::vector<size_t> blk_multi_dim_offsets;
   /// A pointer which point to the indexes of corresponding GQTensor.
   const IndexVec<QNT> *pgqten_indexes = nullptr;
 
 private:
+  /// Ordered map from block index to data block for existed blocks.
+  BlkIdxDataBlkMap blk_idx_data_blk_map_;
+
+  /// Block multi-dimension data offsets;
+  std::vector<size_t> blk_multi_dim_offsets_;
+
   /**
-  Pointer which point to the actual one-dimensional data array (the raw data).
-  @note This variable will only be changed in Constructors and RawData* member functions.
+  Size of the raw data in this block sparse data tensor. This size must equal to
+  the sum of the size of each existed DataBlk.
+
+  @note This variable will only be changed in DataBlk* member functions.
   */
-  ElemT *pactual_raw_data_ = nullptr;
+  size_t raw_data_size_ = 0;
 
   /**
   Actual size of the raw data. This size must equal to the of pactual_raw_data_.
+
   @note This variable will only be changed in Constructors and RawData* member functions.
   */
   size_t actual_raw_data_size_ = 0;
 
   /**
-  Size of the raw data in this block sparse data tensor. This size must equal to
-  the sum of the size of each existed DataBlk.
-  @note This variable will only be changed in DataBlk* member functions.
-  */
-  size_t raw_data_size_ = 0;
+  Pointer which point to the actual one-dimensional data array (the raw data).
 
-  /// Ordered map from block index to data block for existed blocks.
-  BlkIdxDataBlkMap blk_idx_data_blk_map_;
+  @note This variable will only be changed in Constructors and RawData* member functions.
+  */
+  ElemT *pactual_raw_data_ = nullptr;
 
   // Private data block operations.
   void DataBlkClear_(void);
@@ -192,7 +196,7 @@ BlockSparseDataTensor<ElemT, QNT>::BlockSparseDataTensor(
 ) : pgqten_indexes(pgqten_indexes) {
   ten_rank = pgqten_indexes->size();
   blk_shape = CalcQNSctNumOfIdxs(*pgqten_indexes);
-  blk_multi_dim_offsets = CalcMultiDimDataOffsets(blk_shape);
+  blk_multi_dim_offsets_ = CalcMultiDimDataOffsets(blk_shape);
 }
 
 
@@ -207,7 +211,7 @@ BlockSparseDataTensor<ElemT, QNT>::BlockSparseDataTensor(
 ) :
     ten_rank(bsdt.ten_rank),
     blk_shape(bsdt.blk_shape),
-    blk_multi_dim_offsets(bsdt.blk_multi_dim_offsets),
+    blk_multi_dim_offsets_(bsdt.blk_multi_dim_offsets_),
     blk_idx_data_blk_map_(bsdt.blk_idx_data_blk_map_),
     pgqten_indexes(bsdt.pgqten_indexes),
     raw_data_size_(bsdt.raw_data_size_),
@@ -231,7 +235,7 @@ BlockSparseDataTensor<ElemT, QNT>::operator=(const BlockSparseDataTensor &rhs) {
   free(pactual_raw_data_);
   ten_rank = rhs.ten_rank;
   blk_shape = rhs.blk_shape;
-  blk_multi_dim_offsets = rhs.blk_multi_dim_offsets;
+  blk_multi_dim_offsets_ = rhs.blk_multi_dim_offsets_;
   blk_idx_data_blk_map_ = rhs.blk_idx_data_blk_map_;
   pgqten_indexes = rhs.pgqten_indexes;
   actual_raw_data_size_ = rhs.actual_raw_data_size_;
@@ -406,7 +410,7 @@ void BlockSparseDataTensor<ElemT, QNT>::Transpose(
   }
 
   Reorder(blk_shape, transed_idxes_order);
-  blk_multi_dim_offsets = CalcMultiDimDataOffsets(blk_shape);
+  blk_multi_dim_offsets_ = CalcMultiDimDataOffsets(blk_shape);
 
   std::vector<RawDataTransposeTask> raw_data_trans_tasks;
   BlkIdxDataBlkMap transed_blk_idx_data_blk_map;
