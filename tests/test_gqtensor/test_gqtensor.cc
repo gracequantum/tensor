@@ -5,11 +5,7 @@
 *
 * Description: GraceQ/tensor project. Unittests for GQTensor object.
 */
-#include "gqten/gqtensor/gqtensor.h"        // GQTensor
-#include "gqten/gqtensor/index.h"           // Index
-#include "gqten/gqtensor/qn/qn.h"           // QN
-#include "gqten/gqtensor/qn/qnval_u1.h"     // U1QNVal
-#include "gqten/gqtensor/qnsct.h"           // QNSectorVec
+#include "gqten/gqtensor_all.h"      // GQTensor, Index, QN, U1QNVal, QNSectorVec
 #include "gqten/utility/utils_inl.h"        // GenAllCoors
 
 #include "gtest/gtest.h"
