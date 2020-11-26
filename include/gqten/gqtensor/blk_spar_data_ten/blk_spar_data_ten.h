@@ -23,12 +23,12 @@
 #include "gqten/gqtensor/blk_spar_data_ten/raw_data_operation_tasks.h"    // RawDataTransposeTask
 #include "gqten/utility/utils_inl.h"                                      // CalcEffOneDimArrayOffset, CalcMultiDimDataOffsets, Rand, Reorder, CalcScalarNorm2, CalcConj
 
-#include <map>      // map
-#include <cmath>    // sqrt
+#include <map>          // map
+#include <cmath>        // sqrt
+#include <iostream>     // endl, istream, ostream
 
 #include <stdlib.h>     // malloc
 #include <string.h>     // memcpy, memset
-
 #include <assert.h>     // assert
 
 
@@ -50,8 +50,7 @@ Block sparse data tensor.
 @tparam QNT   Type of the quantum number.
 */
 template <typename ElemT, typename QNT>
-//class BlockSparseDataTensor : public Streamable {
-class BlockSparseDataTensor {
+class BlockSparseDataTensor : public Streamable {
 public:
   /// Type of block index to data block ordered mapping.
   using BlkIdxDataBlkMap = std::map<size_t, DataBlk<QNT>>;
@@ -67,11 +66,11 @@ public:
 
   void ElemSet(const std::pair<CoorsT, CoorsT> &, const ElemT);
 
-  // Data block level operations.
+  // Data block level operations
   typename BlkIdxDataBlkMap::iterator
   DataBlkInsert(const CoorsT &blk_coors, const bool alloc_mem = true);
 
-  // Global level operations.
+  // Global level operations
   void Clear(void);
   void Allocate(void);
   void Random(void);
@@ -91,6 +90,10 @@ public:
   bool operator!=(const BlockSparseDataTensor &rhs) const {
     return !(*this == rhs);
   }
+
+  // Override base class
+  void StreamRead(std::istream &) override;
+  void StreamWrite(std::ostream &) const override;
 
   // Misc
   /**
@@ -170,6 +173,9 @@ private:
   void RawDataConj_(void);
 
   void RawDataMultiplyByScalar_(const ElemT);
+
+  void RawDataRead_(std::istream &);
+  void RawDataWrite_(std::ostream &) const;
 };
 
 
@@ -627,6 +633,35 @@ void BlockSparseDataTensor<ElemT, QNT>::CopyFromReal(
 }
 
 
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::StreamRead(std::istream &is) {
+  size_t data_blk_num;
+  is >> data_blk_num;
+  for (size_t i = 0; i < data_blk_num; ++i) {
+    CoorsT blk_coors(ten_rank);
+    for (size_t j = 0; j < ten_rank; ++j) {
+      is >> blk_coors[j];
+    }
+    DataBlkInsert(blk_coors, false);
+  }
+  Allocate();
+  RawDataRead_(is);
+}
+
+
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::StreamWrite(std::ostream &os) const {
+  os << blk_idx_data_blk_map_.size() << std::endl;
+  for (auto &blk_idx_data_blk : blk_idx_data_blk_map_) {
+    for (auto &blk_coor : blk_idx_data_blk.second.blk_coors) {
+      os << blk_coor << std::endl;
+    }
+  }
+  RawDataWrite_(os);
+}
+
+
+
 /**
 Re-calculate and reset the data offset of each data block in a BlkIdxDataBlkMap.
 
@@ -865,6 +900,30 @@ void BlockSparseDataTensor<ElemT, QNT>::RawDataMultiplyByScalar_(
     const ElemT s
 ) {
   hp_numeric::VectorScale(pactual_raw_data_, actual_raw_data_size_, s);
+}
+
+
+/**
+Read raw data from a stream.
+
+@param is Input stream.
+*/
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::RawDataRead_(std::istream &is) {
+  is.seekg(1, std::ios::cur);    // Skip the line break.
+  is.read((char *) pactual_raw_data_, actual_raw_data_size_ * sizeof(ElemT));
+}
+
+
+/**
+Write raw data to a stream.
+
+@param os Output stream.
+*/
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::RawDataWrite_(std::ostream &os) const {
+  os.write((char *) pactual_raw_data_, actual_raw_data_size_ * sizeof(ElemT));
+  os << std::endl;
 }
 } /* gqten */
 #endif /* ifndef GQTEN_GQTENSOR_BLK_SPAR_DATA_TEN_BLK_SPAR_DATA_TEN_H */

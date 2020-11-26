@@ -15,6 +15,8 @@
 #include "gtest/gtest.h"
 #include "../testing_utility.h"     // RandInt, RandUnsignedInt, TransCoors
 
+#include <fstream>    // ifstream, ofstream
+
 
 using namespace gqten;
 
@@ -857,4 +859,52 @@ TEST_F(TestGQTensor, TestToComplex) {
   RunTestGQTensorToComplexCase(dten_3d_s, qn0, 1);
   RunTestGQTensorToComplexCase(dten_3d_s, qnp1, 0);
   RunTestGQTensorToComplexCase(dten_3d_s, qnp1, 1);
+}
+
+
+template <typename GQTensorT>
+void RunTestGQTensorFileIOCase(const GQTensorT &t) {
+  std::string file = "test.gqten";
+  std::ofstream out(file, std::ofstream::binary);
+  out << t;
+  out.close();
+  std::ifstream in(file, std::ifstream::binary);
+  GQTensorT t_cpy;
+  in >> t_cpy;
+  in.close();
+  std::remove(file.c_str());
+  EXPECT_EQ(t_cpy, t);
+}
+
+
+TEST_F(TestGQTensor, FileIO) {
+  dten_scalar.Random(U1QN());
+  RunTestGQTensorFileIOCase(dten_scalar);
+  dten_1d_s.Random(qn0);
+  RunTestGQTensorFileIOCase(dten_1d_s);
+  dten_1d_s.Random(qnp1);
+  RunTestGQTensorFileIOCase(dten_1d_s);
+  dten_2d_s.Random(qn0);
+  RunTestGQTensorFileIOCase(dten_2d_s);
+  dten_2d_s.Random(qnp1);
+  RunTestGQTensorFileIOCase(dten_2d_s);
+  dten_3d_s.Random(qn0);
+  RunTestGQTensorFileIOCase(dten_3d_s);
+  dten_3d_s.Random(qnp1);
+  RunTestGQTensorFileIOCase(dten_3d_s);
+
+  zten_scalar.Random(U1QN());
+  RunTestGQTensorFileIOCase(zten_scalar);
+  zten_1d_s.Random(qn0);
+  RunTestGQTensorFileIOCase(zten_1d_s);
+  zten_1d_s.Random(qnp1);
+  RunTestGQTensorFileIOCase(zten_1d_s);
+  zten_2d_s.Random(qn0);
+  RunTestGQTensorFileIOCase(zten_2d_s);
+  zten_2d_s.Random(qnp1);
+  RunTestGQTensorFileIOCase(zten_2d_s);
+  zten_3d_s.Random(qn0);
+  RunTestGQTensorFileIOCase(zten_3d_s);
+  zten_3d_s.Random(qnp1);
+  RunTestGQTensorFileIOCase(zten_3d_s);
 }

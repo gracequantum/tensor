@@ -21,7 +21,7 @@
 #include "gqten/utility/utils_inl.h"                                // GenAllCoors, Rand, Reorder, CalcScalarNorm, CalcConj
 
 #include <vector>       // vector
-#include <iostream>     // cout, endl
+#include <iostream>     // cout, endl, istream, ostream
 #include <iterator>     // next
 #include <algorithm>    // is_sorted
 
@@ -43,8 +43,7 @@ Symmetry-blocked sparse tensor.
 @tparam QNT   Type of the quantum number.
 */
 template <typename ElemT, typename QNT>
-//class GQTensor : public Streamable {
-class GQTensor {
+class GQTensor : public Streamable {
 public:
   // Constructors and destructor.
   /// Default constructor.
@@ -122,6 +121,10 @@ public:
   GQTensor &operator+=(const GQTensor &);
   GQTensor operator*(const ElemT) const;
   GQTensor& operator*=(const ElemT);
+
+  // Override base class
+  void StreamRead(std::istream &) override;
+  void StreamWrite(std::ostream &) const override;
 
 
 private:
@@ -598,6 +601,39 @@ GQTensor<ElemT, QNT> &GQTensor<ElemT, QNT>::operator*=(const ElemT s) {
 }
 
 
+template <typename ElemT, typename QNT>
+void GQTensor<ElemT, QNT>::StreamRead(std::istream &is) {
+  assert(IsDefault());    // Only default tensor can read data
+  is >> rank_;
+  if (rank_ == 0) {       // Scalar case
+    is.seekg(1, std::ios::cur);    // Skip the line break
+    is.read((char *) &scalar_, sizeof(ElemT));
+    size_ = 1;
+  } else {
+    indexes_ = IndexVec<QNT>(rank_);
+    for (auto &index : indexes_) { is >> index; }
+    shape_ = CalcShape_();
+    size_ = CalcSize_();
+    pblk_spar_data_ten_ = new BlockSparseDataTensor<ElemT, QNT>(&indexes_);
+    is >> (*pblk_spar_data_ten_);
+  }
+}
+
+
+template <typename ElemT, typename QNT>
+void GQTensor<ElemT, QNT>::StreamWrite(std::ostream &os) const {
+  assert(!IsDefault());
+  os << rank_ << std::endl;
+  if (IsScalar()) {
+    os.write((char *) &scalar_, sizeof(ElemT));     // Use this way to keep the full precision
+    os << std::endl;
+  } else {
+    for (auto &index : indexes_) { os << index; }
+    os << (*pblk_spar_data_ten_);
+  }
+}
+
+
 /**
 Calculate dagger of a GQTensor.
 
@@ -611,6 +647,7 @@ GQTensorT Dag(const GQTensorT &t) {
   t_dag.Dag();
   return t_dag;
 }
+
 
 /**
 Calculate the quantum number divergence of a GQTensor.
