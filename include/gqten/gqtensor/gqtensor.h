@@ -77,6 +77,11 @@ public:
   }
 
   /// Get the block sparse data tensor constant.
+  BlockSparseDataTensor<ElemT, QNT> &GetBlkSparDataTen(void) {
+    return *pblk_spar_data_ten_;
+  }
+
+  /// Get the block sparse data tensor constant.
   const BlockSparseDataTensor<ElemT, QNT> &GetBlkSparDataTen(void) const {
     return *pblk_spar_data_ten_;
   }
@@ -169,6 +174,9 @@ GQTensorT Dag(const GQTensorT &);
 
 template <typename ElemT, typename QNT>
 QNT Div(const GQTensor<ElemT, QNT> &);
+
+template <typename QNT>
+GQTensor<GQTEN_Complex, QNT> ToComplex(const GQTensor<GQTEN_Double, QNT> &);
 
 template <typename ElemT, typename QNT>
 GQTensor<ElemT, QNT> operator*(
@@ -644,6 +652,24 @@ QNT Div(const GQTensor<ElemT, QNT> &t) {
       return div;
     }
   }
+}
+
+
+/**
+Convert a real GQTensor to a complex GQTensor.
+*/
+template <typename QNT>
+GQTensor<GQTEN_Complex, QNT> ToComplex(
+    const GQTensor<GQTEN_Double, QNT> &real_t
+) {
+  assert(!real_t.IsDefault());
+  GQTensor<GQTEN_Complex, QNT> cplx_t(real_t.GetIndexes());
+  if (cplx_t.IsScalar()) {
+    cplx_t.SetElem({}, real_t.GetElem({}));
+  } else {
+    cplx_t.GetBlkSparDataTen().CopyFromReal(real_t.GetBlkSparDataTen());
+  }
+  return cplx_t;
 }
 } /* gqten */
 #endif /* ifndef GQTEN_GQTENSOR_GQTENSOR_H */

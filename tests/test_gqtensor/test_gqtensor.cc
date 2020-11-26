@@ -822,3 +822,39 @@ TEST_F(TestGQTensor, TestDotMultiplication) {
   zten_3d_s.Random(qn0);
   RunTestGQTensorDotMultiCase(zten_3d_s, zrand());
 }
+
+
+template <typename QNT>
+void RunTestGQTensorToComplexCase(
+    GQTensor<GQTEN_Double, QNT> &t,
+    const QNT & div,
+    unsigned int rand_seed) {
+  srand(rand_seed);
+  t.Random(div);
+  auto zten = ToComplex(t);
+  for (auto &coors : GenAllCoors(t.GetShape())) {
+    EXPECT_DOUBLE_EQ(zten.GetElem(coors).real(), t.GetElem(coors));
+    EXPECT_DOUBLE_EQ(zten.GetElem(coors).imag(), 0.0);
+  }
+}
+
+
+TEST_F(TestGQTensor, TestToComplex) {
+  dten_scalar.Random(U1QN());
+  auto zten = ToComplex(dten_scalar);
+  EXPECT_DOUBLE_EQ(zten.GetElem({}).real(), dten_scalar.GetElem({}));
+  EXPECT_DOUBLE_EQ(zten.GetElem({}).imag(), 0.0);
+
+  RunTestGQTensorToComplexCase(dten_1d_s, qn0, 0);
+  RunTestGQTensorToComplexCase(dten_1d_s, qn0, 1);
+  RunTestGQTensorToComplexCase(dten_1d_s, qnp1, 0);
+  RunTestGQTensorToComplexCase(dten_1d_s, qnp1, 1);
+  RunTestGQTensorToComplexCase(dten_2d_s, qn0, 0);
+  RunTestGQTensorToComplexCase(dten_2d_s, qn0, 1);
+  RunTestGQTensorToComplexCase(dten_2d_s, qnp1, 0);
+  RunTestGQTensorToComplexCase(dten_2d_s, qnp1, 1);
+  RunTestGQTensorToComplexCase(dten_3d_s, qn0, 0);
+  RunTestGQTensorToComplexCase(dten_3d_s, qn0, 1);
+  RunTestGQTensorToComplexCase(dten_3d_s, qnp1, 0);
+  RunTestGQTensorToComplexCase(dten_3d_s, qnp1, 1);
+}

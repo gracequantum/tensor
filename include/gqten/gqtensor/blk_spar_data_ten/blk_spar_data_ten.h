@@ -29,6 +29,13 @@
 #include <stdlib.h>     // malloc
 #include <string.h>     // memcpy, memset
 
+#include <assert.h>     // assert
+
+
+#ifdef Release
+  #define NDEBUG
+#endif
+
 
 namespace gqten {
 
@@ -77,6 +84,7 @@ public:
   );
   void AddAndAssignIn(const BlockSparseDataTensor &);
   void MultiplyByScalar(const ElemT);
+  void CopyFromReal(const BlockSparseDataTensor<GQTEN_Double, QNT> &);
 
   // Operators overload
   bool operator==(const BlockSparseDataTensor &) const;
@@ -101,6 +109,13 @@ public:
     return blk_idx_data_blk_map_;
   }
 
+  /// Get the pointer to actual raw data constant.
+  const ElemT *GetActualRawDataPtr(void) const { return pactual_raw_data_; }
+
+  /// Get the actual raw data size.
+  size_t GetActualRawDataSize(void) const { return actual_raw_data_size_; }
+
+  // Static members.
   static void ResetDataOffset(BlkIdxDataBlkMap &);
 
 
@@ -142,13 +157,18 @@ private:
   // Raw data operations.
   void RawDataFree_(void);
   void RawDataDiscard_(void);
+
   void RawDataAlloc_(const size_t);
   void RawDataInsert_(const size_t, const size_t, const bool init = false);
+
+  void RawDataCopy_(const std::vector<RawDataCopyTask> &, const ElemT *);
+  void RawDataDuplicateFromReal_(const GQTEN_Double *, const size_t);
+
   void RawDataRand_(void);
   void RawDataTranspose_(const std::vector<RawDataTransposeTask> &);
   GQTEN_Double RawDataNormalize_(void);
   void RawDataConj_(void);
-  void RawDataCopy_(const std::vector<RawDataCopyTask> &, const ElemT *);
+
   void RawDataMultiplyByScalar_(const ElemT);
 };
 
@@ -583,6 +603,31 @@ void BlockSparseDataTensor<ElemT, QNT>::MultiplyByScalar(const ElemT s) {
 
 
 /**
+Copy contents from a real block sparse data tensor.
+
+@param real_bsdt A real block sparse data tensor.
+*/
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::CopyFromReal(
+    const BlockSparseDataTensor<GQTEN_Double, QNT> &real_bsdt
+) {
+  Clear();
+  if (std::is_same<ElemT, GQTEN_Complex>::value) {
+    for (auto &blk_idx_data_blk : real_bsdt.GetBlkIdxDataBlkMap()) {
+      DataBlkInsert(blk_idx_data_blk.second.blk_coors, false);
+    }
+    Allocate();
+    RawDataDuplicateFromReal_(
+        real_bsdt.GetActualRawDataPtr(),
+        real_bsdt.GetActualRawDataSize()
+    );
+  } else {
+    assert(false);    // TODO: To-be implemented!
+  }
+}
+
+
+/**
 Re-calculate and reset the data offset of each data block in a BlkIdxDataBlkMap.
 
 @param blk_idx_data_blk_map A block index <-> data block mapping.
@@ -792,6 +837,20 @@ void BlockSparseDataTensor<ElemT, QNT>::RawDataCopy_(
           task.src_data_size * sizeof(ElemT)
       );
     }
+  }
+}
+
+
+/**
+Duplicate a whole same size real raw data array from another place.
+*/
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::RawDataDuplicateFromReal_(
+    const GQTEN_Double *preal_raw_data_, const size_t size) {
+  if (std::is_same<ElemT, GQTEN_Complex>::value) {
+    hp_numeric::VectorRealToCplx(preal_raw_data_, size, pactual_raw_data_);
+  } else {
+    assert(false);    // TODO: To-be implemented!
   }
 }
 

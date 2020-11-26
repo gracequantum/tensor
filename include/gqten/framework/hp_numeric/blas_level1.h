@@ -16,7 +16,14 @@
 
 #include "gqten/framework/value_t.h"      // GQTEN_Double, GQTEN_Complex
 
-#include "mkl.h"      // cblas_*axpy
+#include <assert.h>     // assert
+
+#include "mkl.h"      // cblas_*axpy, cblas_*scal
+
+
+#ifdef Release
+  #define NDEBUG
+#endif
 
 
 namespace gqten {
@@ -60,6 +67,15 @@ inline void VectorScale(
     const GQTEN_Complex a
 ) {
   cblas_zscal(size, &a, x, 1);
+}
+
+
+inline void VectorRealToCplx(
+    const GQTEN_Double *real,
+    const size_t size,
+    GQTEN_Complex *cplx
+) {
+  for (size_t i = 0; i < size; ++i) { cplx[i]= real[i]; }
 }
 } /* hp_numeric */
 } /* gqten */
