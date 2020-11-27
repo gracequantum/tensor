@@ -643,78 +643,6 @@ TEST_F(TestGQTensor, TestNormalize) {
 
 
 template <typename GQTensorT>
-void RunTestGQTensorDagCase(const GQTensorT &t) {
-  if (t.IsDefault()) {
-    // Do nothing
-  } else if (t.IsScalar()) {
-    auto t_dag = Dag(t);
-    EXPECT_EQ(t_dag.GetElem({}), std::conj(t.GetElem({})));
-  } else {
-    auto t_dag = Dag(t);
-    for (size_t i = 0; i < t.Rank(); ++i) {
-      EXPECT_EQ(t_dag.GetIndexes()[i], InverseIndex(t.GetIndexes()[i]));
-    }
-    for (auto &coor : GenAllCoors(t.GetShape())) {
-      EXPECT_EQ(t_dag.GetElem(coor), std::conj(t.GetElem(coor)));
-    }
-  }
-}
-
-
-TEST_F(TestGQTensor, TestDag) {
-  RunTestGQTensorDagCase(dten_default);
-  dten_1d_s.Random(qn0);
-  RunTestGQTensorDagCase(dten_1d_s);
-  dten_2d_s.Random(qn0);
-  RunTestGQTensorDagCase(dten_2d_s);
-  dten_3d_s.Random(qn0);
-  RunTestGQTensorDagCase(dten_3d_s);
-
-  RunTestGQTensorDagCase(zten_default);
-  zten_1d_s.Random(qn0);
-  RunTestGQTensorDagCase(zten_1d_s);
-  zten_2d_s.Random(qn0);
-  RunTestGQTensorDagCase(zten_2d_s);
-  zten_3d_s.Random(qn0);
-  RunTestGQTensorDagCase(zten_3d_s);
-}
-
-
-template <typename ElemT, typename QNT>
-void RunTestGQTensorDivCase(GQTensor<ElemT, QNT> &t, const QNT &div) {
-  t.Random(div);
-  EXPECT_EQ(Div(t), div);
-}
-
-
-TEST_F(TestGQTensor, TestDiv) {
-  dten_scalar.Random(U1QN());
-  EXPECT_EQ(Div(dten_scalar), U1QN());
-  RunTestGQTensorDivCase(dten_1d_s, qn0);
-  RunTestGQTensorDivCase(dten_2d_s, qn0);
-  RunTestGQTensorDivCase(dten_2d_s, qnp1);
-  RunTestGQTensorDivCase(dten_2d_s, qnm1);
-  RunTestGQTensorDivCase(dten_2d_s, qnp2);
-  RunTestGQTensorDivCase(dten_3d_s, qn0);
-  RunTestGQTensorDivCase(dten_3d_s, qnp1);
-  RunTestGQTensorDivCase(dten_3d_s, qnm1);
-  RunTestGQTensorDivCase(dten_3d_s, qnp2);
-
-  zten_scalar.Random(U1QN());
-  EXPECT_EQ(Div(zten_scalar), U1QN());
-  RunTestGQTensorDivCase(zten_1d_s, qn0);
-  RunTestGQTensorDivCase(zten_2d_s, qn0);
-  RunTestGQTensorDivCase(zten_2d_s, qnp1);
-  RunTestGQTensorDivCase(zten_2d_s, qnm1);
-  RunTestGQTensorDivCase(zten_2d_s, qnp2);
-  RunTestGQTensorDivCase(zten_3d_s, qn0);
-  RunTestGQTensorDivCase(zten_3d_s, qnp1);
-  RunTestGQTensorDivCase(zten_3d_s, qnm1);
-  RunTestGQTensorDivCase(zten_3d_s, qnp2);
-}
-
-
-template <typename GQTensorT>
 void RunTestGQTensorSumCase(const GQTensorT &lhs, const GQTensorT &rhs) {
   auto sum1 = lhs + rhs;
   GQTensorT sum2(lhs);
@@ -819,42 +747,6 @@ TEST_F(TestGQTensor, TestDotMultiplication) {
   RunTestGQTensorDotMultiCase(zten_2d_s, zrand());
   zten_3d_s.Random(qn0);
   RunTestGQTensorDotMultiCase(zten_3d_s, zrand());
-}
-
-
-template <typename QNT>
-void RunTestGQTensorToComplexCase(
-    GQTensor<GQTEN_Double, QNT> &t,
-    const QNT & div,
-    unsigned int rand_seed) {
-  srand(rand_seed);
-  t.Random(div);
-  auto zten = ToComplex(t);
-  for (auto &coors : GenAllCoors(t.GetShape())) {
-    EXPECT_DOUBLE_EQ(zten.GetElem(coors).real(), t.GetElem(coors));
-    EXPECT_DOUBLE_EQ(zten.GetElem(coors).imag(), 0.0);
-  }
-}
-
-
-TEST_F(TestGQTensor, TestToComplex) {
-  dten_scalar.Random(U1QN());
-  auto zten = ToComplex(dten_scalar);
-  EXPECT_DOUBLE_EQ(zten.GetElem({}).real(), dten_scalar.GetElem({}));
-  EXPECT_DOUBLE_EQ(zten.GetElem({}).imag(), 0.0);
-
-  RunTestGQTensorToComplexCase(dten_1d_s, qn0, 0);
-  RunTestGQTensorToComplexCase(dten_1d_s, qn0, 1);
-  RunTestGQTensorToComplexCase(dten_1d_s, qnp1, 0);
-  RunTestGQTensorToComplexCase(dten_1d_s, qnp1, 1);
-  RunTestGQTensorToComplexCase(dten_2d_s, qn0, 0);
-  RunTestGQTensorToComplexCase(dten_2d_s, qn0, 1);
-  RunTestGQTensorToComplexCase(dten_2d_s, qnp1, 0);
-  RunTestGQTensorToComplexCase(dten_2d_s, qnp1, 1);
-  RunTestGQTensorToComplexCase(dten_3d_s, qn0, 0);
-  RunTestGQTensorToComplexCase(dten_3d_s, qn0, 1);
-  RunTestGQTensorToComplexCase(dten_3d_s, qnp1, 0);
-  RunTestGQTensorToComplexCase(dten_3d_s, qnp1, 1);
 }
 
 

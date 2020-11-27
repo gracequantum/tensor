@@ -43,19 +43,24 @@ add_unittest(test_qn "test_gqtensor/test_qn.cc" "" "" "")
 ## Test quantum number sector object.
 add_unittest(test_qnsct "test_gqtensor/test_qnsct.cc" "" "" "")
 
-## Test quantum number sector set object.
-#add_unittest(test_qnsectorset test_qnsectorset.cc "" "" "${MATH_LIB_LINK_FLAGS}")
-
 ## Test index object.
 add_unittest(test_index "test_gqtensor/test_index.cc" "" "" "")
 
-## Test dense block labeled by the quantum numbers, QNBlock.
-#add_unittest(test_qnblock test_qnblock.cc "" "" "${MATH_LIB_LINK_FLAGS}")
-
 ## Test symmetry-blocked sparse tensor, GQTensor.
-add_unittest(test_gqtensor "test_gqtensor/test_gqtensor.cc" "" "" "${MATH_LIB_LINK_FLAGS}")
+add_unittest(test_gqtensor
+  "test_gqtensor/test_gqtensor.cc"
+  "${MATH_LIB_COMPILE_FLAGS}" "" "${MATH_LIB_LINK_FLAGS}"
+)
 
-## Test tensor numerical functions.
+## Test tensor manipulation functions.
+# Test basic tensor operations.
+add_unittest(test_basic_operations
+  "test_tensor_manipulation/test_basic_operations.cc"
+  "${MATH_LIB_COMPILE_FLAGS}" "" "${MATH_LIB_LINK_FLAGS}"
+)
+
+
+
 ## Test tensor contraction.
 #add_unittest(test_ten_ctrct
   #test_ten_ctrct.cc "${MATH_LIB_COMPILE_FLAGS}"

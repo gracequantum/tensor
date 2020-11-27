@@ -143,15 +143,6 @@ private:
 };
 
 // Out-of-class declaration and definition.
-template <typename GQTensorT>
-GQTensorT Dag(const GQTensorT &);
-
-template <typename ElemT, typename QNT>
-QNT Div(const GQTensor<ElemT, QNT> &);
-
-template <typename QNT>
-GQTensor<GQTEN_Complex, QNT> ToComplex(const GQTensor<GQTEN_Double, QNT> &);
-
 template <typename ElemT, typename QNT>
 inline GQTensor<ElemT, QNT> operator*(
     const GQTEN_Double scalar,
