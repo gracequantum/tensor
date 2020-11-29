@@ -16,6 +16,7 @@
 
 #include "gqten/gqtensor/blk_spar_data_ten/blk_spar_data_ten.h"
 #include "gqten/framework/value_t.h"                                      // GQTEN_Double, GQTEN_Complex
+#include "gqten/framework/hp_numeric/ten_trans.h"                         // TensorTranspose
 #include "gqten/gqtensor/blk_spar_data_ten/data_blk.h"                    // DataBlk
 #include "gqten/utility/utils_inl.h"                                      // CalcMultiDimDataOffsets, Reorder
 
@@ -286,6 +287,95 @@ Multiply this block sparse data tensor by a scalar.
 template <typename ElemT, typename QNT>
 void BlockSparseDataTensor<ElemT, QNT>::MultiplyByScalar(const ElemT s) {
   RawDataMultiplyByScalar_(s);
+}
+
+
+/**
+Contract two block sparse data tensors follow a queue of raw data contraction
+tasks.
+*/
+template <typename ElemT, typename QNT>
+ElemT BlockSparseDataTensor<ElemT, QNT>::CtrctTwoBSDTAndAssignIn(
+    const BlockSparseDataTensor &bsdt_a,
+    const BlockSparseDataTensor &bsdt_b,
+    std::vector<RawDataCtrctTask> &raw_data_ctrct_tasks
+) {
+  ElemT poss_scalar = 0.0;
+  if (raw_data_ctrct_tasks.empty()) { return poss_scalar; }
+
+  if (raw_data_size_ != 0) { Allocate(); }    // TODO: Move scalar_ in BSDT!
+
+  bool a_need_trans = raw_data_ctrct_tasks[0].a_need_trans;
+  bool b_need_trans = raw_data_ctrct_tasks[0].b_need_trans;
+  std::unordered_map<size_t, ElemT *> a_blk_idx_transed_data_map;
+  std::unordered_map<size_t, ElemT *> b_blk_idx_transed_data_map;
+  RawDataCtrctTask::SortTasksByCBlkIdx(raw_data_ctrct_tasks);
+  for (auto &task : raw_data_ctrct_tasks) {
+    const ElemT *a_data;
+    const ElemT *b_data;
+    if (a_need_trans) {
+      auto poss_it = a_blk_idx_transed_data_map.find(task.a_blk_idx);
+      if (poss_it != a_blk_idx_transed_data_map.end()) {
+        a_data = poss_it->second;
+      } else {
+        auto a_data_blk = bsdt_a.blk_idx_data_blk_map_.at(task.a_blk_idx);
+        ElemT *transed_data = (ElemT *) malloc(a_data_blk.size * sizeof(ElemT));
+        ShapeT a_blk_transed_shape(a_data_blk.shape);
+        Reorder(a_blk_transed_shape, task.a_trans_orders);
+        hp_numeric::TensorTranspose(
+            task.a_trans_orders,
+            bsdt_a.ten_rank,
+            bsdt_a.pactual_raw_data_ + task.a_data_offset,
+            a_data_blk.shape,
+            transed_data,
+            a_blk_transed_shape
+        );
+        a_blk_idx_transed_data_map[task.a_blk_idx] = transed_data;
+        a_data = transed_data;
+      }
+    } else {
+      a_data = bsdt_a.pactual_raw_data_ + task.a_data_offset;
+    }
+    if (b_need_trans) {
+      auto poss_it = b_blk_idx_transed_data_map.find(task.b_blk_idx);
+      if (poss_it != b_blk_idx_transed_data_map.end()) {
+        b_data = poss_it->second;
+      } else {
+        auto b_data_blk = bsdt_b.blk_idx_data_blk_map_.at(task.b_blk_idx);
+        ElemT *transed_data = (ElemT *) malloc(b_data_blk.size * sizeof(ElemT));
+        ShapeT b_blk_transed_shape(b_data_blk.shape);
+        Reorder(b_blk_transed_shape, task.b_trans_orders);
+        hp_numeric::TensorTranspose(
+            task.b_trans_orders,
+            bsdt_b.ten_rank,
+            bsdt_b.pactual_raw_data_ + task.b_data_offset,
+            b_data_blk.shape,
+            transed_data,
+            b_blk_transed_shape
+        );
+        b_blk_idx_transed_data_map[task.b_blk_idx] = transed_data;
+        b_data = transed_data;
+      }
+    } else {
+      b_data = bsdt_b.pactual_raw_data_ + task.b_data_offset;
+    }
+    poss_scalar += RawDataTwoMatMultiplyAndAssignIn_(
+                       a_data,
+                       b_data,
+                       task.c_data_offset,
+                       task.m, task.k, task.n,
+                       task.beta
+                   );
+  }
+
+  for (auto &blk_idx_transed_data : a_blk_idx_transed_data_map) {
+    free(blk_idx_transed_data.second);
+  }
+  for (auto &blk_idx_transed_data : b_blk_idx_transed_data_map) {
+    free(blk_idx_transed_data.second);
+  }
+
+  return poss_scalar;
 }
 
 

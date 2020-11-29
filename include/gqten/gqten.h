@@ -25,49 +25,49 @@
 namespace gqten {
 
 
-// Tensor numerical functions.
-// Tensors contraction.
-template <typename TenElemType>
-void Contract(
-    const GQTensor<TenElemType> *, const GQTensor<TenElemType> *,
-    const std::vector<std::vector<long>> &,
-    GQTensor<TenElemType> *);
+//// Tensor numerical functions.
+//// Tensors contraction.
+//template <typename TenElemType>
+//void Contract(
+    //const GQTensor<TenElemType> *, const GQTensor<TenElemType> *,
+    //const std::vector<std::vector<long>> &,
+    //GQTensor<TenElemType> *);
 
-// This API just for forward compatibility, it will be deleted soon.
-// TODO: Remove these API.
-inline DGQTensor *Contract(
-    const DGQTensor &ta, const DGQTensor &tb,
-    const std::vector<std::vector<long>> &axes_set) {
-  auto res_t = new DGQTensor();
-  Contract(&ta, &tb, axes_set, res_t);
-  return res_t;
-}
+//// This API just for forward compatibility, it will be deleted soon.
+//// TODO: Remove these API.
+//inline DGQTensor *Contract(
+    //const DGQTensor &ta, const DGQTensor &tb,
+    //const std::vector<std::vector<long>> &axes_set) {
+  //auto res_t = new DGQTensor();
+  //Contract(&ta, &tb, axes_set, res_t);
+  //return res_t;
+//}
 
-inline ZGQTensor *Contract(
-    const ZGQTensor &ta, const ZGQTensor &tb,
-    const std::vector<std::vector<long>> &axes_set) {
-  auto res_t = new ZGQTensor();
-  Contract(&ta, &tb, axes_set, res_t);
-  return res_t;
-}
+//inline ZGQTensor *Contract(
+    //const ZGQTensor &ta, const ZGQTensor &tb,
+    //const std::vector<std::vector<long>> &axes_set) {
+  //auto res_t = new ZGQTensor();
+  //Contract(&ta, &tb, axes_set, res_t);
+  //return res_t;
+//}
 
-inline ZGQTensor *Contract(
-    const DGQTensor &ta, const ZGQTensor &tb,
-    const std::vector<std::vector<long>> &axes_set) {
-  auto res_t = new ZGQTensor();
-  auto zta = ToComplex(ta);
-  Contract(&zta, &tb, axes_set, res_t);
-  return res_t;
-}
+//inline ZGQTensor *Contract(
+    //const DGQTensor &ta, const ZGQTensor &tb,
+    //const std::vector<std::vector<long>> &axes_set) {
+  //auto res_t = new ZGQTensor();
+  //auto zta = ToComplex(ta);
+  //Contract(&zta, &tb, axes_set, res_t);
+  //return res_t;
+//}
 
-inline ZGQTensor *Contract(
-    const ZGQTensor &ta, const DGQTensor &tb,
-    const std::vector<std::vector<long>> &axes_set) {
-  auto res_t = new ZGQTensor();
-  auto ztb = ToComplex(tb);
-  Contract(&ta, &ztb, axes_set, res_t);
-  return res_t;
-}
+//inline ZGQTensor *Contract(
+    //const ZGQTensor &ta, const DGQTensor &tb,
+    //const std::vector<std::vector<long>> &axes_set) {
+  //auto res_t = new ZGQTensor();
+  //auto ztb = ToComplex(tb);
+  //Contract(&ta, &ztb, axes_set, res_t);
+  //return res_t;
+//}
 
 
 // Tensors linear combination.

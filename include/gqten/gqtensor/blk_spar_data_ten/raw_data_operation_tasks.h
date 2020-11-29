@@ -110,5 +110,83 @@ struct RawDataCopyTask {
       src_data_size(src_data_size),
       copy_and_add(copy_and_add) {}
 };
+
+
+struct RawDataCtrctTask {
+  size_t a_blk_idx;
+  size_t a_data_offset;
+  bool a_need_trans;
+  std::vector<size_t> a_trans_orders;
+
+  size_t b_blk_idx;
+  size_t b_data_offset;
+  bool b_need_trans;
+  std::vector<size_t> b_trans_orders;
+
+  size_t c_blk_idx;
+  size_t c_data_offset;
+
+  size_t m;
+  size_t k;
+  size_t n;
+  GQTEN_Double beta;
+
+  RawDataCtrctTask(
+      const size_t a_blk_idx,
+      const size_t a_data_offset,
+      const bool a_need_trans,
+      const size_t b_blk_idx,
+      const size_t b_data_offset,
+      const bool b_need_trans,
+      const size_t m,
+      const size_t k,
+      const size_t n,
+      const GQTEN_Double beta
+  ) : a_blk_idx(a_blk_idx),
+      a_data_offset(a_data_offset),
+      a_need_trans(a_need_trans),
+      b_blk_idx(b_blk_idx),
+      b_data_offset(b_data_offset),
+      b_need_trans(b_need_trans),
+      m(m), k(k), n(n),
+      beta(beta) {}
+
+  RawDataCtrctTask(
+      const size_t a_blk_idx,
+      const size_t a_data_offset,
+      const bool a_need_trans,
+      const size_t b_blk_idx,
+      const size_t b_data_offset,
+      const bool b_need_trans,
+      const size_t c_blk_idx,
+      const size_t m,
+      const size_t k,
+      const size_t n,
+      const GQTEN_Double beta
+  ) : a_blk_idx(a_blk_idx),
+      a_data_offset(a_data_offset),
+      a_need_trans(a_need_trans),
+      b_blk_idx(b_blk_idx),
+      b_data_offset(b_data_offset),
+      b_need_trans(b_need_trans),
+      c_blk_idx(c_blk_idx),
+      m(m), k(k), n(n),
+      beta(beta) {}
+
+  static void SortTasksByCBlkIdx(
+      std::vector<RawDataCtrctTask> & tasks
+  ) {
+    std::sort(
+        tasks.begin(),
+        tasks.end(),
+        [] (
+            const RawDataCtrctTask &task_a,
+            const RawDataCtrctTask &task_b
+        ) -> bool {
+          return task_a.c_blk_idx < task_b.c_blk_idx;
+        }
+    );
+  }
+};
 } /* gqten */
 #endif /* ifndef GQTEN_GQTENSOR_BLK_SPAR_DATA_TEN_RAW_DATA_OPERATION_TASKS_H */

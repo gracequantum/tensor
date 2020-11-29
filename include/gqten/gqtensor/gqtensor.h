@@ -39,11 +39,16 @@ public:
   // Constructors and destructor.
   /// Default constructor.
   GQTensor(void) = default;
+
   GQTensor(const IndexVec<QNT> &);
+  GQTensor(IndexVec<QNT> &&);
+
   GQTensor(const GQTensor &);
   GQTensor &operator=(const GQTensor &);
+
   GQTensor(GQTensor &&) noexcept;
   GQTensor &operator=(GQTensor &&) noexcept;
+
   /// Destroy a GQTensor.
   ~GQTensor(void) { delete pblk_spar_data_ten_; }
 

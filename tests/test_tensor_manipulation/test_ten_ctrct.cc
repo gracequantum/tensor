@@ -1,41 +1,48 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 /*
 * Author: Rongyang Sun <sun-rongyang@outlook.com>
-* Creation Date: 2019-08-10 19:39
-* 
-* Description: GraceQ/tensor project. Unittests for tensor contraction functions.
+* Creation Date: 2020-11-29 09:33
+*
+* Description: GraceQ/tensor project. Unittests for tensor contraction.
 */
-#include <cmath>
+#include "gqten/gqtensor_all.h"
+#include "gqten/tensor_manipulation/ten_ctrct.h"            // Contract
+#include "gqten/tensor_manipulation/basic_operations.h"     // Dag
 
 #include "gtest/gtest.h"
+#include "../testing_utility.h"
 
-#include "gqten/gqten.h"
-#include "testing_utils.h"
-
-#include "mkl.h"    // Included after other header file. Because GraceQ needs redefine MKL_Complex16 to gqten::GQTEN_Complex .
+#include "mkl.h"    // Included after other header file. Because GraceQ needs redefine MKL_Complex16 to gqten::GQTEN_Complex
 
 
 using namespace gqten;
 
+using U1QN = QN<U1QNVal>;
+using IndexT = Index<U1QN>;
+using QNSctT = QNSector<U1QN>;
+using QNSctVecT = QNSectorVec<U1QN>;
+
+using DGQTensor = GQTensor<GQTEN_Double, U1QN>;
+using ZGQTensor = GQTensor<GQTEN_Complex, U1QN>;
 
 struct TestContraction : public testing::Test {
   std::string qn_nm = "qn";
-  QN qn0 =  QN({QNNameVal(qn_nm,  0)});
-  QN qnp1 = QN({QNNameVal(qn_nm,  1)});
-  QN qnp2 = QN({QNNameVal(qn_nm,  2)});
-  QN qnm1 = QN({QNNameVal(qn_nm, -1)});
+  U1QN qn0 =  U1QN({QNCard(qn_nm, U1QNVal( 0))});
+  U1QN qnp1 = U1QN({QNCard(qn_nm, U1QNVal( 1))});
+  U1QN qnp2 = U1QN({QNCard(qn_nm, U1QNVal( 2))});
+  U1QN qnm1 = U1QN({QNCard(qn_nm, U1QNVal(-1))});
   int d_s = 3;
-  QNSector qnsct0_s =  QNSector(qn0,  d_s);
-  QNSector qnsctp1_s = QNSector(qnp1, d_s);
-  QNSector qnsctm1_s = QNSector(qnm1, d_s);
+  QNSctT qnsct0_s =  QNSctT(qn0,  d_s);
+  QNSctT qnsctp1_s = QNSctT(qnp1, d_s);
+  QNSctT qnsctm1_s = QNSctT(qnm1, d_s);
   int d_l = 10;
-  QNSector qnsct0_l =  QNSector(qn0,  d_l);
-  QNSector qnsctp1_l = QNSector(qnp1, d_l);
-  QNSector qnsctm1_l = QNSector(qnm1, d_l);
-  Index idx_in_s =  Index({qnsctm1_s, qnsct0_s, qnsctp1_s}, IN);
-  Index idx_out_s = Index({qnsctm1_s, qnsct0_s, qnsctp1_s}, OUT);
-  Index idx_in_l =  Index({qnsctm1_l, qnsct0_l, qnsctp1_l}, IN);
-  Index idx_out_l = Index({qnsctm1_l, qnsct0_l, qnsctp1_l}, OUT);
+  QNSctT qnsct0_l =  QNSctT(qn0,  d_l);
+  QNSctT qnsctp1_l = QNSctT(qnp1, d_l);
+  QNSctT qnsctm1_l = QNSctT(qnm1, d_l);
+  IndexT idx_in_s =  IndexT({qnsctm1_s, qnsct0_s, qnsctp1_s}, GQTenIndexDirType::IN);
+  IndexT idx_out_s = IndexT({qnsctm1_s, qnsct0_s, qnsctp1_s}, GQTenIndexDirType::OUT);
+  IndexT idx_in_l =  IndexT({qnsctm1_l, qnsct0_l, qnsctp1_l}, GQTenIndexDirType::IN);
+  IndexT idx_out_l = IndexT({qnsctm1_l, qnsct0_l, qnsctp1_l}, GQTenIndexDirType::OUT);
 
   DGQTensor dten_1d_s = DGQTensor({idx_out_s});
   DGQTensor dten_1d_l = DGQTensor({idx_out_l});
@@ -53,19 +60,18 @@ struct TestContraction : public testing::Test {
 };
 
 
-template <typename TenElemType>
-void RunTestTenCtrct1DCase(GQTensor<TenElemType> &t, const QN &div) {
+template <typename QNT, typename TenElemT>
+void RunTestTenCtrct1DCase(GQTensor<TenElemT, QNT> &t, const QNT &div) {
   t.Random(div);
-  TenElemType res = 0;
-  for (auto &blk : t.cblocks()) {
-    for (long i = 0; i < blk->size; ++i) {
-      res += std::norm(blk->cdata()[i]);
-    }
-  }
-  GQTensor<TenElemType> t_res;
+  GQTensor<TenElemT, QNT> t_res;
   auto t_dag = Dag(t);
   Contract(&t, &t_dag, {{0}, {0}}, &t_res);
-  GtestExpectNear(t_res.scalar, res, kEpsilon);
+
+  TenElemT res = 0.0;
+  for (auto &coors : GenAllCoors(t.GetShape())) {
+    res += std::norm(t.GetElem(coors));
+  }
+  GtestExpectNear(t_res.GetElem({}), res, kEpsilon);
 }
 
 
@@ -80,26 +86,28 @@ TEST_F(TestContraction, 1DCase) {
 }
 
 
-template <typename TenElemType>
+template <typename TenElemT, typename QNT>
 void RunTestTenCtrct2DCase1(
-    GQTensor<TenElemType> &ta, GQTensor<TenElemType> &tb) {
-  auto m = ta.shape[0];
-  auto n = tb.shape[1];
-  auto k1 = ta.shape[1];
-  auto k2 = tb.shape[0];
+    const GQTensor<TenElemT, QNT> &ta,
+    const GQTensor<TenElemT, QNT> &tb
+) {
+  auto m = ta.GetShape()[0];
+  auto n = tb.GetShape()[1];
+  auto k1 = ta.GetShape()[1];
+  auto k2 = tb.GetShape()[0];
   auto ta_size = m * k1;
   auto tb_size = k2 * n;
-  auto dense_ta =  new TenElemType [ta_size];
-  auto dense_tb =  new TenElemType [tb_size];
-  auto dense_res = new TenElemType [m * n];
-  long idx = 0;
-  for (auto &coor : ta.CoorsIter()) {
-    dense_ta[idx] = ta.Elem(coor);
+  auto dense_ta =  new TenElemT [ta_size];
+  auto dense_tb =  new TenElemT [tb_size];
+  auto dense_res = new TenElemT [m * n];
+  size_t idx = 0;
+  for (auto &coors : GenAllCoors(ta.GetShape())) {
+    dense_ta[idx] = ta.GetElem(coors);
     idx++;
   }
   idx = 0;
-  for (auto &coor : tb.CoorsIter()) {
-    dense_tb[idx] = tb.Elem(coor);
+  for (auto &coors : GenAllCoors(ta.GetShape())) {
+    dense_tb[idx] = tb.GetElem(coors);
     idx++;
   }
   CblasGemm(
@@ -110,11 +118,11 @@ void RunTestTenCtrct2DCase1(
       dense_tb, n,
       0.0,
       dense_res, n);
-  GQTensor<TenElemType> res;
+  GQTensor<TenElemT, QNT> res;
   Contract(&ta, &tb, {{1}, {0}}, &res);
   idx = 0;
-  for (auto &coor : res.CoorsIter()) {
-    GtestExpectNear(res.Elem(coor), dense_res[idx], kEpsilon);
+  for (auto &coors : GenAllCoors(res.GetShape())) {
+    GtestExpectNear(res.GetElem(coors), dense_res[idx], kEpsilon);
     idx++;
   }
   delete [] dense_ta;
@@ -123,34 +131,36 @@ void RunTestTenCtrct2DCase1(
 }
 
 
-template <typename TenElemType>
+template <typename TenElemT, typename QNT>
 void RunTestTenCtrct2DCase2(
-    GQTensor<TenElemType> &ta, GQTensor<TenElemType> &tb) {
-  auto m = ta.shape[0];
-  auto n = tb.shape[1];
-  auto k1 = ta.shape[1];
-  auto k2 = tb.shape[0];
+    const GQTensor<TenElemT, QNT> &ta,
+    const GQTensor<TenElemT, QNT> &tb
+) {
+  auto m = ta.GetShape()[0];
+  auto n = tb.GetShape()[1];
+  auto k1 = ta.GetShape()[1];
+  auto k2 = tb.GetShape()[0];
   auto ta_size = m * k1;
   auto tb_size = k2 * n;
-  auto dense_ta =  new TenElemType [ta_size];
-  auto dense_tb =  new TenElemType [tb_size];
-  long idx = 0;
-  for (auto &coor : ta.CoorsIter()) {
-    dense_ta[idx] = ta.Elem(coor);
+  auto dense_ta =  new TenElemT [ta_size];
+  auto dense_tb =  new TenElemT [tb_size];
+  size_t idx = 0;
+  for (auto &coors : GenAllCoors(ta.GetShape())) {
+    dense_ta[idx] = ta.GetElem(coors);
     idx++;
   }
   idx = 0;
-  for (auto &coor : tb.CoorsIter()) {
-    dense_tb[idx] = tb.Elem({coor[1], coor[0]});
+  for (auto &coors : GenAllCoors(tb.GetShape())) {
+    dense_tb[idx] = tb.GetElem({coors[1], coors[0]});
     idx++;
   }
-  TenElemType res_scalar = 0.0;
-  for (long i = 0; i < ta_size; ++i) {
+  TenElemT res_scalar = 0.0;
+  for (size_t i = 0; i < ta_size; ++i) {
     res_scalar += (dense_ta[i] * dense_tb[i]);
   }
-  GQTensor<TenElemType> res;
+  GQTensor<TenElemT, QNT> res;
   Contract(&ta, &tb, {{0, 1}, {1, 0}}, &res);
-  GtestExpectNear(res.scalar, res_scalar, kEpsilon);
+  GtestExpectNear(res.GetElem({}), res_scalar, kEpsilon);
   delete [] dense_ta;
   delete [] dense_tb;
 }
@@ -187,27 +197,28 @@ TEST_F(TestContraction, 2DCase) {
 }
 
 
-template <typename TenElemType>
+template <typename TenElemT, typename QNT>
 void RunTestTenCtrct3DCase1(
-    GQTensor<TenElemType> &ta,
-    GQTensor<TenElemType> &tb) {
-  auto m = ta.shape[0] * ta.shape[1];
-  auto n = tb.shape[1] * tb.shape[2];
-  auto k1 = ta.shape[2];
-  auto k2 = tb.shape[0];
+    const GQTensor<TenElemT, QNT> &ta,
+    const GQTensor<TenElemT, QNT> &tb
+) {
+  auto m = ta.GetShape()[0] * ta.GetShape()[1];
+  auto n = tb.GetShape()[1] * tb.GetShape()[2];
+  auto k1 = ta.GetShape()[2];
+  auto k2 = tb.GetShape()[0];
   auto ta_size = m * k1;
   auto tb_size = k2 * n;
-  auto dense_ta =  new TenElemType [ta_size];
-  auto dense_tb =  new TenElemType [tb_size];
-  auto dense_res = new TenElemType [m * n];
-  long idx = 0;
-  for (auto &coor : ta.CoorsIter()) {
-    dense_ta[idx] = ta.Elem(coor);
+  auto dense_ta =  new TenElemT [ta_size];
+  auto dense_tb =  new TenElemT [tb_size];
+  auto dense_res = new TenElemT [m * n];
+  size_t idx = 0;
+  for (auto &coors : GenAllCoors(ta.GetShape())) {
+    dense_ta[idx] = ta.GetElem(coors);
     idx++;
   }
   idx = 0;
-  for (auto &coor : tb.CoorsIter()) {
-    dense_tb[idx] = tb.Elem(coor);
+  for (auto &coors : GenAllCoors(tb.GetShape())) {
+    dense_tb[idx] = tb.GetElem(coors);
     idx++;
   }
   CblasGemm(
@@ -218,11 +229,11 @@ void RunTestTenCtrct3DCase1(
       dense_tb, n,
       0.0,
       dense_res, n);
-  GQTensor<TenElemType> res;
+  GQTensor<TenElemT, QNT> res;
   Contract(&ta, &tb, {{2}, {0}}, &res);
   idx = 0;
-  for (auto &coor : res.CoorsIter()) {
-    GtestExpectNear(res.Elem(coor), dense_res[idx], kEpsilon);
+  for (auto &coors : GenAllCoors(res.GetShape())) {
+    GtestExpectNear(res.GetElem(coors), dense_res[idx], kEpsilon);
     idx++;
   }
   delete [] dense_ta;
@@ -231,27 +242,28 @@ void RunTestTenCtrct3DCase1(
 }
 
 
-template <typename TenElemType>
+template <typename TenElemT, typename QNT>
 void RunTestTenCtrct3DCase2(
-    GQTensor<TenElemType> &ta,
-    GQTensor<TenElemType> &tb) {
-  auto m = ta.shape[0];
-  auto n = tb.shape[2];
-  auto k1 = ta.shape[1] * ta.shape[2];
-  auto k2 = tb.shape[0] * tb.shape[1];
+    const GQTensor<TenElemT, QNT> &ta,
+    const GQTensor<TenElemT, QNT> &tb
+) {
+  auto m = ta.GetShape()[0];
+  auto n = tb.GetShape()[2];
+  auto k1 = ta.GetShape()[1] * ta.GetShape()[2];
+  auto k2 = tb.GetShape()[0] * tb.GetShape()[1];
   auto ta_size = m * k1;
   auto tb_size = k2 * n;
-  auto dense_ta =  new TenElemType [ta_size];
-  auto dense_tb =  new TenElemType [tb_size];
-  auto dense_res = new TenElemType [m * n];
-  long idx = 0;
-  for (auto &coor : ta.CoorsIter()) {
-    dense_ta[idx] = ta.Elem(coor);
+  auto dense_ta =  new TenElemT [ta_size];
+  auto dense_tb =  new TenElemT [tb_size];
+  auto dense_res = new TenElemT [m * n];
+  size_t idx = 0;
+  for (auto &coors : GenAllCoors(ta.GetShape())) {
+    dense_ta[idx] = ta.GetElem(coors);
     idx++;
   }
   idx = 0;
-  for (auto &coor : tb.CoorsIter()) {
-    dense_tb[idx] = tb.Elem(coor);
+  for (auto &coors : GenAllCoors(tb.GetShape())) {
+    dense_tb[idx] = tb.GetElem(coors);
     idx++;
   }
   CblasGemm(
@@ -262,11 +274,11 @@ void RunTestTenCtrct3DCase2(
       dense_tb, n,
       0.0,
       dense_res, n);
-  GQTensor<TenElemType> res;
+  GQTensor<TenElemT, QNT> res;
   Contract(&ta, &tb, {{1, 2}, {0, 1}}, &res);
   idx = 0;
-  for (auto &coor : res.CoorsIter()) {
-    GtestExpectNear(res.Elem(coor), dense_res[idx], kEpsilon);
+  for (auto &coors : GenAllCoors(res.GetShape())) {
+    GtestExpectNear(res.GetElem(coors), dense_res[idx], kEpsilon);
     idx++;
   }
   delete [] dense_ta;
@@ -275,35 +287,36 @@ void RunTestTenCtrct3DCase2(
 }
 
 
-template <typename TenElemType>
+template <typename TenElemT, typename QNT>
 void RunTestTenCtrct3DCase3(
-    GQTensor<TenElemType> &ta,
-    GQTensor<TenElemType> &tb) {
-  auto m = ta.shape[0];
-  auto n = tb.shape[2];
-  auto k1 = ta.shape[1] * ta.shape[2];
-  auto k2 = tb.shape[0] * tb.shape[1];
+    const GQTensor<TenElemT, QNT> &ta,
+    const GQTensor<TenElemT, QNT> &tb
+) {
+  auto m = ta.GetShape()[0];
+  auto n = tb.GetShape()[2];
+  auto k1 = ta.GetShape()[1] * ta.GetShape()[2];
+  auto k2 = tb.GetShape()[0] * tb.GetShape()[1];
   auto ta_size = m * k1;
   auto tb_size = k2 * n;
-  auto dense_ta =  new TenElemType [ta_size];
-  auto dense_tb =  new TenElemType [tb_size];
-  long idx = 0;
-  for (auto &coor : ta.CoorsIter()) {
-    dense_ta[idx] = ta.Elem(coor);
+  auto dense_ta =  new TenElemT [ta_size];
+  auto dense_tb =  new TenElemT [tb_size];
+  size_t idx = 0;
+  for (auto &coors : GenAllCoors(ta.GetShape())) {
+    dense_ta[idx] = ta.GetElem(coors);
     idx++;
   }
   idx = 0;
-  for (auto &coor : tb.CoorsIter()) {
-    dense_tb[idx] = tb.Elem(coor);
+  for (auto &coors : GenAllCoors(tb.GetShape())) {
+    dense_tb[idx] = tb.GetElem(coors);
     idx++;
   }
-  TenElemType res_scalar = 0.0;
-  for (long i = 0; i < ta_size; ++i) {
+  TenElemT res_scalar = 0.0;
+  for (size_t i = 0; i < ta_size; ++i) {
     res_scalar += (dense_ta[i] * dense_tb[i]);
   }
-  GQTensor<TenElemType> res;
+  GQTensor<TenElemT, QNT> res;
   Contract(&ta, &tb, {{0, 1, 2}, {0, 1, 2}}, &res);
-  GtestExpectNear(res.scalar, res_scalar, kEpsilon);
+  GtestExpectNear(res.GetElem({}), res_scalar, kEpsilon);
   delete [] dense_ta;
   delete [] dense_tb;
 }

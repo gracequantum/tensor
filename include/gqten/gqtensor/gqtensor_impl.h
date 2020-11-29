@@ -47,7 +47,23 @@ GQTensor<ElemT, QNT>::GQTensor(
   rank_ = indexes_.size();
   shape_ = CalcShape_();
   size_ = CalcSize_();
-  if (!IsScalar()) {
+  if (!IsDefault()) {
+    pblk_spar_data_ten_ = new BlockSparseDataTensor<ElemT, QNT>(&indexes_);
+  }
+}
+
+
+/**
+Create an empty GQTensor by moving indexes.
+
+@param indexes Vector of Index of the tensor.
+*/
+template <typename ElemT, typename QNT>
+GQTensor<ElemT, QNT>::GQTensor(IndexVec<QNT> &&indexes) : indexes_(indexes) {
+  rank_ = indexes_.size();
+  shape_ = CalcShape_();
+  size_ = CalcSize_();
+  if (!IsDefault()) {
     pblk_spar_data_ten_ = new BlockSparseDataTensor<ElemT, QNT>(&indexes_);
   }
 }
@@ -115,12 +131,15 @@ GQTensor<ElemT, QNT>::GQTensor(GQTensor &&gqten) noexcept :
     size_(gqten.size_) {
   if (gqten.IsDefault()) {
     // Do nothing
-  } else if (gqten.IsScalar()) {
-    scalar_ = gqten.scalar_;
   } else {
     indexes_ = std::move(gqten.indexes_);
     pblk_spar_data_ten_ = gqten.pblk_spar_data_ten_;
     gqten.pblk_spar_data_ten_ = nullptr;
+    pblk_spar_data_ten_->pgqten_indexes = &indexes_;
+  }
+  
+  if (gqten.IsScalar()) {     // TODO: Remove in the future!
+    scalar_ = gqten.scalar_;
   }
 }
 
@@ -137,13 +156,16 @@ GQTensor<ElemT, QNT> &GQTensor<ElemT, QNT>::operator=(GQTensor &&rhs) noexcept {
   size_ = rhs.size_;
   if (rhs.IsDefault()) {
     // Do nothing
-  } else if (rhs.IsScalar()) {
-    scalar_ = rhs.scalar_;
   } else {
     indexes_ = std::move(rhs.indexes_);
     delete pblk_spar_data_ten_;
     pblk_spar_data_ten_ = rhs.pblk_spar_data_ten_;
     rhs.pblk_spar_data_ten_ = nullptr;
+    pblk_spar_data_ten_->pgqten_indexes = &indexes_;
+  }
+
+  if (rhs.IsScalar()) {       // TODO: Remove in the future!
+    scalar_ = rhs.scalar_;
   }
   return *this;
 }

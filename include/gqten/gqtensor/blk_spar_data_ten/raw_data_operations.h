@@ -20,6 +20,7 @@
 #include "gqten/gqtensor/blk_spar_data_ten/raw_data_operation_tasks.h"    // RawDataTransposeTask
 #include "gqten/framework/hp_numeric/ten_trans.h"                         // TensorTranspose
 #include "gqten/framework/hp_numeric/blas_level1.h"                       // VectorAddTo
+#include "gqten/framework/hp_numeric/blas_level3.h"                       // MatMultiply
 #include "gqten/utility/utils_inl.h"                                      // Rand, CalcScalarNorm2, CalcConj
 
 #include <iostream>     // endl, istream, ostream
@@ -232,6 +233,35 @@ void BlockSparseDataTensor<ElemT, QNT>::RawDataMultiplyByScalar_(
     const ElemT s
 ) {
   hp_numeric::VectorScale(pactual_raw_data_, actual_raw_data_size_, s);
+}
+
+
+/**
+Multiply two matrices and assign in.
+*/
+template <typename ElemT, typename QNT>
+ElemT BlockSparseDataTensor<ElemT, QNT>::RawDataTwoMatMultiplyAndAssignIn_(
+    const ElemT *a,
+    const ElemT *b,
+    const size_t c_data_offset,
+    const size_t m, const size_t k, const size_t n,
+    const ElemT beta
+) {
+  ElemT poss_scalar = 0.0;    // TODO: Remove it!
+  if (actual_raw_data_size_ == 0) {
+    assert(m == 1);
+    assert(n == 1);
+    hp_numeric::MatMultiply(a, b, m, k, n, beta, &poss_scalar);
+  } else {
+    hp_numeric::MatMultiply(
+        a,
+        b,
+        m, k, n,
+        beta,
+        pactual_raw_data_ + c_data_offset
+    );
+  }
+  return poss_scalar;
 }
 
 

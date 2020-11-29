@@ -3,7 +3,8 @@
 * Author: Rongyang Sun <sun-rongyang@outlook.com>
 * Creation Date: 2020-11-24 20:13
 *
-* Description: High performance BLAS Level 1 related functions based on MKL.
+* Description: GraceQ/tensor project. High performance BLAS Level 1 related
+* functions based on MKL.
 */
 
 /**

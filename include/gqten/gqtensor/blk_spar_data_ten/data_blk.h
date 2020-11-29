@@ -51,6 +51,9 @@ public:
     CalcSize_();
   }
 
+  /// Get quantum number block info.
+  const QNBlkInfo<QNT> &GetQNBlkInfo(void) const { return qnblk_info_; }
+
 
   /**
   Transpose the data block (only information).

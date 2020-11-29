@@ -108,6 +108,27 @@ inline size_t CalcEffOneDimArrayOffset(
 }
 
 
+// Multiply selected elements in a vector
+template <typename T>
+inline T VecMultiSelectElemts(
+    const std::vector<T> &v,
+    const std::vector<size_t> elem_idxes
+) {
+  auto selected_elem_num = elem_idxes.size();
+  assert(selected_elem_num > 0);
+  T res;
+  if (selected_elem_num == 1) {
+    return v[elem_idxes[0]];
+  } else {
+    res = v[elem_idxes[0]];
+  }
+  for (size_t i = 1; i < selected_elem_num; ++i) {
+    res *= v[elem_idxes[i]];
+  }
+  return res;
+}
+
+
 //// Equivalence check
 inline bool DoubleEq(const GQTEN_Double a, const GQTEN_Double b) {
   if (std::abs(a-b) < kDoubleEpsilon) {

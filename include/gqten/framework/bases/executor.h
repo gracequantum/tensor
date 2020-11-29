@@ -44,6 +44,9 @@ public:
   /// Get the status of the executor.
   ExecutorStatus GetStatus(void) const { return status_; }
 
+  /// Set the status of the executor.
+  void SetStatus(const ExecutorStatus new_status) { status_ = new_status; }
+
 private:
   /// The status of the executor.
   ExecutorStatus status_ = ExecutorStatus::UNINITED;
