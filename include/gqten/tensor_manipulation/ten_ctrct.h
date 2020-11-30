@@ -33,15 +33,6 @@ void TenCtrctInitResTen(
 );
 
 
-template <typename QNT, typename TenElemT>
-void Contract(
-    const GQTensor<TenElemT, QNT> *,
-    const GQTensor<TenElemT, QNT> *,
-    const std::vector<std::vector<size_t>> &,
-    GQTensor<TenElemT, QNT> *
-);
-
-
 /**
 Tensor contraction executor.
 
