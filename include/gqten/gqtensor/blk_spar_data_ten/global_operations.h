@@ -15,9 +15,11 @@
 
 
 #include "gqten/gqtensor/blk_spar_data_ten/blk_spar_data_ten.h"
+#include "gqten/gqtensor/blk_spar_data_ten/data_blk.h"                    // DataBlk
+#include "gqten/gqtensor/blk_spar_data_ten/data_blk_operations.h"
+#include "gqten/gqtensor/blk_spar_data_ten/raw_data_operations.h"
 #include "gqten/framework/value_t.h"                                      // GQTEN_Double, GQTEN_Complex
 #include "gqten/framework/hp_numeric/ten_trans.h"                         // TensorTranspose
-#include "gqten/gqtensor/blk_spar_data_ten/data_blk.h"                    // DataBlk
 #include "gqten/utility/utils_inl.h"                                      // CalcMultiDimDataOffsets, Reorder
 
 #include <assert.h>     // assert
@@ -29,16 +31,6 @@
 
 
 namespace gqten {
-
-
-/**
-Clear data blocks and reset raw_data_size_.
-*/
-template <typename ElemT, typename QNT>
-void BlockSparseDataTensor<ElemT, QNT>::DataBlkClear_(void) {
-  blk_idx_data_blk_map_.clear();
-  raw_data_size_ = 0;
-}
 
 
 /**
