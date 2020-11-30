@@ -170,7 +170,7 @@ public:
   );
   void AddAndAssignIn(const BlockSparseDataTensor &);
   void MultiplyByScalar(const ElemT);
-  ElemT CtrctTwoBSDTAndAssignIn(
+  void CtrctTwoBSDTAndAssignIn(
       const BlockSparseDataTensor &,
       const BlockSparseDataTensor &,
       std::vector<RawDataCtrctTask> &
@@ -189,6 +189,23 @@ public:
   void StreamWrite(std::ostream &) const override;
 
   // Misc
+  /// Rank 0 (scalar) check.
+  bool IsScalar(void) const {
+#ifdef NDEBUG
+    return (ten_rank == 0);
+#else     // Do more extra check
+    bool is_rank0 = (ten_rank == 0);
+    if (is_rank0) {
+      assert(blk_shape.empty());
+      assert(blk_multi_dim_offsets_.empty());
+      assert(blk_idx_data_blk_map_.empty());
+      assert((raw_data_size_ == 0) || (raw_data_size_ == 1));
+      assert((actual_raw_data_size_ == 0) || (actual_raw_data_size_ == 1));
+    }
+    return is_rank0;
+#endif
+  }
+
   /**
   Calculate block index from block coordinates.
 
@@ -235,7 +252,9 @@ private:
 
   /**
   Size of the raw data in this block sparse data tensor. This size must equal to
-  the sum of the size of each existed DataBlk.
+  the sum of the size of each existed DataBlk. The only exception is the rank 0
+  (scalar) case which number of DataBlk is always zero but raw_data_size_ can
+  equals to 1.
 
   @note This variable will only be changed in DataBlk* member functions.
   */
@@ -274,7 +293,7 @@ private:
   void RawDataConj_(void);
 
   void RawDataMultiplyByScalar_(const ElemT);
-  ElemT RawDataTwoMatMultiplyAndAssignIn_(
+  void RawDataTwoMatMultiplyAndAssignIn_(
       const ElemT *,
       const ElemT *,
       const size_t,
@@ -373,6 +392,20 @@ template <typename ElemT, typename QNT>
 ElemT BlockSparseDataTensor<ElemT, QNT>::ElemGet(
     const std::pair<CoorsT, CoorsT> &blk_coors_data_coors
 ) const {
+  assert(blk_coors_data_coors.first.size() == ten_rank);
+  assert(
+      blk_coors_data_coors.first.size() == blk_coors_data_coors.second.size()
+  );
+
+  // For scalar case
+  if (IsScalar()) {
+    if (actual_raw_data_size_ == 1) {
+      return *pactual_raw_data_;
+    } else {
+      return 0.0;
+    }
+  }
+
   auto blk_idx_data_blk_it = blk_idx_data_blk_map_.find(
                                  BlkCoorsToBlkIdx(blk_coors_data_coors.first)
                              );
@@ -404,6 +437,23 @@ void BlockSparseDataTensor<ElemT, QNT>::ElemSet(
     const std::pair<CoorsT, CoorsT> &blk_coors_data_coors,
     const ElemT elem
 ) {
+  assert(blk_coors_data_coors.first.size() == ten_rank);
+  assert(
+      blk_coors_data_coors.first.size() == blk_coors_data_coors.second.size()
+  );
+
+  // For scalar case
+  if (IsScalar()) {
+    if (actual_raw_data_size_ == 0) {
+      raw_data_size_ = 1;
+      Allocate();
+      *pactual_raw_data_ = elem;
+    } else {
+      *pactual_raw_data_ = elem;
+    }
+    return;
+  }
+
   auto blk_idx_data_blk_it = blk_idx_data_blk_map_.find(
                                  BlkCoorsToBlkIdx(blk_coors_data_coors.first)
                              );
@@ -432,6 +482,7 @@ typename BlockSparseDataTensor<ElemT, QNT>::BlkIdxDataBlkMap::iterator
 BlockSparseDataTensor<ElemT, QNT>::DataBlkInsert(
     const CoorsT &blk_coors, const bool alloc_mem
 ) {
+  assert(!blk_coors.empty());
   auto blk_idx = BlkCoorsToBlkIdx(blk_coors);
   blk_idx_data_blk_map_[blk_idx] = DataBlk<QNT>(blk_coors, *pgqten_indexes);
   size_t inserted_data_size = blk_idx_data_blk_map_[blk_idx].size;
@@ -472,6 +523,7 @@ BlockSparseDataTensor<ElemT, QNT>::DataBlkGenForTenCtrct(
     const BlockSparseDataTensor &bsdt_b,
     const std::vector<std::vector<size_t>> &ctrct_axes_set
 ) {
+  assert(!(bsdt_a.IsScalar() || bsdt_b.IsScalar()));
   auto saved_axes_set = TenCtrctGenSavedAxesSet(
                             bsdt_a.ten_rank,
                             bsdt_b.ten_rank,
@@ -484,12 +536,6 @@ BlockSparseDataTensor<ElemT, QNT>::DataBlkGenForTenCtrct(
                             a_trans_orders,
                             b_trans_orders
                         );
-  bool c_is_scalar;
-  if (saved_axes_set[0].empty() && saved_axes_set[1].empty()) {
-    c_is_scalar = true;
-  } else {
-    c_is_scalar = false;
-  }
   auto a_blk_idx_data_blk_map = bsdt_a.GetBlkIdxDataBlkMap();
   auto b_blk_idx_data_blk_map = bsdt_b.GetBlkIdxDataBlkMap();
   auto a_blk_idx_qnblk_info_part_hash_map = GenBlkIdxQNBlkInfoPartHashMap(
@@ -505,6 +551,12 @@ BlockSparseDataTensor<ElemT, QNT>::DataBlkGenForTenCtrct(
       a_blk_idx_m_map,
       a_blk_idx_k_map,
       b_blk_idx_n_map;
+
+  bool c_is_scalar = IsScalar();
+  if (c_is_scalar) {
+    assert(saved_axes_set[0].empty() && saved_axes_set[1].empty());
+    raw_data_size_ = 1;
+  }
   for (auto &a_blk_idx_part_hash : a_blk_idx_qnblk_info_part_hash_map) {
     for (auto &b_blk_idx_part_hash : b_blk_idx_qnblk_info_part_hash_map) {
       if (a_blk_idx_part_hash.second == b_blk_idx_part_hash.second) {
@@ -595,6 +647,8 @@ BlockSparseDataTensor<ElemT, QNT>::DataBlkGenForTenCtrct(
     }
     if (!c_is_scalar) {
       task.c_data_offset = blk_idx_data_blk_map_[task.c_blk_idx].data_offset;
+    } else {
+      task.c_data_offset = 0;
     }
   }
 
@@ -613,6 +667,8 @@ void BlockSparseDataTensor<ElemT, QNT>::StreamRead(std::istream &is) {
     }
     DataBlkInsert(blk_coors, false);
   }
+
+  if (IsScalar()) { raw_data_size_ = 1; }
   Allocate();
   RawDataRead_(is);
 }
@@ -626,7 +682,15 @@ void BlockSparseDataTensor<ElemT, QNT>::StreamWrite(std::ostream &os) const {
       os << blk_coor << std::endl;
     }
   }
-  RawDataWrite_(os);
+
+  if (IsScalar() && actual_raw_data_size_ == 0) {     // Empty scalar case
+    ElemT *pscalar0 = new ElemT();
+    os.write((char *) pscalar0, sizeof(ElemT));
+    os << std::endl;
+    delete pscalar0;
+  } else {
+    RawDataWrite_(os);
+  }
 }
 
 
@@ -683,6 +747,10 @@ template <typename ElemT, typename QNT>
 bool BlockSparseDataTensor<ElemT, QNT>::operator==(
     const BlockSparseDataTensor &rhs
 ) const {
+  if (IsScalar() && rhs.IsScalar()) {
+    return ElemGet({}) == rhs.ElemGet({});
+  }
+
   auto data_blk_size = blk_idx_data_blk_map_.size();
   if (data_blk_size != rhs.blk_idx_data_blk_map_.size()) { return false; }
   auto lhs_idx_blk_it = blk_idx_data_blk_map_.begin();

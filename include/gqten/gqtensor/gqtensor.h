@@ -137,9 +137,6 @@ private:
   /// The pointer which point to block sparse data tensor.
   BlockSparseDataTensor<ElemT, QNT> *pblk_spar_data_ten_ = nullptr;
 
-  /// The value of the rank 0 tensor (scalar).
-  ElemT scalar_ = 0.0;
-
   ShapeT CalcShape_(void) const;
 
   size_t CalcSize_(void) const;

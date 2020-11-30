@@ -104,15 +104,11 @@ template <typename QNT, typename TenElemT>
 void TensorContractionExecutor<QNT, TenElemT>::Execute(void) {
   SetStatus(ExecutorStatus::EXEING);
 
-  // TODO: Remove this ugly output and move scalar in BlockSparseDataTensor!
-  auto poss_scalar = pc_->GetBlkSparDataTen().CtrctTwoBSDTAndAssignIn(
+  pc_->GetBlkSparDataTen().CtrctTwoBSDTAndAssignIn(
       pa_->GetBlkSparDataTen(),
       pb_->GetBlkSparDataTen(),
       raw_data_ctrct_tasks_
   );
-  if (pc_->IsScalar()) {
-    pc_->SetElem({}, poss_scalar);
-  }
 
   SetStatus(ExecutorStatus::FINISH);
 }

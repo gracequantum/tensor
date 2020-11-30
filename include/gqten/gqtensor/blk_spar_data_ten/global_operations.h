@@ -65,6 +65,7 @@ Random set all elements in [0, 1].
 */
 template <typename ElemT, typename QNT>
 void BlockSparseDataTensor<ElemT, QNT>::Random(void) {
+  if (IsScalar()) { raw_data_size_ = 1; }
   if (raw_data_size_ > actual_raw_data_size_) {
     RawDataAlloc_(raw_data_size_);
   }
@@ -157,6 +158,11 @@ template <typename ElemT, typename QNT>
 void BlockSparseDataTensor<ElemT, QNT>::AddTwoBSDTAndAssignIn(
     const BlockSparseDataTensor &a,
     const BlockSparseDataTensor &b) {
+  if (a.IsScalar() && b.IsScalar()) {
+    ElemSet({}, a.ElemGet({}) + b.ElemGet({}));
+    return;
+  }
+
   auto blk_idx_data_blk_map_a = a.GetBlkIdxDataBlkMap();
   std::vector<RawDataCopyTask> raw_data_copy_tasks_a;
   for (auto &blk_idx_data_blk : blk_idx_data_blk_map_a) {
@@ -219,6 +225,12 @@ Add another block sparse data tensor to this block sparse data tensor.
 template <typename ElemT, typename QNT>
 void BlockSparseDataTensor<ElemT, QNT>::AddAndAssignIn(
     const BlockSparseDataTensor &rhs) {
+  assert(ten_rank == rhs.ten_rank);
+  if (IsScalar() && rhs.IsScalar()) {
+    ElemSet({}, ElemGet({}) + rhs.ElemGet({}));
+    return;
+  }
+
   // Copy block index <-> data block map and save actual raw data pointer.
   BlkIdxDataBlkMap this_blk_idx_data_blk_map(blk_idx_data_blk_map_);
   ElemT *this_pactual_raw_data_ = pactual_raw_data_;
@@ -295,15 +307,16 @@ Contract two block sparse data tensors follow a queue of raw data contraction
 tasks.
 */
 template <typename ElemT, typename QNT>
-ElemT BlockSparseDataTensor<ElemT, QNT>::CtrctTwoBSDTAndAssignIn(
+void BlockSparseDataTensor<ElemT, QNT>::CtrctTwoBSDTAndAssignIn(
     const BlockSparseDataTensor &bsdt_a,
     const BlockSparseDataTensor &bsdt_b,
     std::vector<RawDataCtrctTask> &raw_data_ctrct_tasks
 ) {
-  ElemT poss_scalar = 0.0;
-  if (raw_data_ctrct_tasks.empty()) { return poss_scalar; }
+  assert(!(bsdt_a.IsScalar() || bsdt_b.IsScalar()));
+  if (raw_data_ctrct_tasks.empty()) { return; }
 
-  if (raw_data_size_ != 0) { Allocate(); }    // TODO: Move scalar_ in BSDT!
+  if (IsScalar()) { raw_data_size_ = 1; }
+  Allocate();
 
   bool a_need_trans = raw_data_ctrct_tasks[0].a_need_trans;
   bool b_need_trans = raw_data_ctrct_tasks[0].b_need_trans;
@@ -359,13 +372,13 @@ ElemT BlockSparseDataTensor<ElemT, QNT>::CtrctTwoBSDTAndAssignIn(
     } else {
       b_data = bsdt_b.pactual_raw_data_ + task.b_data_offset;
     }
-    poss_scalar += RawDataTwoMatMultiplyAndAssignIn_(
-                       a_data,
-                       b_data,
-                       task.c_data_offset,
-                       task.m, task.k, task.n,
-                       task.beta
-                   );
+    RawDataTwoMatMultiplyAndAssignIn_(
+        a_data,
+        b_data,
+        task.c_data_offset,
+        task.m, task.k, task.n,
+        task.beta
+    );
   }
 
   for (auto &blk_idx_transed_data : a_blk_idx_transed_data_map) {
@@ -374,8 +387,6 @@ ElemT BlockSparseDataTensor<ElemT, QNT>::CtrctTwoBSDTAndAssignIn(
   for (auto &blk_idx_transed_data : b_blk_idx_transed_data_map) {
     free(blk_idx_transed_data.second);
   }
-
-  return poss_scalar;
 }
 
 
@@ -393,6 +404,10 @@ void BlockSparseDataTensor<ElemT, QNT>::CopyFromReal(
     for (auto &blk_idx_data_blk : real_bsdt.GetBlkIdxDataBlkMap()) {
       DataBlkInsert(blk_idx_data_blk.second.blk_coors, false);
     }
+    if (IsScalar() && (real_bsdt.GetActualRawDataSize() != 0)) {
+      raw_data_size_ = 1;
+    }
+
     Allocate();
     RawDataDuplicateFromReal_(
         real_bsdt.GetActualRawDataPtr(),
@@ -402,7 +417,5 @@ void BlockSparseDataTensor<ElemT, QNT>::CopyFromReal(
     assert(false);    // TODO: To-be implemented!
   }
 }
-
-
 } /* gqten */
 #endif /* ifndef GQTEN_GQTENSOR_BLK_SPAR_DATA_TEN_GLOBAL_OPERATIONS_H */

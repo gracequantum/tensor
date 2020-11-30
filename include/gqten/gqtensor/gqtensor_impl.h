@@ -82,8 +82,6 @@ GQTensor<ElemT, QNT>::GQTensor(const GQTensor &gqten) :
     indexes_(gqten.indexes_) {
   if (gqten.IsDefault()) {
     // Do nothing
-  } else if (gqten.IsScalar()) {
-    scalar_ = gqten.scalar_;
   } else {
     pblk_spar_data_ten_ = new BlockSparseDataTensor<ElemT, QNT>(
                               *gqten.pblk_spar_data_ten_
@@ -106,8 +104,6 @@ GQTensor<ElemT, QNT> &GQTensor<ElemT, QNT>::operator=(const GQTensor &rhs) {
   indexes_ = rhs.indexes_;
   if (rhs.IsDefault()) {
     // Do nothing
-  } else if (rhs.IsScalar()) {
-    scalar_ = rhs.scalar_;
   } else {
     delete pblk_spar_data_ten_;
     pblk_spar_data_ten_ = new BlockSparseDataTensor<ElemT, QNT>(
@@ -137,10 +133,6 @@ GQTensor<ElemT, QNT>::GQTensor(GQTensor &&gqten) noexcept :
     gqten.pblk_spar_data_ten_ = nullptr;
     pblk_spar_data_ten_->pgqten_indexes = &indexes_;
   }
-  
-  if (gqten.IsScalar()) {     // TODO: Remove in the future!
-    scalar_ = gqten.scalar_;
-  }
 }
 
 
@@ -162,10 +154,6 @@ GQTensor<ElemT, QNT> &GQTensor<ElemT, QNT>::operator=(GQTensor &&rhs) noexcept {
     pblk_spar_data_ten_ = rhs.pblk_spar_data_ten_;
     rhs.pblk_spar_data_ten_ = nullptr;
     pblk_spar_data_ten_->pgqten_indexes = &indexes_;
-  }
-
-  if (rhs.IsScalar()) {       // TODO: Remove in the future!
-    scalar_ = rhs.scalar_;
   }
   return *this;
 }
@@ -229,8 +217,8 @@ Get the tensor element using its coordinates.
 */
 template <typename ElemT, typename QNT>
 ElemT GQTensor<ElemT, QNT>::GetElem(const std::vector<size_t> &coors) const {
+  assert(!IsDefault());
   assert(coors.size() == rank_);
-  if (IsScalar()) { return scalar_; }
   auto blk_coors_data_coors = CoorsToBlkCoorsDataCoors_(coors);
   return pblk_spar_data_ten_->ElemGet(blk_coors_data_coors);
 }
@@ -247,13 +235,10 @@ void GQTensor<ElemT, QNT>::SetElem(
     const std::vector<size_t> &coors,
     const ElemT elem
 ) {
+  assert(!IsDefault());
   assert(coors.size() == rank_);
-  if (IsScalar()) {
-    scalar_ = elem;
-  } else {
-    auto blk_coors_data_coors = CoorsToBlkCoorsDataCoors_(coors);
-    pblk_spar_data_ten_->ElemSet(blk_coors_data_coors, elem);
-  }
+  auto blk_coors_data_coors = CoorsToBlkCoorsDataCoors_(coors);
+  pblk_spar_data_ten_->ElemSet(blk_coors_data_coors, elem);
 }
 
 
@@ -267,17 +252,8 @@ Equivalence check.
 template <typename ElemT, typename QNT>
 bool GQTensor<ElemT, QNT>::operator==(const GQTensor &rhs) const {
   // Default check
-  if (IsDefault()) {
-    if (rhs.IsDefault()) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-  // Scalar check
-  if (IsScalar() && rhs.IsScalar() && scalar_ != rhs.scalar_) { return false; }
-  if (IsScalar()) {
-    if (rhs.IsScalar() && scalar_ == rhs.scalar_) {
+  if (IsDefault() || rhs.IsDefault()) {
+    if (IsDefault() && rhs.IsDefault()) {
       return true;
     } else {
       return false;
@@ -299,15 +275,13 @@ Original data of this tensor will be destroyed.
 template <typename ElemT, typename QNT>
 void GQTensor<ElemT, QNT>::Random(const QNT &div) {
   assert(!IsDefault());
-  if (IsScalar()) {
-    assert(div == QNT());
-    Rand(scalar_);
-    return;
-  }
+  if (IsScalar()) { assert(div == QNT()); }
   pblk_spar_data_ten_->Clear();
-  for (auto &blk_coors : GenAllCoors(pblk_spar_data_ten_->blk_shape)) {
-    if (CalcDiv(indexes_, blk_coors) == div) {
-      pblk_spar_data_ten_->DataBlkInsert(blk_coors, false);     // NO allocate memory on this stage.
+  if (!IsScalar()) {
+    for (auto &blk_coors : GenAllCoors(pblk_spar_data_ten_->blk_shape)) {
+      if (CalcDiv(indexes_, blk_coors) == div) {
+        pblk_spar_data_ten_->DataBlkInsert(blk_coors, false);     // NO allocate memory on this stage.
+      }
     }
   }
   pblk_spar_data_ten_->Random();
@@ -323,7 +297,9 @@ template <typename ElemT, typename QNT>
 void GQTensor<ElemT, QNT>::Transpose(
     const std::vector<size_t> &transed_idxes_order
 ) {
-  if (IsDefault() || IsScalar()) { return; }
+  assert(!IsDefault());
+
+  if (IsScalar()) { return; }
 
   assert(transed_idxes_order.size() == rank_);
   // Give a shorted order, do nothing
@@ -343,17 +319,9 @@ Normalize the tensor and return its norm.
 */
 template <typename ElemT, typename QNT>
 GQTEN_Double GQTensor<ElemT, QNT>::Normalize(void) {
-  if (IsDefault()) {
-    std::cout << "Default GQTensor cannot be normailzed!" << std::endl;
-    exit(1);
-  } else if (IsScalar()) {
-    GQTEN_Double norm = CalcScalarNorm(scalar_);
-    scalar_ /= norm;
-    return norm;
-  } else {
-    GQTEN_Double norm = pblk_spar_data_ten_->Normalize();
-    return norm;
-  }
+  assert(!IsDefault());
+  GQTEN_Double norm = pblk_spar_data_ten_->Normalize();
+  return norm;
 }
 
 
@@ -362,15 +330,10 @@ Switch the direction of the indexes, complex conjugate of the elements.
 */
 template <typename ElemT, typename QNT>
 void GQTensor<ElemT, QNT>::Dag(void) {
-  if (IsDefault()) {
-    std::cout << "Default GQTensor cannot be daggered!" << std::endl;
-    exit(1);
-  } else if (IsScalar()) {
-    scalar_ = CalcConj(scalar_);
-  } else {
-    for (auto &index : indexes_) { index.Inverse(); }
-    pblk_spar_data_ten_->Conj();
-  }
+  assert(!IsDefault());
+  for (auto &index : indexes_) { index.Inverse(); }
+  pblk_spar_data_ten_->Conj();
+
 }
 
 
@@ -400,20 +363,13 @@ GQTensor<ElemT, QNT> GQTensor<ElemT, QNT>::operator+(
     const GQTensor &rhs
 ) const {
   assert(!(IsDefault() || rhs.IsDefault()));
-  if (IsScalar()) {
-    assert(rhs.IsScalar());
-    GQTensor<ElemT, QNT> res(IndexVec<QNT>{});
-    res.scalar_ = scalar_ + rhs.scalar_;
-    return res;
-  } else {
-    assert(indexes_ == rhs.indexes_);
-    GQTensor<ElemT, QNT> res(indexes_);
-    res.pblk_spar_data_ten_->AddTwoBSDTAndAssignIn(
-        *pblk_spar_data_ten_,
-        *rhs.pblk_spar_data_ten_
-    );
-    return res;
-  }
+  assert(indexes_ == rhs.indexes_);
+  GQTensor<ElemT, QNT> res(indexes_);
+  res.pblk_spar_data_ten_->AddTwoBSDTAndAssignIn(
+      *pblk_spar_data_ten_,
+      *rhs.pblk_spar_data_ten_
+      );
+  return res;
 }
 
 
@@ -427,15 +383,9 @@ Add and assign another GQTensor \f$ B \f$ to this tensor.
 template <typename ElemT, typename QNT>
 GQTensor<ElemT, QNT> &GQTensor<ElemT, QNT>::operator+=(const GQTensor &rhs) {
   assert(!(IsDefault() || rhs.IsDefault()));
-  if (IsScalar()) {
-    assert(rhs.IsScalar());
-    scalar_ += rhs.scalar_;
-    return *this;
-  } else {
-    assert(indexes_ == rhs.indexes_);
-    pblk_spar_data_ten_->AddAndAssignIn(*rhs.pblk_spar_data_ten_);
-    return *this;
-  }
+  assert(indexes_ == rhs.indexes_);
+  pblk_spar_data_ten_->AddAndAssignIn(*rhs.pblk_spar_data_ten_);
+  return *this;
 }
 
 
@@ -448,11 +398,7 @@ template <typename ElemT, typename QNT>
 GQTensor<ElemT, QNT> GQTensor<ElemT, QNT>::operator*(const ElemT s) const {
   assert(!IsDefault());
   GQTensor<ElemT, QNT> res(*this);
-  if (IsScalar()) {
-    res.scalar_ *= s;
-  } else {
-    res.pblk_spar_data_ten_->MultiplyByScalar(s);
-  }
+  res.pblk_spar_data_ten_->MultiplyByScalar(s);
   return res;
 }
 
@@ -465,11 +411,7 @@ Multiply a GQTensor by a scalar (real/complex number) and assign back.
 template <typename ElemT, typename QNT>
 GQTensor<ElemT, QNT> &GQTensor<ElemT, QNT>::operator*=(const ElemT s) {
   assert(!IsDefault());
-  if (IsScalar()) {
-    scalar_ *= s;
-  } else {
-    pblk_spar_data_ten_->MultiplyByScalar(s);
-  }
+  pblk_spar_data_ten_->MultiplyByScalar(s);
   return *this;
 }
 
@@ -478,18 +420,12 @@ template <typename ElemT, typename QNT>
 void GQTensor<ElemT, QNT>::StreamRead(std::istream &is) {
   assert(IsDefault());    // Only default tensor can read data
   is >> rank_;
-  if (rank_ == 0) {       // Scalar case
-    is.seekg(1, std::ios::cur);    // Skip the line break
-    is.read((char *) &scalar_, sizeof(ElemT));
-    size_ = 1;
-  } else {
-    indexes_ = IndexVec<QNT>(rank_);
-    for (auto &index : indexes_) { is >> index; }
-    shape_ = CalcShape_();
-    size_ = CalcSize_();
-    pblk_spar_data_ten_ = new BlockSparseDataTensor<ElemT, QNT>(&indexes_);
-    is >> (*pblk_spar_data_ten_);
-  }
+  indexes_ = IndexVec<QNT>(rank_);
+  for (auto &index : indexes_) { is >> index; }
+  shape_ = CalcShape_();
+  size_ = CalcSize_();
+  pblk_spar_data_ten_ = new BlockSparseDataTensor<ElemT, QNT>(&indexes_);
+  is >> (*pblk_spar_data_ten_);
 }
 
 
@@ -497,13 +433,8 @@ template <typename ElemT, typename QNT>
 void GQTensor<ElemT, QNT>::StreamWrite(std::ostream &os) const {
   assert(!IsDefault());
   os << rank_ << std::endl;
-  if (IsScalar()) {
-    os.write((char *) &scalar_, sizeof(ElemT));     // Use this way to keep the full precision
-    os << std::endl;
-  } else {
-    for (auto &index : indexes_) { os << index; }
-    os << (*pblk_spar_data_ten_);
-  }
+  for (auto &index : indexes_) { os << index; }
+  os << (*pblk_spar_data_ten_);
 }
 
 

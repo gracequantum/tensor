@@ -536,7 +536,7 @@ void RunTestGQTensorTransposeCase(
     const GQTensorT &t, const std::vector<size_t> &axes) {
   auto transed_t = t;
   transed_t.Transpose(axes);
-  if (t.IsDefault() || t.IsScalar()) {
+  if (t.IsScalar()) {
     EXPECT_EQ(transed_t, t);
   } else {
     for (size_t i = 0; i < axes.size(); ++i) {
@@ -554,7 +554,8 @@ void RunTestGQTensorTransposeCase(
 
 
 TEST_F(TestGQTensor, TestTranspose) {
-  RunTestGQTensorTransposeCase(dten_default, {});
+  dten_scalar.Random(U1QN());
+  RunTestGQTensorTransposeCase(dten_scalar, {});
   dten_1d_s.Random(qn0);
   RunTestGQTensorTransposeCase(dten_1d_s, {0});
   dten_2d_s.Random(qn0);
@@ -572,7 +573,8 @@ TEST_F(TestGQTensor, TestTranspose) {
   RunTestGQTensorTransposeCase(dten_3d_s, {1, 0, 2});
   RunTestGQTensorTransposeCase(dten_3d_s, {2, 0, 1});
 
-  RunTestGQTensorTransposeCase(zten_default, {});
+  zten_scalar.Random(U1QN());
+  RunTestGQTensorTransposeCase(zten_scalar, {});
   zten_1d_s.Random(qn0);
   RunTestGQTensorTransposeCase(zten_1d_s, {0});
   zten_2d_s.Random(qn0);
