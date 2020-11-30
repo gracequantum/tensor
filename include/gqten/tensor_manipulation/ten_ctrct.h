@@ -15,8 +15,7 @@
 
 
 #include "gqten/framework/bases/executor.h"                         // Executor
-#include "gqten/gqtensor/gqtensor.h"                                // GQTensor
-#include "gqten/gqtensor/blk_spar_data_ten/blk_spar_data_ten.h"     // BlockSparseDataTensor, RawDataCtrctTask
+#include "gqten/gqtensor_all.h"
 
 #include <vector>     // vector
 
