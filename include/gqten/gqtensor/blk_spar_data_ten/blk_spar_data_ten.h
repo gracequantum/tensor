@@ -19,6 +19,7 @@
 #include "gqten/gqtensor/index.h"                                         // IndexVec, CalcQNSctNumOfIdxs
 #include "gqten/gqtensor/blk_spar_data_ten/data_blk.h"                    // DataBlk
 #include "gqten/gqtensor/blk_spar_data_ten/raw_data_operation_tasks.h"    // RawDataTransposeTask
+#include "gqten/gqtensor/blk_spar_data_ten/data_blk_mat.h"                // IdxDataBlkMatMap
 #include "gqten/utility/utils_inl.h"                                      // CalcEffOneDimArrayOffset, CalcMultiDimDataOffsets, Reorder, ArrayEq, VecMultiSelectElemts
 
 #include <map>              // map
@@ -68,6 +69,24 @@ public:
       const BlockSparseDataTensor &,
       const BlockSparseDataTensor &,
       const std::vector<std::vector<size_t>> &
+  );
+
+  std::map<size_t, DataBlkMatSvdRes<ElemT>> DataBlkDecompSVD(
+      const IdxDataBlkMatMap<QNT> &
+  ) const ;
+
+  void DataBlkCopySVDUdata(
+      const CoorsT &, const size_t, const size_t,
+      const size_t,
+      const ElemT *, const size_t, const size_t,
+      const std::vector<size_t> &
+  );
+
+  void DataBlkCopySVDVtData(
+      const CoorsT &, const size_t, const size_t,
+      const size_t,
+      const ElemT *, const size_t, const size_t,
+      const std::vector<size_t> &
   );
 
   // Global level operations
@@ -200,6 +219,11 @@ private:
       const size_t, const size_t, const size_t,
       const ElemT
   );
+
+  // Related to tensor decomposition
+  ElemT *RawDataGenDenseDataBlkMat_(
+      const TenDecompDataBlkMat<QNT> &
+  ) const ;
 
   void RawDataRead_(std::istream &);
   void RawDataWrite_(std::ostream &) const;

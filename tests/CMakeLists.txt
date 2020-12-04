@@ -63,6 +63,11 @@ add_unittest(test_ten_ctrct
   "test_tensor_manipulation/test_ten_ctrct.cc"
   "${MATH_LIB_COMPILE_FLAGS}" "" "${MATH_LIB_LINK_FLAGS}"
 )
+# Test tensor SVD.
+add_unittest(test_ten_svd
+  "test_tensor_manipulation/test_ten_svd.cc"
+  "${MATH_LIB_COMPILE_FLAGS}" "" "${MATH_LIB_LINK_FLAGS}"
+)
 
 
 ## Test tensor contraction.

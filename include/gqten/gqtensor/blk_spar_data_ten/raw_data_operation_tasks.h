@@ -18,6 +18,7 @@
 #include "gqten/framework/value_t.h"    // ShapeT, CoorsT
 
 #include <vector>       // vector
+#include <map>          // map
 #include <algorithm>    // sort
 
 
@@ -188,5 +189,40 @@ struct RawDataCtrctTask {
     );
   }
 };
+
+
+template <typename ElemT>
+struct DataBlkMatSvdRes {
+  size_t m = 0;
+  size_t n = 0;
+  size_t k = 0;
+  ElemT *u = nullptr;
+  GQTEN_Double *s = nullptr;
+  ElemT *vt = nullptr;
+
+  DataBlkMatSvdRes(void) = default;
+
+  DataBlkMatSvdRes(
+      const size_t m,
+      const size_t n,
+      const size_t k,
+      ElemT *u,
+      GQTEN_Double *s,
+      ElemT *vt
+  ) : m(m), n(n), k(k), u(u), s(s), vt(vt) {}
+};
+
+
+template <typename ElemT>
+void DeleteDataBlkMatSvdResMap(
+    std::map<size_t, DataBlkMatSvdRes<ElemT>> &idx_svd_res_map
+) {
+  for (auto &idx_svd_res : idx_svd_res_map) {
+    auto svd_res = idx_svd_res.second;
+    free(svd_res.u); svd_res.u = nullptr;
+    free(svd_res.s); svd_res.s = nullptr;
+    free(svd_res.vt); svd_res.vt = nullptr;
+  }
+}
 } /* gqten */
 #endif /* ifndef GQTEN_GQTENSOR_BLK_SPAR_DATA_TEN_RAW_DATA_OPERATION_TASKS_H */

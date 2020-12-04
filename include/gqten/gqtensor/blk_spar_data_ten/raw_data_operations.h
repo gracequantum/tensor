@@ -21,12 +21,13 @@
 #include "gqten/framework/hp_numeric/ten_trans.h"                         // TensorTranspose
 #include "gqten/framework/hp_numeric/blas_level1.h"                       // VectorAddTo
 #include "gqten/framework/hp_numeric/blas_level3.h"                       // MatMultiply
-#include "gqten/utility/utils_inl.h"                                      // Rand, CalcScalarNorm2, CalcConj
+#include "gqten/framework/hp_numeric/lapack.h"                            // MatSVD
+#include "gqten/utility/utils_inl.h"                                      // Rand, CalcScalarNorm2, CalcConj, SubMatMemCpy
 
 #include <iostream>     // endl, istream, ostream
 #include <cmath>        // sqrt
 
-#include <stdlib.h>     // malloc, free
+#include <stdlib.h>     // malloc, free, calloc
 #include <string.h>     // memcpy, memset
 #include <assert.h>     // assert
 
@@ -257,6 +258,34 @@ void BlockSparseDataTensor<ElemT, QNT>::RawDataTwoMatMultiplyAndAssignIn_(
       beta,
       pactual_raw_data_ + c_data_offset
   );
+}
+
+
+template <typename ElemT, typename QNT>
+ElemT *BlockSparseDataTensor<ElemT, QNT>::RawDataGenDenseDataBlkMat_(
+    const TenDecompDataBlkMat<QNT> &data_blk_mat
+) const {
+  auto rows = data_blk_mat.rows;
+  auto cols = data_blk_mat.cols;
+  ElemT *mat = (ElemT *) calloc(rows * cols, sizeof(ElemT));
+  for (auto &elem : data_blk_mat.elems) {
+    auto i = elem.first[0];
+    auto j = elem.first[1];
+    auto row_offset = std::get<1>(data_blk_mat.row_scts[i]);
+    auto col_offset = std::get<1>(data_blk_mat.col_scts[j]);
+    auto m = std::get<2>(data_blk_mat.row_scts[i]);
+    auto n = std::get<2>(data_blk_mat.col_scts[j]);
+    auto blk_idx_in_bsdt = elem.second;
+    auto sub_mem_begin = pactual_raw_data_ +
+                         blk_idx_data_blk_map_.at(blk_idx_in_bsdt).data_offset;
+    SubMatMemCpy(
+        rows, cols,
+        row_offset, col_offset,
+        m, n, sub_mem_begin,
+        mat
+    );
+  }
+  return mat;
 }
 
 

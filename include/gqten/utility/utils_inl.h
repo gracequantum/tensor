@@ -18,6 +18,7 @@
 #include <cmath>        // abs
 #include <algorithm>    // swap
 
+#include <string.h>     // memcpy
 #include <assert.h>     // assert
 
 
@@ -267,6 +268,28 @@ template<typename T>
 inline std::vector<T> SliceFromEnd(const std::vector<T> &v, size_t to) {
   auto last = v.cend();
   return std::vector<T>(last-to, last);
+}
+
+
+template <typename ElemT>
+void SubMatMemCpy(
+    const size_t m, const size_t n,
+    const size_t row_offset, const size_t col_offset,
+    const size_t sub_m, const size_t sub_n,
+    const ElemT *sub_mem_begin,
+    ElemT *mem_begin
+) {
+  size_t offset = row_offset * n + col_offset;
+  size_t sub_offset = 0;
+  for (size_t row_idx = row_offset; row_idx < row_offset + sub_m; ++row_idx) {
+    memcpy(
+        mem_begin + offset,
+        sub_mem_begin + sub_offset,
+        sub_n * sizeof(ElemT)
+    );
+    offset += n;
+    sub_offset += sub_n;
+  }
 }
 
 

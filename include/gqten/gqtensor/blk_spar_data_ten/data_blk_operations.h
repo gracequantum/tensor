@@ -18,6 +18,7 @@
 #include "gqten/gqtensor/blk_spar_data_ten/blk_spar_data_ten.h"
 #include "gqten/gqtensor/blk_spar_data_ten/raw_data_operations.h"
 #include "gqten/gqtensor/blk_spar_data_ten/raw_data_operation_tasks.h"
+#include "gqten/framework/hp_numeric/lapack.h"    // MatSVD
 
 #include <assert.h>     // assert
 
@@ -302,6 +303,73 @@ BlockSparseDataTensor<ElemT, QNT>::DataBlkGenForTenCtrct(
   return raw_data_ctrct_tasks;
 }
 
+
+/**
+SVD decomposition.
+*/
+template <typename ElemT, typename QNT>
+std::map<size_t, DataBlkMatSvdRes<ElemT>>
+BlockSparseDataTensor<ElemT, QNT>::DataBlkDecompSVD(
+    const IdxDataBlkMatMap<QNT> &idx_data_blk_mat_map
+) const {
+  std::map<size_t, DataBlkMatSvdRes<ElemT>> idx_svd_res_map;
+  for (auto &idx_data_blk_mat : idx_data_blk_mat_map) {
+    auto idx = idx_data_blk_mat.first;
+    auto data_blk_mat = idx_data_blk_mat.second;
+    ElemT *mat = RawDataGenDenseDataBlkMat_(data_blk_mat);
+    ElemT *u = nullptr;
+    ElemT *vt = nullptr;
+    GQTEN_Double *s = nullptr;
+    size_t m = data_blk_mat.rows;
+    size_t n = data_blk_mat.cols;
+    size_t k = m > n ? n : m;
+    hp_numeric::MatSVD(mat, m, n, u, s, vt);
+    idx_svd_res_map[idx] = DataBlkMatSvdRes<ElemT>(m, n, k, u, s, vt);
+  }
+  return idx_svd_res_map;
+}
+
+
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::DataBlkCopySVDUdata(
+    const CoorsT &blk_coors, const size_t mat_m, const size_t mat_n,
+    const size_t row_offset,
+    const ElemT *u, const size_t u_m, const size_t u_n,
+    const std::vector<size_t> & kept_cols
+) {
+  assert(kept_cols.size() == mat_n);
+  auto blk_idx = BlkCoorsToBlkIdx(blk_coors);
+  // TODO: Remove direct touch the raw data in DataBlk* member!
+  auto data = pactual_raw_data_ + blk_idx_data_blk_map_[blk_idx].data_offset;
+  size_t data_idx = 0;
+  for (size_t i = 0; i < mat_m; ++i) {
+    for (size_t j = 0; j < mat_n; ++j) {
+      data[data_idx] = u[(row_offset + i) * u_n + kept_cols[j]];
+      data_idx++;
+    }
+  }
+}
+
+
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::DataBlkCopySVDVtData(
+    const CoorsT &blk_coors, const size_t mat_m, const size_t mat_n,
+    const size_t col_offset,
+    const ElemT *vt, const size_t vt_m, const size_t vt_n,
+    const std::vector<size_t> & kept_rows
+) {
+  assert(kept_rows.size() == mat_m);
+  auto blk_idx = BlkCoorsToBlkIdx(blk_coors);
+  // TODO: Remove direct touch the raw data in DataBlk* member!
+  auto data = pactual_raw_data_ + blk_idx_data_blk_map_[blk_idx].data_offset;
+  for (size_t i = 0; i < mat_m; ++i) {
+    memcpy(
+        data + (i * mat_n),
+        vt + (kept_rows[i] * vt_n + col_offset),
+        mat_n * sizeof(ElemT)
+    );
+  }
+}
 
 /**
 Clear data blocks and reset raw_data_size_.
