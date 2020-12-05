@@ -188,6 +188,14 @@ void RunTestSvdCase(
     for (auto &coors : GenAllCoors(t.GetShape())) {
       GtestExpectNear(t_restored.GetElem(coors), t.GetElem(coors), kEpsilon);
     }
+  } else {
+    GQTensor<TenElemT, QNT> t_restored;
+    SVDTensRestore(&u, &s, &vt, ldims, &t_restored);
+    auto t_diff = t + (-t_restored);
+    auto t_diff_norm = t_diff.Normalize();
+    auto t_norm = t.Normalize();
+    auto norm_ratio = (t_diff_norm / t_norm);
+    GtestExpectNear(norm_ratio * norm_ratio, trunc_err, 1E-02);
   }
 
   delete [] dense_mat;
@@ -211,6 +219,17 @@ TEST_F(TestSvd, 2DCase) {
   RunTestSvdCase(
       dten_2d_s,
       1, 1,
+      0, 1, d_s - 1,
+      &qn0);
+  RunTestSvdCase(
+      dten_2d_s,
+      1, 1,
+      0, 1, d_s + 1,
+      &qn0);
+
+  RunTestSvdCase(
+      dten_2d_s,
+      1, 1,
       0, 1, d_s*3,
       &qnp1);
   RunTestSvdCase(
@@ -218,6 +237,17 @@ TEST_F(TestSvd, 2DCase) {
       1, 1,
       0, 1, d_s,
       &qnp1);
+  RunTestSvdCase(
+      dten_2d_s,
+      1, 1,
+      0, 1, d_s - 1,
+      &qnp1);
+  RunTestSvdCase(
+      dten_2d_s,
+      1, 1,
+      0, 1, d_s + 1,
+      &qnp1);
+
   RunTestSvdCase(
       dten_2d_s,
       1, 1,
@@ -315,6 +345,17 @@ TEST_F(TestSvd, 3DCase) {
   RunTestSvdCase(
       dten_3d_s,
       1, 2,
+      0, 1, d_s - 1,
+      &qn0);
+  RunTestSvdCase(
+      dten_3d_s,
+      1, 2,
+      0, 1, d_s + 1,
+      &qn0);
+
+  RunTestSvdCase(
+      dten_3d_s,
+      1, 2,
       0, 1, d_s*3,
       &qnp1);
   RunTestSvdCase(
@@ -324,6 +365,17 @@ TEST_F(TestSvd, 3DCase) {
       &qnp1);
   RunTestSvdCase(
       dten_3d_s,
+      1, 2,
+      0, 1, d_s + 1,
+      &qnp1);
+  RunTestSvdCase(
+      dten_3d_s,
+      1, 2,
+      0, 1, d_s - 1,
+      &qnp1);
+
+  RunTestSvdCase(
+      dten_3d_s,
       2, 1,
       0, 1, d_s*3,
       &qn0);
@@ -332,6 +384,17 @@ TEST_F(TestSvd, 3DCase) {
       2, 1,
       0, 1, d_s*2,
       &qn0);
+  RunTestSvdCase(
+      dten_3d_s,
+      2, 1,
+      0, 1, d_s + 1,
+      &qn0);
+  RunTestSvdCase(
+      dten_3d_s,
+      2, 1,
+      0, 1, d_s - 1,
+      &qn0);
+
   RunTestSvdCase(
       dten_3d_s,
       2, 1,
@@ -400,6 +463,17 @@ TEST_F(TestSvd, 4DCase) {
   RunTestSvdCase(
       dten_4d_s,
       2, 2,
+      0, 1, (d_s*3) + 1,
+      &qn0);
+  RunTestSvdCase(
+      dten_4d_s,
+      2, 2,
+      0, 1, (d_s*3) - 1,
+      &qn0);
+
+  RunTestSvdCase(
+      dten_4d_s,
+      2, 2,
       0, 1, (d_s*3)*(d_s*3),
       &qnp1);
   RunTestSvdCase(
@@ -407,6 +481,17 @@ TEST_F(TestSvd, 4DCase) {
       2, 2,
       0, 1, (d_s*3),
       &qnp1);
+  RunTestSvdCase(
+      dten_4d_s,
+      2, 2,
+      0, 1, (d_s*3) + 1,
+      &qnp1);
+  RunTestSvdCase(
+      dten_4d_s,
+      2, 2,
+      0, 1, (d_s*3) - 1,
+      &qnp1);
+
   RunTestSvdCase(
       dten_4d_s,
       1, 3,
