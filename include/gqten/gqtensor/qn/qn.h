@@ -19,12 +19,10 @@
 #include "gqten/framework/bases/streamable.h"     // Streamable
 #include "gqten/framework/vec_hash.h"             // VecPtrHasher
 
-#include <assert.h>
-
-
 #ifdef Release
   #define NDEBUG
 #endif
+#include <assert.h>
 
 
 namespace gqten {

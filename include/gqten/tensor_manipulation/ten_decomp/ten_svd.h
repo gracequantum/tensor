@@ -16,10 +16,14 @@
 
 #include "gqten/framework/bases/executor.h"     // Executor
 #include "gqten/gqtensor_all.h"
-#include "gqten/framework/value_t.h"            // GQTEN_Double
 #include "gqten/gqtensor/blk_spar_data_ten/data_blk_mat.h"
 
 #include <utility>    // pair
+
+#ifdef Release
+  #define NDEBUG
+#endif
+#include <assert.h>     // assert
 
 
 namespace gqten {

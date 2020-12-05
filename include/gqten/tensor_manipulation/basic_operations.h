@@ -19,12 +19,10 @@
 #include <iostream>     // cout, endl
 #include <iterator>     // next
 
-#include <assert.h>     // assert
-
-
 #ifdef Release
   #define NDEBUG
 #endif
+#include <assert.h>     // assert
 
 
 namespace gqten {

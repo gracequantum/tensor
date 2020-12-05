@@ -17,14 +17,12 @@
 
 #include "gqten/framework/value_t.h"      // GQTEN_Double, GQTEN_Complex
 
-#include <assert.h>     // assert
-
-#include "mkl.h"      //cblas_*gemm
-
-
 #ifdef Release
   #define NDEBUG
 #endif
+#include <assert.h>     // assert
+
+#include "mkl.h"      //cblas_*gemm
 
 
 namespace gqten {

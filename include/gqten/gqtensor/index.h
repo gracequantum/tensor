@@ -24,12 +24,10 @@
 
 #include <functional>     // std::hash
 
-#include <assert.h>     // assert
-
-
 #ifdef Release
   #define NDEBUG
 #endif
+#include <assert.h>     // assert
 
 
 namespace gqten {

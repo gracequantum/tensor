@@ -20,12 +20,10 @@
 #include "gqten/gqtensor/blk_spar_data_ten/raw_data_operation_tasks.h"
 #include "gqten/framework/hp_numeric/lapack.h"    // MatSVD
 
-#include <assert.h>     // assert
-
-
 #ifdef Release
   #define NDEBUG
 #endif
+#include <assert.h>     // assert
 
 
 namespace gqten {

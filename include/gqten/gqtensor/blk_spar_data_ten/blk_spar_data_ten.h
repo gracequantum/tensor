@@ -28,12 +28,10 @@
 
 #include <stdlib.h>     // malloc, free
 #include <string.h>     // memcpy, memset
-#include <assert.h>     // assert
-
-
 #ifdef Release
   #define NDEBUG
 #endif
+#include <assert.h>     // assert
 
 
 namespace gqten {

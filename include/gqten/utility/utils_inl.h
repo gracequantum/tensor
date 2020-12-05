@@ -2,7 +2,7 @@
 /*
 * Author: Rongyang Sun <sun-rongyang@outlook.com>
 * Creation Date: 2019-09-11 16:20
-* 
+*
 * Description: GraceQ/tensor project. Inline utility functions used by template headers.
 */
 #ifndef GQTEN_UTILITY_UTILS_INL_H
@@ -19,12 +19,10 @@
 #include <algorithm>    // swap
 
 #include <string.h>     // memcpy
-#include <assert.h>     // assert
-
-
 #ifdef Release
   #define NDEBUG
 #endif
+#include <assert.h>     // assert
 
 
 namespace gqten {

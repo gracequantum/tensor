@@ -17,14 +17,12 @@
 
 #include "gqten/framework/value_t.h"
 
-#include <assert.h>     // assert
-
-#include "mkl.h"
-
-
 #ifdef Release
   #define NDEBUG
 #endif
+#include <assert.h>     // assert
+
+#include "mkl.h"
 
 
 namespace gqten {

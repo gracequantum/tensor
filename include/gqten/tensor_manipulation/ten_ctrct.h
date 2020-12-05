@@ -19,6 +19,11 @@
 
 #include <vector>     // vector
 
+#ifdef Release
+  #define NDEBUG
+#endif
+#include <assert.h>     // assert
+
 
 namespace gqten {
 
