@@ -121,7 +121,7 @@ QNT CalcDataBlkMatLeftQNFlux(
 }
 
 
-template <typename QNT, typename TenElemT>
+template <typename TenElemT, typename QNT>
 IdxDataBlkMatMap<QNT> GenIdxTenDecompDataBlkMats(
     const GQTensor<TenElemT, QNT> &t,
     const size_t ldims,
@@ -164,8 +164,11 @@ IdxDataBlkMatMap<QNT> GenIdxTenDecompDataBlkMats(
 
 /**
 Tensor SVD executor.
+
+@tparam TenElemT Element type of tensors.
+@tparam QNT Quantum number type of tensors.
 */
-template <typename QNT, typename TenElemT>
+template <typename TenElemT, typename QNT>
 class TensorSVDExecutor : public Executor {
 public:
   TensorSVDExecutor(
@@ -217,8 +220,8 @@ private:
 /**
 Initialize a tensor SVD executor.
 */
-template <typename QNT, typename TenElemT>
-TensorSVDExecutor<QNT, TenElemT>::TensorSVDExecutor(
+template <typename TenElemT, typename QNT>
+TensorSVDExecutor<TenElemT, QNT>::TensorSVDExecutor(
     const GQTensor<TenElemT, QNT> *pt,
     const size_t ldims,
     const QNT &lqndiv,
@@ -253,8 +256,8 @@ TensorSVDExecutor<QNT, TenElemT>::TensorSVDExecutor(
 /**
 Execute tensor SVD calculation.
 */
-template <typename QNT, typename TenElemT>
-void TensorSVDExecutor<QNT, TenElemT>::Execute(void) {
+template <typename TenElemT, typename QNT>
+void TensorSVDExecutor<TenElemT, QNT>::Execute(void) {
   SetStatus(ExecutorStatus::EXEING);
 
   auto idx_raw_data_svd_res = pt_->GetBlkSparDataTen().DataBlkDecompSVD(
@@ -299,8 +302,8 @@ GQTEN_Double SumSV2(
 /**
 Get truncated singular value information.
 */
-template <typename QNT, typename TenElemT>
-std::vector<TruncedSVInfo> TensorSVDExecutor<QNT, TenElemT>::CalcTruncedSVInfo_(
+template <typename TenElemT, typename QNT>
+std::vector<TruncedSVInfo> TensorSVDExecutor<TenElemT, QNT>::CalcTruncedSVInfo_(
     const std::map<size_t, DataBlkMatSvdRes<TenElemT>> &idx_svd_res_map
 ) {
   std::vector<TruncedSVInfo> trunced_sv_info;
@@ -435,8 +438,8 @@ inline CoorsT GetSVDVtCoors(
 /**
 Construct SVD result tensors.
 */
-template <typename QNT, typename TenElemT>
-void TensorSVDExecutor<QNT, TenElemT>::ConstructSVDResTens_(
+template <typename TenElemT, typename QNT>
+void TensorSVDExecutor<TenElemT, QNT>::ConstructSVDResTens_(
     const std::vector<TruncedSVInfo> &trunced_sv_info,
     const std::map<size_t, DataBlkMatSvdRes<TenElemT>> &idx_raw_data_svd_res
 ) {
@@ -470,8 +473,8 @@ QNSectorVec<QNT> GenMidQNSects(
 }
 
 
-template <typename QNT, typename TenElemT>
-UVtDataBlkInfoVecPair TensorSVDExecutor<QNT, TenElemT>::CreateSVDResTens_(
+template <typename TenElemT, typename QNT>
+UVtDataBlkInfoVecPair TensorSVDExecutor<TenElemT, QNT>::CreateSVDResTens_(
     const std::map<size_t, SDataBlkInfo> &idx_s_data_blk_info_map
 ) {
   // Initialize u, s, vt tensors
@@ -540,8 +543,8 @@ UVtDataBlkInfoVecPair TensorSVDExecutor<QNT, TenElemT>::CreateSVDResTens_(
 }
 
 
-template <typename QNT, typename TenElemT>
-void TensorSVDExecutor<QNT, TenElemT>::FillSVDResTens_(
+template <typename TenElemT, typename QNT>
+void TensorSVDExecutor<TenElemT, QNT>::FillSVDResTens_(
     const std::map<size_t, DataBlkMatSvdRes<TenElemT>> &idx_svd_res_map,
     const std::map<size_t, SDataBlkInfo> &idx_s_data_blk_info_map,
     const UVtDataBlkInfoVecPair &u_vt_data_blks_info

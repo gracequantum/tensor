@@ -41,10 +41,10 @@ void TenCtrctInitResTen(
 /**
 Tensor contraction executor.
 
-@tparam QNT The quantum number type of the tensors.
 @tparam TenElemT The type of tensor elements.
+@tparam QNT The quantum number type of the tensors.
 */
-template <typename QNT, typename TenElemT>
+template <typename TenElemT, typename QNT>
 class TensorContractionExecutor : public Executor {
 public:
   TensorContractionExecutor(
@@ -73,8 +73,8 @@ Initialize a tensor contraction executor.
 @param axes_set To-be contracted tensor axes indexes. For example, {{0, 1}, {3, 2}}.
 @param pc Pointer to result tensor \f$ C \f$.
 */
-template <typename QNT, typename TenElemT>
-TensorContractionExecutor<QNT, TenElemT>::TensorContractionExecutor(
+template <typename TenElemT, typename QNT>
+TensorContractionExecutor<TenElemT, QNT>::TensorContractionExecutor(
     const GQTensor<TenElemT, QNT> *pa,
     const GQTensor<TenElemT, QNT> *pb,
     const std::vector<std::vector<size_t>> &axes_set,
@@ -95,8 +95,8 @@ TensorContractionExecutor<QNT, TenElemT>::TensorContractionExecutor(
 /**
 Allocate memory and perform raw data contraction calculation.
 */
-template <typename QNT, typename TenElemT>
-void TensorContractionExecutor<QNT, TenElemT>::Execute(void) {
+template <typename TenElemT, typename QNT>
+void TensorContractionExecutor<TenElemT, QNT>::Execute(void) {
   SetStatus(ExecutorStatus::EXEING);
 
   pc_->GetBlkSparDataTen().CtrctTwoBSDTAndAssignIn(
@@ -112,22 +112,22 @@ void TensorContractionExecutor<QNT, TenElemT>::Execute(void) {
 /**
 Function version for tensor contraction.
 
-@tparam QNT The quantum number type of the tensors.
 @tparam TenElemT The type of tensor elements.
+@tparam QNT The quantum number type of the tensors.
 
 @param pa Pointer to input tensor \f$ A \f$.
 @param pb Pointer to input tensor \f$ B \f$.
 @param axes_set To-be contracted tensor axes indexes. For example, {{0, 1}, {3, 2}}.
 @param pc Pointer to result tensor \f$ C \f$.
 */
-template <typename QNT, typename TenElemT>
+template <typename TenElemT, typename QNT>
 void Contract(
     const GQTensor<TenElemT, QNT> *pa,
     const GQTensor<TenElemT, QNT> *pb,
     const std::vector<std::vector<size_t>> &axes_set,
     GQTensor<TenElemT, QNT> *pc
 ) {
-  TensorContractionExecutor<QNT, TenElemT> ten_ctrct_executor(
+  TensorContractionExecutor<TenElemT, QNT> ten_ctrct_executor(
       pa,
       pb,
       axes_set,

@@ -60,7 +60,7 @@ struct TestContraction : public testing::Test {
 };
 
 
-template <typename QNT, typename TenElemT>
+template <typename TenElemT, typename QNT>
 void RunTestTenCtrct1DCase(GQTensor<TenElemT, QNT> &t, const QNT &div) {
   t.Random(div);
   GQTensor<TenElemT, QNT> t_res;

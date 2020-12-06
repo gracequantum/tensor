@@ -115,7 +115,7 @@ void RunTestSvdCase(
   size_t D;
   std::string qn_nm = "qn";
   U1QN qn0 =  U1QN({QNCard(qn_nm, U1QNVal( 0))});
-  TensorSVDExecutor<QNT, TenElemT> ten_svd_executor(
+  TensorSVDExecutor<TenElemT, QNT> ten_svd_executor(
       &t,
       ldims,
       qn0,
