@@ -199,10 +199,12 @@ BlockSparseDataTensor<ElemT, QNT>::DataBlkGenForTenCtrct(
       b_blk_idx_n_map;
 
   bool c_is_scalar = IsScalar();
+  bool scalar_c_first_task = true;
+#ifndef NDEBUG
   if (c_is_scalar) {
     assert(saved_axes_set[0].empty() && saved_axes_set[1].empty());
-    raw_data_size_ = 1;
   }
+#endif /* ifndef NDEBUG */
   for (auto &a_blk_idx_part_hash : a_blk_idx_qnblk_info_part_hash_map) {
     for (auto &b_blk_idx_part_hash : b_blk_idx_qnblk_info_part_hash_map) {
       if (a_blk_idx_part_hash.second == b_blk_idx_part_hash.second) {
@@ -238,6 +240,14 @@ BlockSparseDataTensor<ElemT, QNT>::DataBlkGenForTenCtrct(
 
         // Create raw data contraction task
         if (c_is_scalar) {
+          GQTEN_Double beta;
+          if (scalar_c_first_task) {
+            beta = 0.0;
+            raw_data_size_ = 1;     // Set raw data size at first task scheduling
+            scalar_c_first_task = false;
+          } else {
+            beta = 1.0;
+          }
           raw_data_ctrct_tasks.push_back(
               RawDataCtrctTask(
                   a_blk_idx,
@@ -247,7 +257,7 @@ BlockSparseDataTensor<ElemT, QNT>::DataBlkGenForTenCtrct(
                   b_data_blk.data_offset,
                   a_b_need_trans.second,
                   m, k, n,
-                  1.0
+                  beta
               )
           );
         } else {
@@ -322,6 +332,7 @@ BlockSparseDataTensor<ElemT, QNT>::DataBlkDecompSVD(
     size_t n = data_blk_mat.cols;
     size_t k = m > n ? n : m;
     hp_numeric::MatSVD(mat, m, n, u, s, vt);
+    free(mat);
     idx_svd_res_map[idx] = DataBlkMatSvdRes<ElemT>(m, n, k, u, s, vt);
   }
   return idx_svd_res_map;
