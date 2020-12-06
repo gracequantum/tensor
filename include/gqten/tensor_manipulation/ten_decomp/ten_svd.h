@@ -564,7 +564,7 @@ UVtDataBlkInfoVecPair TensorSVDExecutor<TenElemT, QNT>::CreateSVDResTens_(
     auto mat_dims = s_data_blk_info.mat_dims;
     auto data_blk_mat = idx_ten_decomp_data_blk_mat_map_.at(data_blk_mat_idx);
 
-    ps_->GetBlkSparDataTen().DataBlkInsert({blk_coor, blk_coor}, true);
+    ps_->GetBlkSparDataTen().DataBlkInsert({blk_coor, blk_coor}, false);
 
     for (auto &row_sct : data_blk_mat.row_scts) {
       CoorsT u_data_blk_coors(std::get<0>(row_sct));
@@ -607,6 +607,7 @@ void TensorSVDExecutor<TenElemT, QNT>::FillSVDResTens_(
     const UVtDataBlkInfoVecPair &u_vt_data_blks_info
 ) {
   // Fill s tensor
+  ps_->GetBlkSparDataTen().Allocate(true);    // Initialize memory to 0 here
   size_t s_coor = 0;
   for (auto &idx_s_data_blk_info : idx_s_data_blk_info_map) {
     auto s_data_blk_info = idx_s_data_blk_info.second;
