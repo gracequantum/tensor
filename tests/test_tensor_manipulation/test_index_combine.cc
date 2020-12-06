@@ -57,6 +57,8 @@ void TestCombinerIntraStruct(const GQTensor<CombinerElemT, QNT> &combiner) {
       }
     }
   }
+
+  mkl_free_buffers();
 }
 
 

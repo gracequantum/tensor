@@ -72,6 +72,8 @@ void RunTestTenCtrct1DCase(GQTensor<TenElemT, QNT> &t, const QNT &div) {
     res += std::norm(t.GetElem(coors));
   }
   GtestExpectNear(t_res.GetElem({}), res, kEpsilon);
+
+  mkl_free_buffers();
 }
 
 
@@ -125,6 +127,8 @@ void RunTestTenCtrct2DCase1(
     GtestExpectNear(res.GetElem(coors), dense_res[idx], kEpsilon);
     idx++;
   }
+
+  mkl_free_buffers();
   delete [] dense_ta;
   delete [] dense_tb;
   delete [] dense_res;
@@ -161,6 +165,8 @@ void RunTestTenCtrct2DCase2(
   GQTensor<TenElemT, QNT> res;
   Contract(&ta, &tb, {{0, 1}, {1, 0}}, &res);
   GtestExpectNear(res.GetElem({}), res_scalar, kEpsilon);
+
+  mkl_free_buffers();
   delete [] dense_ta;
   delete [] dense_tb;
 }
@@ -236,6 +242,8 @@ void RunTestTenCtrct3DCase1(
     GtestExpectNear(res.GetElem(coors), dense_res[idx], kEpsilon);
     idx++;
   }
+
+  mkl_free_buffers();
   delete [] dense_ta;
   delete [] dense_tb;
   delete [] dense_res;
@@ -281,6 +289,8 @@ void RunTestTenCtrct3DCase2(
     GtestExpectNear(res.GetElem(coors), dense_res[idx], kEpsilon);
     idx++;
   }
+
+  mkl_free_buffers();
   delete [] dense_ta;
   delete [] dense_tb;
   delete [] dense_res;
@@ -317,6 +327,8 @@ void RunTestTenCtrct3DCase3(
   GQTensor<TenElemT, QNT> res;
   Contract(&ta, &tb, {{0, 1, 2}, {0, 1, 2}}, &res);
   GtestExpectNear(res.GetElem({}), res_scalar, kEpsilon);
+
+  mkl_free_buffers();
   delete [] dense_ta;
   delete [] dense_tb;
 }

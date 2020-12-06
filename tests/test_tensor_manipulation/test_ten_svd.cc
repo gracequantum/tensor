@@ -196,6 +196,7 @@ void RunTestSvdCase(
     GtestExpectNear(norm_ratio * norm_ratio, trunc_err, 1E-02);
   }
 
+  mkl_free_buffers();
   delete [] dense_mat;
   free(dense_s);
   free(dense_u);
