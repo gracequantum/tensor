@@ -43,10 +43,12 @@ void BlockSparseDataTensor<ElemT, QNT>::Clear(void) {
 
 /**
 Allocate the memory based on the size of raw_data_size_;
+
+@param init Whether initialize the memory to 0.
 */
 template <typename ElemT, typename QNT>
-void BlockSparseDataTensor<ElemT, QNT>::Allocate(void) {
-  RawDataAlloc_(raw_data_size_);
+void BlockSparseDataTensor<ElemT, QNT>::Allocate(const bool init) {
+  RawDataAlloc_(raw_data_size_, init);
 }
 
 
@@ -305,7 +307,6 @@ void BlockSparseDataTensor<ElemT, QNT>::CtrctTwoBSDTAndAssignIn(
   assert(!(bsdt_a.IsScalar() || bsdt_b.IsScalar()));
   if (raw_data_ctrct_tasks.empty()) { return; }
 
-  if (IsScalar()) { raw_data_size_ = 1; }
   Allocate();
 
   bool a_need_trans = raw_data_ctrct_tasks[0].a_need_trans;

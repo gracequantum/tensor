@@ -124,7 +124,7 @@ struct RawDataCtrctTask {
   bool b_need_trans;
   std::vector<size_t> b_trans_orders;
 
-  size_t c_blk_idx;
+  size_t c_blk_idx = 0;     // initialize it for c is rank 0 (scalar) case
   size_t c_data_offset;
 
   size_t m;

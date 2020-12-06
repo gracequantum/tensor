@@ -63,11 +63,20 @@ void BlockSparseDataTensor<ElemT, QNT>::RawDataDiscard_(void) {
 
 /**
 Allocate memoery using a size.
+
+@param init Whether initialize the memory to 0.
 */
 template <typename ElemT, typename QNT>
-void BlockSparseDataTensor<ElemT, QNT>::RawDataAlloc_(const size_t size) {
+void BlockSparseDataTensor<ElemT, QNT>::RawDataAlloc_(
+    const size_t size,
+    const bool init
+) {
   free(pactual_raw_data_);
-  pactual_raw_data_ = (ElemT *) malloc(size * sizeof(ElemT));
+  if (!init) {
+    pactual_raw_data_ = (ElemT *) malloc(size * sizeof(ElemT));
+  } else {
+    pactual_raw_data_ = (ElemT *) calloc(size, sizeof(ElemT));
+  }
   actual_raw_data_size_ = size;
 }
 

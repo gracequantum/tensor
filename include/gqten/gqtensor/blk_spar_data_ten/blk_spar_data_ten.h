@@ -89,7 +89,7 @@ public:
 
   // Global level operations
   void Clear(void);
-  void Allocate(void);
+  void Allocate(const bool init = false);
 
   void Random(void);
   void Transpose(const std::vector<size_t> &);
@@ -198,7 +198,7 @@ private:
   void RawDataFree_(void);
   void RawDataDiscard_(void);
 
-  void RawDataAlloc_(const size_t);
+  void RawDataAlloc_(const size_t, const bool init = false);
   void RawDataInsert_(const size_t, const size_t, const bool init = false);
 
   void RawDataCopy_(const std::vector<RawDataCopyTask> &, const ElemT *);
