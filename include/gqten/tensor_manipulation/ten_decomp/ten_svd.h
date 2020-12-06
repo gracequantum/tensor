@@ -29,6 +29,9 @@
 namespace gqten {
 
 
+// Some helpers
+
+
 // (unnormalized sv, data_blk_mat, mat_dim_label, normalized_sv)
 using TruncedSVInfo = std::tuple<GQTEN_Double, size_t, size_t, GQTEN_Double>;
 
@@ -219,6 +222,19 @@ private:
 
 /**
 Initialize a tensor SVD executor.
+
+@param pt A pointer to to-be SVD decomposed tensor \f$ T \f$. The rank of \f$ T
+       \f$ should be larger then 1.
+@param ldims Number of indexes on the left hand side of the decomposition.
+@param lqndiv Quantum number divergence of the result \f$ U \f$ tensor.
+@param trunc_err The target truncation error.
+@param Dmin The target minimal kept dimensions for the truncated SVD decomposition.
+@param Dmax The target maximal kept dimensions for the truncated SVD decomposition.
+@param pu A pointer to result \f$ U \f$ tensor.
+@param ps A pointer to result \f$ S \f$ tensor.
+@param pvt A pointer to result \f$ V^{\dagger} \f$ tensor.
+@param pactual_trunc_err A pointer to actual truncation error after the truncation.
+@param pD A pointer to actual kept dimensions after the truncation.
 */
 template <typename TenElemT, typename QNT>
 TensorSVDExecutor<TenElemT, QNT>::TensorSVDExecutor(
@@ -268,6 +284,47 @@ void TensorSVDExecutor<TenElemT, QNT>::Execute(void) {
   DeleteDataBlkMatSvdResMap(idx_raw_data_svd_res);
 
   SetStatus(ExecutorStatus::FINISH);
+}
+
+
+/**
+Function version for tensor SVD.
+
+@tparam TenElemT The element type of the tensors.
+@tparam QNT The quantum number type of the tensors.
+
+@param pt A pointer to to-be SVD decomposed tensor \f$ T \f$. The rank of \f$ T
+       \f$ should be larger then 1.
+@param ldims Number of indexes on the left hand side of the decomposition.
+@param lqndiv Quantum number divergence of the result \f$ U \f$ tensor.
+@param trunc_err The target truncation error.
+@param Dmin The target minimal kept dimensions for the truncated SVD decomposition.
+@param Dmax The target maximal kept dimensions for the truncated SVD decomposition.
+@param pu A pointer to result \f$ U \f$ tensor.
+@param ps A pointer to result \f$ S \f$ tensor.
+@param pvt A pointer to result \f$ V^{\dagger} \f$ tensor.
+@param pactual_trunc_err A pointer to actual truncation error after the truncation.
+@param pD A pointer to actual kept dimensions after the truncation.
+*/
+template <typename TenElemT, typename QNT>
+void SVD(
+    const GQTensor<TenElemT, QNT> *pt,
+    const size_t ldims,
+    const QNT &lqndiv,
+    const GQTEN_Double trunc_err, const size_t Dmin, const size_t Dmax,
+    GQTensor<TenElemT, QNT> *pu,
+    GQTensor<GQTEN_Double, QNT> *ps,
+    GQTensor<TenElemT, QNT> *pvt,
+    GQTEN_Double *pactual_trunc_err, size_t *pD
+) {
+  TensorSVDExecutor<TenElemT, QNT> ten_svd_executor(
+      pt,
+      ldims,
+      lqndiv,
+      trunc_err, Dmin, Dmax,
+      pu, ps, pvt, pactual_trunc_err, pD
+  );
+  ten_svd_executor.Execute();
 }
 
 

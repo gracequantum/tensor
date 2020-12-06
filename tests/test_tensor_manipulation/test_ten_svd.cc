@@ -115,15 +115,13 @@ void RunTestSvdCase(
   size_t D;
   std::string qn_nm = "qn";
   U1QN qn0 =  U1QN({QNCard(qn_nm, U1QNVal( 0))});
-  TensorSVDExecutor<TenElemT, QNT> ten_svd_executor(
+  SVD(
       &t,
       ldims,
       qn0,
       cutoff, dmin, dmax,
-      &u, &s,&vt,
-      &trunc_err, &D
+      &u, &s,&vt, &trunc_err, &D
   );
-  ten_svd_executor.Execute();
 
   auto ndim = ldims + rdims;
   size_t rows = 1, cols = 1;
