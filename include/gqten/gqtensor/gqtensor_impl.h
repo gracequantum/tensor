@@ -472,7 +472,8 @@ std::pair<CoorsT, CoorsT> GQTensor<ElemT, QNT>::CoorsToBlkCoorsDataCoors_(
     const CoorsT &coors
 ) const {
   assert(coors.size() == rank_);
-  CoorsT blk_coors, data_coors;
+  CoorsT blk_coors {};
+  CoorsT data_coors {};
   for (size_t i = 0; i < coors.size(); ++i) {
     auto blk_coor_data_coor = indexes_[i].CoorToBlkCoorDataCoor(coors[i]);
     blk_coors.push_back(blk_coor_data_coor.first);
