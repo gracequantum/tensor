@@ -18,7 +18,6 @@ macro(add_unittest
 
     target_include_directories(${TEST_NAME}
       PRIVATE ${GQTEN_HEADER_PATH}
-      PRIVATE ${GQTEN_SRC_PATH}
       PRIVATE ${CFLAGS}
       PRIVATE ${hptt_INCLUDE_DIR})
     target_link_libraries(${TEST_NAME}
@@ -73,28 +72,3 @@ add_unittest(test_index_combine
   "test_tensor_manipulation/test_index_combine.cc"
   "${MATH_LIB_COMPILE_FLAGS}" "" "${MATH_LIB_LINK_FLAGS}"
 )
-
-
-## Test tensor contraction.
-#add_unittest(test_ten_ctrct
-  #test_ten_ctrct.cc "${MATH_LIB_COMPILE_FLAGS}"
-  #"" "${MATH_LIB_LINK_FLAGS}")
-## Test tensor linear combination.
-#add_unittest(test_ten_lincmb
-  #test_ten_lincmb.cc "${MATH_LIB_COMPILE_FLAGS}"
-  #"" "${MATH_LIB_LINK_FLAGS}")
-
-## Test tensor SVD.
-#add_unittest(test_ten_svd
-  #test_ten_svd.cc "${MATH_LIB_COMPILE_FLAGS}"
-  #"" "${MATH_LIB_LINK_FLAGS}")
-
-## Test tensor expansion.
-#add_unittest(test_ten_expand
-  #test_ten_expand.cc "${MATH_LIB_COMPILE_FLAGS}"
-  #"" "${MATH_LIB_LINK_FLAGS}")
-
-## Test index combination.
-#add_unittest(test_index_combine
-  #test_index_combine.cc "${MATH_LIB_COMPILE_FLAGS}"
-  #"" "${MATH_LIB_LINK_FLAGS}")
