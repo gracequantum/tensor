@@ -173,7 +173,7 @@ struct GQTensor<ElemT, QNT>:: GQTensorElementAccessDeref {
     return this_ten.GetElem(coors);
   }
 
-  ElemT &operator=(const ElemT elem) {
+  void operator=(const ElemT elem) {
     this_ten.SetElem(coors, elem);
   }
 
@@ -225,7 +225,10 @@ GQTensor<ElemT, QNT>::operator()(
     const size_t coor0,
     const OtherCoorsT... other_coors
 ) {
-  return GQTensorElementAccessDeref(*this, {coor0, other_coors...});
+  return GQTensorElementAccessDeref(
+      *this,
+      {coor0, static_cast<size_t>(other_coors)...}
+  );
 }
 
 
