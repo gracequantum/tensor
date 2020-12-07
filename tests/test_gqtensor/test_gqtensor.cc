@@ -108,38 +108,60 @@ void RunTestGQTensorElemAssignmentCase(
     const std::vector<std::vector<size_t>> coors) {
   auto t = t_init;
   for (size_t i = 0; i < elems.size(); ++i) {
-    t.SetElem(coors[i], elems[i]);
+    t(coors[i]) = elems[i];
   }
   for (auto coor : GenAllCoors(t.GetShape())) {
     auto coor_it = std::find(coors.cbegin(), coors.cend(), coor);
     if (coor_it != coors.end()) {
       auto elem_idx = std::distance(coors.cbegin(), coor_it);
-      EXPECT_EQ(t.GetElem(coor), elems[elem_idx]);
+      EXPECT_EQ(t(coor), elems[elem_idx]);
     } else {
-      EXPECT_EQ(t.GetElem(coor), ElemT(0.0));
+      EXPECT_EQ(t(coor), ElemT(0.0));
     }
   }
 }
 
 
 TEST_F(TestGQTensor, TestElemAssignment) {
+  DGQTensor dten_scalar2(dten_scalar);
+  auto scalar = drand();
+  dten_scalar2() = scalar;
+  EXPECT_EQ(dten_scalar2(), scalar);
   RunTestGQTensorElemAssignmentCase(dten_scalar, {drand()}, {{}});
+
+  DGQTensor dten_1d_s2(dten_1d_s);
+  auto elem0 = drand();
+  dten_1d_s2(0) = elem0;
+  EXPECT_EQ(dten_1d_s2(0), elem0);
+  EXPECT_EQ(dten_1d_s2(1), 0.0);
+  auto elem1 = drand();
+  dten_1d_s2(1) = elem1;
+  EXPECT_EQ(dten_1d_s2(1), elem1);
   RunTestGQTensorElemAssignmentCase(dten_1d_s, {drand()}, {{0}});
   RunTestGQTensorElemAssignmentCase(dten_1d_s, {drand()}, {{1}});
   RunTestGQTensorElemAssignmentCase(dten_1d_s, {drand(), drand()}, {{0}, {1}});
   RunTestGQTensorElemAssignmentCase(dten_1d_s, {drand(), drand()}, {{1}, {2}});
+
+  DGQTensor dten_2d_s2(dten_2d_s);
+  dten_2d_s2(2, 3) = elem0;
+  EXPECT_EQ(dten_2d_s2(2, 3), elem0);
+  EXPECT_EQ(dten_2d_s2(1, 7), 0.0);
+  dten_2d_s2(1, 7) = elem1;
+  EXPECT_EQ(dten_2d_s2(1, 7), elem1);
   RunTestGQTensorElemAssignmentCase(dten_2d_s, {drand()}, {{0, 0}});
   RunTestGQTensorElemAssignmentCase(dten_2d_s, {drand()}, {{2, 3}});
   RunTestGQTensorElemAssignmentCase(
       dten_2d_s,
       {drand(), drand()},
       {{2, 3}, {1, 7}});
+
   RunTestGQTensorElemAssignmentCase(dten_3d_s, {drand()}, {{0, 0, 0}});
   RunTestGQTensorElemAssignmentCase(dten_3d_s, {drand()}, {{2, 3, 4}});
   RunTestGQTensorElemAssignmentCase(
       dten_3d_s,
       {drand(), drand()},
       {{2, 3, 5}, {1, 7, 4}});
+
   RunTestGQTensorElemAssignmentCase(
       zten_1d_s,
       {zrand()},

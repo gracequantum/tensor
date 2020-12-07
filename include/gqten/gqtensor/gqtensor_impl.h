@@ -165,7 +165,9 @@ struct GQTensor<ElemT, QNT>:: GQTensorElementAccessDeref {
   GQTensorElementAccessDeref(
       GQTensor &gqten,
       const std::vector<size_t> &coors
-  ) : this_ten(gqten), coors(coors) {}
+  ) : this_ten(gqten), coors(coors) {
+    assert(this_ten.Rank() == coors.size());
+  }
 
   operator ElemT() const {
     return this_ten.GetElem(coors);
@@ -174,7 +176,57 @@ struct GQTensor<ElemT, QNT>:: GQTensorElementAccessDeref {
   ElemT &operator=(const ElemT elem) {
     this_ten.SetElem(coors, elem);
   }
+
+  bool operator==(const ElemT elem) const {
+    return this_ten.GetElem(coors) == elem;
+  }
+
+  bool operator!=(const ElemT elem) const {
+    return !(*this == elem);
+  }
 };
+
+
+/**
+Access to the tensor element using its coordinates.
+
+@param coors The coordinates of the element.
+*/
+template <typename ElemT, typename QNT>
+typename GQTensor<ElemT, QNT>::GQTensorElementAccessDeref
+GQTensor<ElemT, QNT>::operator()(const std::vector<size_t> &coors) {
+    return GQTensorElementAccessDeref(*this, coors);
+}
+
+
+/**
+Access to the rank 0 (scalar) tensor element.
+*/
+template <typename ElemT, typename QNT>
+typename GQTensor<ElemT, QNT>::GQTensorElementAccessDeref
+GQTensor<ElemT, QNT>::operator()(void) {
+  assert(IsScalar());
+  return GQTensorElementAccessDeref(*this, {});
+}
+
+
+/**
+Access to the tensor element of a non-scalar tensor.
+
+@tparam OtherCoorsT The types of the second, third, etc coordinates.
+@param coor0 The first coordinate.
+@param other_coors The second, third, ... coordiantes. They should be
+       non-negative integers.
+*/
+template <typename ElemT, typename QNT>
+template <typename... OtherCoorsT>
+typename GQTensor<ElemT, QNT>::GQTensorElementAccessDeref
+GQTensor<ElemT, QNT>::operator()(
+    const size_t coor0,
+    const OtherCoorsT... other_coors
+) {
+  return GQTensorElementAccessDeref(*this, {coor0, other_coors...});
+}
 
 
 /**

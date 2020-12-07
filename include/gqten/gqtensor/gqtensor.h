@@ -99,9 +99,10 @@ public:
   ElemT GetElem(const std::vector<size_t> &) const;
   void SetElem(const std::vector<size_t> &, const ElemT);
   struct GQTensorElementAccessDeref;
-  GQTensorElementAccessDeref operator[](std::vector<size_t> coors) {
-    return GQTensorElementAccessDeref(*this, coors);
-  }
+  GQTensorElementAccessDeref operator()(const std::vector<size_t> &);
+  GQTensorElementAccessDeref operator()(void);
+  template <typename... OtherCoorsT>
+  GQTensorElementAccessDeref operator()(const size_t, const OtherCoorsT...);
 
   // Inplace operations.
   void Random(const QNT &);
