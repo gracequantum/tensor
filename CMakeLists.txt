@@ -40,7 +40,7 @@ option(GQTEN_USE_EXTERNAL_HPTT_LIB "Use external hptt library" OFF)
 
 # Compilation and linking control.
 set(CMAKE_CXX_STANDARD 11)
-add_definitions(-Wall)
+add_definitions(-Wall -g)
 
 
 # Set MKL compile flags and link flags.
@@ -55,7 +55,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 endif()
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   set(MATH_LIB_COMPILE_FLAGS -m64 -I$ENV{MKLROOT}/include)
-  set(MATH_LIB_LINK_FLAGS $ENV{MKLROOT}/lib/libmkl_intel_lp64.a $ENV{MKLROOT}/lib/libmkl_intel_thread.a $ENV{MKLROOT}/lib/libmkl_core.a -liomp5 -lpthread -lm -ldl)
+  set(MATH_LIB_LINK_FLAGS -Wl,--start-group $ENV{MKLROOT}/lib/intel64/libmkl_intel_lp64.a $ENV{MKLROOT}/lib/intel64/libmkl_intel_thread.a $ENV{MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl)
 endif()
 
 
