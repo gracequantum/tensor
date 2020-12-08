@@ -3,7 +3,12 @@ A high-performance tensor computation library for the quantum physics community
 
 _If it isn't fast, it isn't graceful_
 
-For more information, user guide, and documentation, please visit [project homepage](tensor.gracequantum.org).
+
+## Project status
+
+- Docs: [![Documentation Status](https://readthedocs.org/projects/gqten-doc/badge/?version=latest)](https://tensor.gracequantum.org/en/latest/?badge=latest)
+
+For more information, user guide, and documentation, please visit [project homepage](https://tensor.gracequantum.org).
 
 
 ## Acknowledgments
