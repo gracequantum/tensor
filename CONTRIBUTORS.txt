@@ -5,6 +5,10 @@ Names should be added to this file as:
   Name <email address>
 
 
-Original GraceQ/tensor authors:
+Current developer and maintainer:
+  Rong-Yang Sun <sun-rongyang@outlook.com>
+
+
+Original (before version 0.1) developers:
   Rong-Yang Sun <sun-rongyang@outlook.com>
   Cheng Peng <cpeng18@stanford.edu>
