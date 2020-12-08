@@ -16,7 +16,7 @@ _If it isn't fast, it isn't graceful_
 
 
 ## Newest version
-- version [0.2-alpha.0](https://github.com/gracequantum/tensor/releases)
+- version [0.2-alpha.0](https://github.com/gracequantum/tensor/releases/tag/v0.2-alpha.0)
 
 
 ## Current developers and maintainers

@@ -5,9 +5,13 @@ _If it isn't fast, it isn't graceful_
 
 
 ## Project status
+[![Documentation Status](https://readthedocs.org/projects/gqten-doc/badge/?version=latest)](https://tensor.gracequantum.org/en/latest/?badge=latest)
 
-- Docs: [![Documentation Status](https://readthedocs.org/projects/gqten-doc/badge/?version=latest)](https://tensor.gracequantum.org/en/latest/?badge=latest)
+### Last release
+- [v0.2-alpha.0](https://github.com/gracequantum/tensor/releases/tag/v0.2-alpha.0)
 
+
+## Project homepage
 For more information, user guide, and documentation, please visit [project homepage](https://tensor.gracequantum.org).
 
 
