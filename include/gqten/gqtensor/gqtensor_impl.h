@@ -159,26 +159,26 @@ GQTensor<ElemT, QNT> &GQTensor<ElemT, QNT>::operator=(GQTensor &&rhs) noexcept {
 
 template <typename ElemT, typename QNT>
 struct GQTensor<ElemT, QNT>:: GQTensorElementAccessDeref {
-  GQTensor &this_ten;
+  const GQTensor &const_this_ten;
   std::vector<size_t> coors;
 
   GQTensorElementAccessDeref(
-      GQTensor &gqten,
+      const GQTensor &gqten,
       const std::vector<size_t> &coors
-  ) : this_ten(gqten), coors(coors) {
-    assert(this_ten.Rank() == coors.size());
+  ) : const_this_ten(gqten), coors(coors) {
+    assert(const_this_ten.Rank() == coors.size());
   }
 
   operator ElemT() const {
-    return this_ten.GetElem(coors);
+    return const_this_ten.GetElem(coors);
   }
 
   void operator=(const ElemT elem) {
-    this_ten.SetElem(coors, elem);
+    const_cast<GQTensor &>(const_this_ten).SetElem(coors, elem);
   }
 
   bool operator==(const ElemT elem) const {
-    return this_ten.GetElem(coors) == elem;
+    return const_this_ten.GetElem(coors) == elem;
   }
 
   bool operator!=(const ElemT elem) const {
@@ -199,12 +199,27 @@ GQTensor<ElemT, QNT>::operator()(const std::vector<size_t> &coors) {
 }
 
 
+template <typename ElemT, typename QNT>
+typename GQTensor<ElemT, QNT>::GQTensorElementAccessDeref
+GQTensor<ElemT, QNT>::operator()(const std::vector<size_t> &coors) const {
+    return GQTensorElementAccessDeref(*this, coors);
+}
+
+
 /**
 Access to the rank 0 (scalar) tensor element.
 */
 template <typename ElemT, typename QNT>
 typename GQTensor<ElemT, QNT>::GQTensorElementAccessDeref
 GQTensor<ElemT, QNT>::operator()(void) {
+  assert(IsScalar());
+  return GQTensorElementAccessDeref(*this, {});
+}
+
+
+template <typename ElemT, typename QNT>
+typename GQTensor<ElemT, QNT>::GQTensorElementAccessDeref
+GQTensor<ElemT, QNT>::operator()(void) const {
   assert(IsScalar());
   return GQTensorElementAccessDeref(*this, {});
 }
@@ -225,6 +240,20 @@ GQTensor<ElemT, QNT>::operator()(
     const size_t coor0,
     const OtherCoorsT... other_coors
 ) {
+  return GQTensorElementAccessDeref(
+      *this,
+      {coor0, static_cast<size_t>(other_coors)...}
+  );
+}
+
+
+template <typename ElemT, typename QNT>
+template <typename... OtherCoorsT>
+typename GQTensor<ElemT, QNT>::GQTensorElementAccessDeref
+GQTensor<ElemT, QNT>::operator()(
+    const size_t coor0,
+    const OtherCoorsT... other_coors
+) const {
   return GQTensorElementAccessDeref(
       *this,
       {coor0, static_cast<size_t>(other_coors)...}

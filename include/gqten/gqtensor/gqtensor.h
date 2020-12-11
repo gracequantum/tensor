@@ -100,9 +100,16 @@ public:
   void SetElem(const std::vector<size_t> &, const ElemT);
   struct GQTensorElementAccessDeref;
   GQTensorElementAccessDeref operator()(const std::vector<size_t> &);
+  GQTensorElementAccessDeref operator()(const std::vector<size_t> &) const;
   GQTensorElementAccessDeref operator()(void);
+  GQTensorElementAccessDeref operator()(void) const;
   template <typename... OtherCoorsT>
   GQTensorElementAccessDeref operator()(const size_t, const OtherCoorsT...);
+  template <typename... OtherCoorsT>
+  GQTensorElementAccessDeref operator()(
+      const size_t,
+      const OtherCoorsT...
+  ) const;
 
   // Inplace operations.
   void Random(const QNT &);
