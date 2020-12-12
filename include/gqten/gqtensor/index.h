@@ -115,6 +115,16 @@ public:
   }
 
   /**
+  Get a quantum number sector using actual coordinate.
+
+  @param actual_coor The actual coordinate.
+  */
+  const QNSector<QNT> &GetQNSctFromActualCoor(const size_t actual_coor) {
+    auto sct_coor_data_coor = CoorToBlkCoorDataCoor(actual_coor);
+    return qnscts_[sct_coor_data_coor.first];
+  }
+
+  /**
   Calculate block coordinate and data coordinate from corresponding actual coordinate.
 
   @param coor The actual coordinate.
