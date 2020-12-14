@@ -119,10 +119,13 @@ void RunTestGQTensorElemAssignmentCase(
       EXPECT_EQ(t(coor), ElemT(0.0));
     }
   }
+  Show(t);
 }
 
 
 TEST_F(TestGQTensor, TestElemAssignment) {
+  Show(dten_default);
+
   DGQTensor dten_scalar2(dten_scalar);
   auto scalar = drand();
   dten_scalar2() = scalar;

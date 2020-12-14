@@ -86,6 +86,20 @@ TEST_F(TestQNSector, Hashable) {
 }
 
 
+TEST_F(TestQNSector, Showable) {
+  Show(qnsct1_default);
+  std::cout << std::endl;
+  Show(qnsct1);
+  std::cout << std::endl;
+  Show(qnsct1, 1);
+  std::cout << std::endl;
+  Show(qnsct2, 1);
+  std::cout << std::endl;
+  Show(qnsct2, 2);
+  std::cout << std::endl;
+}
+
+
 TEST_F(TestQNSector, Equivalent) {
   EXPECT_TRUE(qnsct1_default == qnsct1_default);
   EXPECT_TRUE(qnsct1 == qnsct1);

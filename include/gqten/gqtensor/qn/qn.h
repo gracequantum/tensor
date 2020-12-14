@@ -17,6 +17,7 @@
 #include "gqten/gqtensor/qn/qnval.h"              // QNVal, QNValSharedPtr
 #include "gqten/framework/bases/hashable.h"       // Hashable
 #include "gqten/framework/bases/streamable.h"     // Streamable
+#include "gqten/framework/bases/showable.h"       // Showable
 #include "gqten/framework/vec_hash.h"             // VecPtrHasher
 
 #ifdef Release
@@ -59,7 +60,7 @@ The quantum number of a system.
 @tparam QNValTs Types of quantum number values of the quantum number.
 */
 template <typename... QNValTs>
-class QN : public Hashable, public Streamable {
+class QN : public Hashable, public Streamable, public Showable{
 public:
   QN(void);
   QN(const QNCardVec &);
@@ -84,6 +85,8 @@ public:
 
   void StreamRead(std::istream &) override;
   void StreamWrite(std::ostream &) const override;
+
+  void Show(const size_t indent_level = 0) const override;
 
 private:
   QNValPtrVec pqnvals_;
@@ -240,6 +243,15 @@ void QN<QNValTs...>::StreamWrite(std::ostream &os) const {
     os << (*qnval) << std::endl;
   }
   os << hash_ << std::endl;
+}
+
+
+template <typename... QNValTs>
+void QN<QNValTs...>::Show(const size_t indent_level) const {
+  std::cout << IndentPrinter(indent_level) << "QN:" << std::endl;
+  for (auto &qnval : pqnvals_) {
+    qnval->Show(indent_level + 1);
+  }
 }
 } /* gqten */
 #endif /* ifndef GQTEN_GQTENSOR_QN_QN_H */

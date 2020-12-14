@@ -52,6 +52,12 @@ public:
   void StreamRead(std::istream &is) override { is >> val_; }
   void StreamWrite(std::ostream &os) const override { os << val_ << std::endl; }
 
+  // Override for Showable base class
+  void Show(const size_t indent_level = 0) const override {
+    std::cout << IndentPrinter(indent_level) << "QNVal: U(1)" << std::endl;
+    std::cout << IndentPrinter(indent_level + 1) << "Representation charge: " << val_ << std::endl;
+  }
+
 private:
   int val_;
   std::hash<int> hasher_;

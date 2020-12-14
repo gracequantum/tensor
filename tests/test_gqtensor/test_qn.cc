@@ -55,6 +55,18 @@ TEST_F(TestQN, Hashable) {
 }
 
 
+TEST_F(TestQN, Showable) {
+  Show(qn_default);
+  std::cout << std::endl;
+  Show(u1_qn_1);
+  std::cout << std::endl;
+  Show(u1_qn_2, 1);
+  std::cout << std::endl;
+  Show(u1u1_qn, 2);
+  std::cout << std::endl;
+}
+
+
 TEST_F(TestQN, Equivalent) {
   EXPECT_TRUE(qn_default == QN0());
   EXPECT_TRUE(u1_qn_1 == u1_qn_1);

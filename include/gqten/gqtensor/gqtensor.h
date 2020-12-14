@@ -17,6 +17,7 @@
 
 #include "gqten/framework/value_t.h"                                // CoorsT, ShapeT, GQTEN_Double, GQTEN_Complex
 #include "gqten/framework/bases/streamable.h"                       // Streamable
+#include "gqten/framework/bases/showable.h"                         // Showable
 #include "gqten/gqtensor/index.h"                                   // IndexVec
 #include "gqten/gqtensor/blk_spar_data_ten/blk_spar_data_ten.h"     // BlockSparseDataTensor
 
@@ -34,7 +35,7 @@ Symmetry-blocked sparse tensor.
 @tparam QNT   Type of the quantum number.
 */
 template <typename ElemT, typename QNT>
-class GQTensor : public Streamable {
+class GQTensor : public Streamable, public Showable {
 public:
   // Constructors and destructor.
   /// Default constructor.
@@ -131,6 +132,7 @@ public:
   void StreamRead(std::istream &) override;
   void StreamWrite(std::ostream &) const override;
 
+  void Show(const size_t indent_level = 0) const override;
 
 private:
   /// The rank of the GQTensor.

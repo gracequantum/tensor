@@ -19,10 +19,12 @@
 #include "gqten/framework/value_t.h"            // CoorsT
 #include "gqten/framework/bases/hashable.h"     // Hashable
 #include "gqten/framework/bases/streamable.h"   // Streamable
+#include "gqten/framework/bases/showable.h"     // Showable
 #include "gqten/framework/vec_hash.h"           // VecHasher
 #include "gqten/gqtensor/qnsct.h"               // QNSectorVec
 
 #include <functional>     // std::hash
+#include <string>         // string
 
 #ifdef Release
   #define NDEBUG
@@ -47,7 +49,7 @@ Linear space constructed by a series of QNSector, and it can define a direction.
 @tparam QNT Type of the quantum number.
 */
 template <typename QNT>
-class Index : public Hashable, public Streamable {
+class Index : public Hashable, public Streamable, public Showable {
 public:
   /**
   Create an Index using a series of quantum number sectors and the direction.
@@ -189,6 +191,30 @@ public:
     os << dir_int_repr << std::endl;
     os << dim_ << std::endl;
     os << hash_ << std::endl;
+  }
+
+  void Show(const size_t indent_level = 0) const override {
+    std::cout << IndentPrinter(indent_level) << "Index:" << std::endl;
+    std::cout << IndentPrinter(indent_level + 1) << "Dimension: " << dim_ << std::endl;
+    std::cout << IndentPrinter(indent_level + 1) << "Direction: ";
+    std::string dir_str;
+    switch (dir_) {
+      case GQTenIndexDirType::IN:
+        dir_str = "IN";
+        break;
+      case GQTenIndexDirType::NDIR:
+        dir_str = "NDIR";
+        break;
+      case GQTenIndexDirType::OUT:
+        dir_str = "OUT";
+        break;
+      default:
+        assert(false);
+    }
+    std::cout << dir_str << std::endl;
+    for (auto &qnsct : qnscts_) {
+      qnsct.Show(indent_level + 1);
+    }
   }
 
 

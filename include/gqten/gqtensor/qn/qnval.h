@@ -16,6 +16,7 @@
 
 #include "gqten/framework/bases/hashable.h"       // Hashable
 #include "gqten/framework/bases/streamable.h"     // Streamable
+#include "gqten/framework/bases/showable.h"       // Showable
 
 #include <vector>     // vector
 #include <memory>     // shared_ptr
@@ -27,7 +28,7 @@ namespace gqten {
 /**
 Abstract base class for quantum number value.
 */
-class QNVal : public Hashable, public Streamable {
+class QNVal : public Hashable, public Streamable, public Showable {
 public:
   QNVal(void) = default;
   virtual ~QNVal(void) = default;

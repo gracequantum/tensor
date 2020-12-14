@@ -18,6 +18,7 @@
 
 #include "gqten/framework/bases/hashable.h"       // Hashable
 #include "gqten/framework/bases/streamable.h"     // Streamable
+#include "gqten/framework/bases/showable.h"       // Showable
 
 #include <vector>     // vector
 
@@ -37,7 +38,7 @@ quantum number.
 @tparam QNT Type of the quantum number.
 */
 template <typename QNT>
-class QNSector : public Hashable, public Streamable {
+class QNSector : public Hashable, public Streamable, public Showable {
 public:
   /**
   Create a quantum number sector using a quantum number and the degeneracy.
@@ -117,6 +118,12 @@ public:
     os << qn_;
     os << dgnc_ << std::endl;
     os << hash_ << std::endl;
+  }
+
+  void Show(const size_t indent_level = 0) const override {
+    std::cout << IndentPrinter(indent_level) << "QNSector:" << std::endl;
+    qn_.Show(indent_level + 1);
+    std::cout << IndentPrinter(indent_level + 1) << "Degeneracy: " << dgnc_ << std::endl;
   }
 
 private:

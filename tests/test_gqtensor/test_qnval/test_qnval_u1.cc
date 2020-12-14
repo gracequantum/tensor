@@ -35,6 +35,13 @@ TEST_F(TestU1QNVal, Hashable) {
 }
 
 
+TEST_F(TestU1QNVal, Showable) {
+  Show(u1_qnval_0);
+  Show(u1_qnval, 1);
+  Show(minus_u1_qnval, 2);
+}
+
+
 TEST_F(TestU1QNVal, Clone) {
   auto pu1_qnval_0_clone = u1_qnval_0.Clone();
   EXPECT_TRUE(*pu1_qnval_0_clone == u1_qnval_0);

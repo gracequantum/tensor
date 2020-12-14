@@ -520,6 +520,42 @@ void GQTensor<ElemT, QNT>::StreamWrite(std::ostream &os) const {
 }
 
 
+template <typename VecElemT>
+inline void VectorPrinter(const std::vector<VecElemT> &vec) {
+  auto size = vec.size();
+  for (size_t i = 0; i < size; ++i) {
+    std::cout << vec[i];
+    if (i != size - 1) {
+      std::cout << ", ";
+    }
+  }
+}
+
+
+template <typename ElemT, typename QNT>
+void GQTensor<ElemT, QNT>::Show(const size_t indent_level) const {
+  std::cout << IndentPrinter(indent_level) << "GQTensor:" << std::endl;
+  std::cout << IndentPrinter(indent_level + 1) << "Shape: (";
+  VectorPrinter(shape_);
+  std::cout << ")" << std::endl;
+  std::cout << IndentPrinter(indent_level + 1) << "Indices:" << std::endl;
+  for (auto &index : indexes_) {
+    index.Show(indent_level + 2);
+  }
+  if (!IsDefault()) {
+    std::cout << IndentPrinter(indent_level + 1) << "Nonzero elements:" << std::endl;
+    for (auto &coors : GenAllCoors(shape_)) {
+      auto elem = GetElem(coors);
+      if (elem != ElemT(0.0)) {
+        std::cout << IndentPrinter(indent_level + 2) << "[";
+        VectorPrinter(coors);
+        std::cout << "]: " << elem << std::endl;
+      }
+    }
+  }
+}
+
+
 /**
 Calculate shape from tensor rank.
 */

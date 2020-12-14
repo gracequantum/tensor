@@ -89,6 +89,20 @@ TEST_F(TestIndex, Hashable) {
 }
 
 
+TEST_F(TestIndex, Showable) {
+  Show(idx_default);
+  std::cout << std::endl;
+  Show(idx_1sct_in);
+  std::cout << std::endl;
+  Show(idx_1sct_in, 1);
+  std::cout << std::endl;
+  Show(idx_2sct_in);
+  std::cout << std::endl;
+  Show(idx_2sct_out, 1);
+  std::cout << std::endl;
+}
+
+
 TEST_F(TestIndex, Inversion) {
   EXPECT_EQ(InverseIndex(idx_default), idx_default);
   EXPECT_EQ(InverseIndex(idx_2sct_in), idx_2sct_out);
