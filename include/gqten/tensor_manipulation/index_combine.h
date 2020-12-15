@@ -166,7 +166,7 @@ GQTensor<TenElemT, QNT> IndexCombine(
     auto qnsct_coor_from_new_idx = std::get<2>(qnscts_offset_info);
     auto intra_offset_in_new_qnsct = std::get<3>(qnscts_offset_info);
     auto qnsct_from_idx1 = idx1.GetQNSct(qnsct_coor_from_idx1);
-    auto qnsct_from_idx2 = idx1.GetQNSct(qnsct_coor_from_idx2);
+    auto qnsct_from_idx2 = idx2.GetQNSct(qnsct_coor_from_idx2);
     size_t k = new_idx_qnsct_dim_offsets[
                    qnsct_coor_from_new_idx
                ] + intra_offset_in_new_qnsct;
