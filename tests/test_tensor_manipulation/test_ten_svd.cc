@@ -96,6 +96,19 @@ inline void SVDTensRestore(
 }
 
 
+template <typename TenT>
+void CheckIsIdTen(const TenT &t) {
+  auto shape = t.GetShape();
+  EXPECT_EQ(shape.size(), 2);
+  EXPECT_EQ(shape[0], shape[1]);
+  for (size_t i = 0; i < shape[0]; ++i) {
+    GQTEN_Complex elem = t.GetElem({i, i});
+    EXPECT_NEAR(elem.real(), 1.0, 1E-14);
+    EXPECT_NEAR(elem.imag(), 0.0, 1E-14);
+  }
+}
+
+
 template <typename TenElemT, typename QNT>
 void RunTestSvdCase(
     GQTensor<TenElemT, QNT> &t,
@@ -122,6 +135,19 @@ void RunTestSvdCase(
       cutoff, dmin, dmax,
       &u, &s,&vt, &trunc_err, &D
   );
+
+  // Canonical check
+  GQTensor<TenElemT, QNT> temp1, temp2;
+  auto u_dag = Dag(u);
+  std::vector<size_t> cano_check_u_ctrct_axes;
+  for (size_t i = 0; i < ldims; ++i) { cano_check_u_ctrct_axes.push_back(i); }
+  Contract(&u, &u_dag, {cano_check_u_ctrct_axes, cano_check_u_ctrct_axes}, &temp1);
+  CheckIsIdTen(temp1);
+  auto vt_dag = Dag(vt);
+  std::vector<size_t> cano_check_vt_ctrct_axes;
+  for (size_t i = 1; i <= rdims; ++i) { cano_check_vt_ctrct_axes.push_back(i); }
+  Contract(&vt, &vt_dag, {cano_check_vt_ctrct_axes, cano_check_vt_ctrct_axes}, &temp2);
+  CheckIsIdTen(temp2);
 
   auto ndim = ldims + rdims;
   size_t rows = 1, cols = 1;
