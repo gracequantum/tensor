@@ -543,6 +543,8 @@ void GQTensor<ElemT, QNT>::Show(const size_t indent_level) const {
     index.Show(indent_level + 2);
   }
   if (!IsDefault()) {
+    std::cout << IndentPrinter(indent_level + 1) << "Divergence:" << std::endl;
+    Div().Show(indent_level + 2);
     std::cout << IndentPrinter(indent_level + 1) << "Nonzero elements:" << std::endl;
     for (auto &coors : GenAllCoors(shape_)) {
       auto elem = GetElem(coors);
