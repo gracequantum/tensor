@@ -184,7 +184,13 @@ struct RawDataCtrctTask {
             const RawDataCtrctTask &task_a,
             const RawDataCtrctTask &task_b
         ) -> bool {
-          return task_a.c_blk_idx < task_b.c_blk_idx;
+          if (task_a.c_blk_idx < task_b.c_blk_idx) {
+            return true;
+          } else if (task_a.c_blk_idx == task_b.c_blk_idx) {
+            return task_a.beta < task_b.beta;     // Keep beta == 0 task first
+          } else {
+            return false;
+          }
         }
     );
   }
