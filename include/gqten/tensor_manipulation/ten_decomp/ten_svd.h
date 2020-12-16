@@ -32,7 +32,7 @@ namespace gqten {
 // Some helpers
 
 
-// (unnormalized sv, data_blk_mat, mat_dim_label, normalized_sv)
+// (unnormalized sv, data_blk_mat, mat_dim_label, sv2)
 using TruncedSVInfo = std::tuple<GQTEN_Double, size_t, size_t, GQTEN_Double>;
 
 
@@ -328,20 +328,6 @@ void SVD(
 }
 
 
-void NormalizeSV(std::vector<TruncedSVInfo> &trunced_sv_info) {
-  GQTEN_Double norm2_sum = 0.0;
-  for (auto &sv_info : trunced_sv_info) {
-    auto sv = std::get<3>(sv_info);
-    norm2_sum += (sv * sv);
-  }
-  assert(norm2_sum != 0);
-  GQTEN_Double norm = std::sqrt(norm2_sum);
-  for (auto &sv_info : trunced_sv_info) {
-    std::get<3>(sv_info) /= norm;
-  }
-}
-
-
 GQTEN_Double SumSV2(
     const std::vector<TruncedSVInfo> &trunced_sv_info,
     const size_t beg,
@@ -349,8 +335,7 @@ GQTEN_Double SumSV2(
 ) {
   GQTEN_Double sv2_sum = 0.0;
   for (size_t i = beg; i < end; ++i) {
-    auto sv = std::get<3>(trunced_sv_info[i]);
-    sv2_sum += (sv * sv);
+    sv2_sum += std::get<3>(trunced_sv_info[i]);
   }
   return sv2_sum;
 }
@@ -373,7 +358,10 @@ std::vector<TruncedSVInfo> TensorSVDExecutor<TenElemT, QNT>::CalcTruncedSVInfo_(
     auto k = svd_res.k;
     auto s = svd_res.s;
     for (size_t i = 0; i < k; ++i) {
-      trunced_sv_info.emplace_back(std::make_tuple(s[i], idx, i, s[i]));
+      GQTEN_Double &sv = s[i];
+      if (sv != 0.0) {
+        trunced_sv_info.emplace_back(std::make_tuple(sv, idx, i, sv * sv));
+      }
     }
   }
   size_t total_sv_size = trunced_sv_info.size();
@@ -386,8 +374,6 @@ std::vector<TruncedSVInfo> TensorSVDExecutor<TenElemT, QNT>::CalcTruncedSVInfo_(
   }
 
   // Truncate
-  NormalizeSV(trunced_sv_info);
-  assert(DoubleEq(SumSV2(trunced_sv_info, 0, trunced_sv_info.size()), 1.0));
   std::sort(
       trunced_sv_info.begin(),
       trunced_sv_info.end(),
@@ -395,31 +381,31 @@ std::vector<TruncedSVInfo> TensorSVDExecutor<TenElemT, QNT>::CalcTruncedSVInfo_(
           const TruncedSVInfo &sv_info_a,
           const TruncedSVInfo &sv_info_b
       ) -> bool {
-        return std::get<3>(sv_info_a) > std::get<3>(sv_info_b);
+        return std::get<0>(sv_info_a) > std::get<0>(sv_info_b);
       }
   );
+  GQTEN_Double total_kept_sv2_sum = SumSV2(trunced_sv_info, 0, trunced_sv_info.size());
+  GQTEN_Double target_kept_sv2_sum = total_kept_sv2_sum * (1 - trunc_err_);
   size_t kept_dim = Dmin_;
   GQTEN_Double kept_sv2_sum = SumSV2(trunced_sv_info, 0, kept_dim);
-  GQTEN_Double actual_trunc_err = 1 - kept_sv2_sum;
   size_t next_kept_dim;
   GQTEN_Double next_kept_sv2_sum;
   while (true) {
+    if (kept_sv2_sum > target_kept_sv2_sum) { break; }
     next_kept_dim = kept_dim + 1;
     if (next_kept_dim > total_sv_size) { break; }
-    auto sv = std::get<3>(trunced_sv_info[next_kept_dim - 1]);
-    next_kept_sv2_sum = kept_sv2_sum + (sv * sv);
-    auto next_actual_trunc_err = 1 - next_kept_sv2_sum;
-    if (DoubleEq(next_actual_trunc_err, 0)) { next_actual_trunc_err = 0.0; }
-    if (next_kept_dim > Dmax_ || next_actual_trunc_err < trunc_err_) {
+    next_kept_sv2_sum = kept_sv2_sum +
+                        std::get<3>(trunced_sv_info[next_kept_dim - 1]);
+    if (next_kept_dim > Dmax_) {
       break;
     } else {
       kept_dim = next_kept_dim;
       kept_sv2_sum = next_kept_sv2_sum;
-      actual_trunc_err = next_actual_trunc_err;
     }
   }
   assert(kept_dim <= total_sv_size);
-  *pactual_trunc_err_ = actual_trunc_err;
+  GQTEN_Double actual_trunc_err = 1 - (kept_sv2_sum / total_kept_sv2_sum);
+  *pactual_trunc_err_ = actual_trunc_err > 0 ? actual_trunc_err : 0;
   *pD_ = kept_dim;
   trunced_sv_info.resize(kept_dim);
   // Sort back
