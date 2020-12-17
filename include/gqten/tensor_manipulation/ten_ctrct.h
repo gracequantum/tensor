@@ -14,8 +14,9 @@
 #define GQTEN_TENSOR_MANIPULATION_TEN_CTRCT_H
 
 
-#include "gqten/framework/bases/executor.h"                         // Executor
+#include "gqten/framework/bases/executor.h"                 // Executor
 #include "gqten/gqtensor_all.h"
+#include "gqten/tensor_manipulation/basic_operations.h"     // ToComplex
 
 #include <vector>     // vector
 
@@ -134,6 +135,30 @@ void Contract(
       pc
   );
   ten_ctrct_executor.Execute();
+}
+
+
+template <typename QNT>
+void Contract(
+    const GQTensor<GQTEN_Double, QNT> *pa,
+    const GQTensor<GQTEN_Complex, QNT> *pb,
+    const std::vector<std::vector<size_t>> &axes_set,
+    GQTensor<GQTEN_Complex, QNT> *pc
+) {
+  auto cplx_a = ToComplex(*pa);
+  Contract(&cplx_a, pb, axes_set, pc);
+}
+
+
+template <typename QNT>
+void Contract(
+    const GQTensor<GQTEN_Complex, QNT> *pa,
+    const GQTensor<GQTEN_Double, QNT> *pb,
+    const std::vector<std::vector<size_t>> &axes_set,
+    GQTensor<GQTEN_Complex, QNT> *pc
+) {
+  auto cplx_b = ToComplex(*pb);
+  Contract(pa, &cplx_b, axes_set, pc);
 }
 
 
