@@ -69,6 +69,11 @@ public:
       const std::vector<std::vector<size_t>> &
   );
 
+  void DataBlkCopyAndScale(
+      const RawDataCopyAndScaleTask<ElemT> &,
+      const ElemT *
+  );
+
   std::map<size_t, DataBlkMatSvdRes<ElemT>> DataBlkDecompSVD(
       const IdxDataBlkMatMap<QNT> &
   ) const ;
@@ -202,6 +207,10 @@ private:
   void RawDataInsert_(const size_t, const size_t, const bool init = false);
 
   void RawDataCopy_(const std::vector<RawDataCopyTask> &, const ElemT *);
+  void RawDataCopyAndScale_(
+      const RawDataCopyAndScaleTask<ElemT> &,
+      const ElemT *
+  );
   void RawDataDuplicateFromReal_(const GQTEN_Double *, const size_t);
 
   void RawDataRand_(void);

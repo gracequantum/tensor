@@ -70,6 +70,18 @@ BlockSparseDataTensor<ElemT, QNT>::DataBlkInsert(
 }
 
 
+/**
+Copy and rescale raw data from another tensor.
+*/
+template<typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::DataBlkCopyAndScale(
+    const RawDataCopyAndScaleTask<ElemT> &task,
+    const ElemT *pten_raw_data
+) {
+  RawDataCopyAndScale_(task, pten_raw_data);
+}
+
+
 // Some helpers for tensor contraction
 std::vector<std::vector<size_t>> TenCtrctGenSavedAxesSet(
     const size_t a_rank,

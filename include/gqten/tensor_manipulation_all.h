@@ -16,6 +16,7 @@
 
 #include "gqten/tensor_manipulation/basic_operations.h"       // Dag, Div, ToComplex
 #include "gqten/tensor_manipulation/index_combine.h"          // IndexCombine
+#include "gqten/tensor_manipulation/ten_linear_combine.h"     // LinearCombine
 #include "gqten/tensor_manipulation/ten_ctrct.h"              // Contract, TensorContractionExecutor
 #include "gqten/tensor_manipulation/ten_decomp/ten_svd.h"     // SVD, TensorSVDExecutor
 

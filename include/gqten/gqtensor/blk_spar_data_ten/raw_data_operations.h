@@ -218,6 +218,41 @@ void BlockSparseDataTensor<ElemT, QNT>::RawDataCopy_(
 
 
 /**
+Copy and scale a piece of raw data from another place. You can decided whether
+add this piece on the original one.
+
+@param raw_data_copy_tasks Raw data copy task list.
+@param psrc_raw_data The pointer to source data.
+*/
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::RawDataCopyAndScale_(
+    const RawDataCopyAndScaleTask<ElemT> &raw_data_copy_and_scale_task,
+    const ElemT *psrc_raw_data
+) {
+  auto dest_data_offset = blk_idx_data_blk_map_[
+                              BlkCoorsToBlkIdx(
+                                  raw_data_copy_and_scale_task.dest_blk_coors
+                              )
+                          ].data_offset;
+  if (raw_data_copy_and_scale_task.copy_and_add) {
+    hp_numeric::VectorAddTo(
+        psrc_raw_data + raw_data_copy_and_scale_task.src_data_offset,
+        raw_data_copy_and_scale_task.src_data_size,
+        pactual_raw_data_ + dest_data_offset,
+        raw_data_copy_and_scale_task.coef
+    );
+  } else {
+    hp_numeric::VectorScaleCopy(
+        psrc_raw_data + raw_data_copy_and_scale_task.src_data_offset,
+        raw_data_copy_and_scale_task.src_data_size,
+        pactual_raw_data_ + dest_data_offset,
+        raw_data_copy_and_scale_task.coef
+    );
+  }
+}
+
+
+/**
 Duplicate a whole same size real raw data array from another place.
 */
 template <typename ElemT, typename QNT>

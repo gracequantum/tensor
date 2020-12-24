@@ -57,6 +57,11 @@ add_unittest(test_basic_operations
   "test_tensor_manipulation/test_basic_operations.cc"
   "${MATH_LIB_COMPILE_FLAGS}" "" "${MATH_LIB_LINK_FLAGS}"
 )
+# Test tensor linear combination.
+add_unittest(test_ten_linear_combine
+  "test_tensor_manipulation/test_ten_linear_combine.cc"
+  "${MATH_LIB_COMPILE_FLAGS}" "" "${MATH_LIB_LINK_FLAGS}"
+)
 # Test tensor contraction.
 add_unittest(test_ten_ctrct
   "test_tensor_manipulation/test_ten_ctrct.cc"

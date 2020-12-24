@@ -17,6 +17,7 @@
 
 #include "gqten/framework/value_t.h"      // GQTEN_Double, GQTEN_Complex
 
+#include <string.h>     // memcpy
 #ifdef Release
   #define NDEBUG
 #endif
@@ -35,19 +36,42 @@ namespace hp_numeric {
 inline void VectorAddTo(
     const GQTEN_Double *x,
     const size_t size,
-    GQTEN_Double *y
+    GQTEN_Double *y,
+    const GQTEN_Double a = 1.0
 ) {
-  cblas_daxpy(size, 1.0, x, 1, y, 1);
+  cblas_daxpy(size, a, x, 1, y, 1);
 }
 
 
 inline void VectorAddTo(
     const GQTEN_Complex *x,
     const size_t size,
-    GQTEN_Complex *y
+    GQTEN_Complex *y,
+    const GQTEN_Complex a = 1.0
 ) {
-  GQTEN_Complex a(1.0);
   cblas_zaxpy(size, &a, x, 1, y, 1);
+}
+
+
+inline void VectorScaleCopy(
+    const GQTEN_Double *x,
+    const size_t size,
+    GQTEN_Double *y,
+    const GQTEN_Double a = 1.0
+) {
+  memcpy(y, x, size * sizeof(GQTEN_Double));
+  cblas_dscal(size, a, y, 1);
+}
+
+
+inline void VectorScaleCopy(
+    const GQTEN_Complex *x,
+    const size_t size,
+    GQTEN_Complex *y,
+    const GQTEN_Complex a = 1.0
+) {
+  memcpy(y, x, size * sizeof(GQTEN_Complex));
+  cblas_zscal(size, &a, y, 1);
 }
 
 

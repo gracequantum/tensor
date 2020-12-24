@@ -105,10 +105,36 @@ struct RawDataCopyTask {
       const CoorsT &src_blk_coors,
       const size_t src_data_offset,
       const size_t src_data_size,
-      const bool copy_and_add = false) :
-      src_blk_coors(src_blk_coors),
+      const bool copy_and_add = false
+  ) : src_blk_coors(src_blk_coors),
       src_data_offset(src_data_offset),
       src_data_size(src_data_size),
+      copy_and_add(copy_and_add) {}
+};
+
+
+/**
+Task for tensor linear combination data copy.
+*/
+template <typename CoefT>
+struct RawDataCopyAndScaleTask {
+  size_t src_data_offset;
+  size_t src_data_size;
+
+  CoorsT dest_blk_coors;
+  CoefT coef;
+  bool copy_and_add;
+
+  RawDataCopyAndScaleTask(
+      const size_t src_data_offset,
+      const size_t src_data_size,
+      const CoorsT &dest_blk_coors,
+      const CoefT coef,
+      const bool copy_and_add
+  ) : src_data_offset(src_data_offset),
+      src_data_size(src_data_size),
+      dest_blk_coors(dest_blk_coors),
+      coef(coef),
       copy_and_add(copy_and_add) {}
 };
 
