@@ -8,11 +8,22 @@ _If it isn't fast, it isn't graceful_
 [![Documentation Status](https://readthedocs.org/projects/gqten-doc/badge/?version=latest)](https://tensor.gracequantum.org/en/latest/?badge=latest)
 
 ### Last release
-- [v0.2-alpha.0](https://github.com/gracequantum/tensor/releases/tag/v0.2-alpha.0)
+- [v0.2-alpha.1](https://github.com/gracequantum/tensor/releases/latest)
 
 
 ## Project homepage
 For more information, user guide, and documentation, please visit [project homepage](https://tensor.gracequantum.org).
+
+
+## Current developers and maintainers
+- Rong-Yang Sun <sun-rongyang@outlook.com>
+
+> Note: For a complete list of the contributors, see CONTRIBUTORS.txt
+
+
+## How to cite
+You can cite the GraceQ/tensor where you use it as a support to this project. Please cite GraceQ/tensor as
+> GraceQuantum.org . GraceQ/tensor: A high-performance tensor computation framework for the quantum physics community. Homepage: https://tensor.gracequantum.org . For a complete list of the contributors, see CONTRIBUTORS.txt .
 
 
 ## Acknowledgments
