@@ -77,3 +77,8 @@ add_unittest(test_index_combine
   "test_tensor_manipulation/test_index_combine.cc"
   "${MATH_LIB_COMPILE_FLAGS}" "" "${MATH_LIB_LINK_FLAGS}"
 )
+# Test tensor expansion
+add_unittest(test_ten_expand
+  "test_tensor_manipulation/test_ten_expand.cc"
+  "${MATH_LIB_COMPILE_FLAGS}" "" "${MATH_LIB_LINK_FLAGS}"
+)

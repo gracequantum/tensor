@@ -47,6 +47,7 @@ public:
   }
 
   size_t PartHash(const std::vector<size_t> &) const;
+  size_t QnHash(void) const;
 
   /**
   Transpose quantum number sectors.
@@ -72,6 +73,17 @@ size_t QNBlkInfo<QNT>::PartHash(const std::vector<size_t> &axes) const {
     pselected_qnscts[i] = &qnscts[axes[i]];
   }
   return VecPtrHasher(pselected_qnscts);
+}
+
+
+/**
+Calculate a hash value only based on quantum numbers but the shape of the degeneracy space.
+*/
+template <typename QNT>
+size_t QNBlkInfo<QNT>::QnHash(void) const {
+  std::vector<QNT> qns;
+  for (auto &qnsct : qnscts) { qns.push_back(qnsct.GetQn()); }
+  return VecHasher(qns);
 }
 } /* gqten */
 #endif /* ifndef GQTEN_GQTENSOR_QNBLK_INFO_H */

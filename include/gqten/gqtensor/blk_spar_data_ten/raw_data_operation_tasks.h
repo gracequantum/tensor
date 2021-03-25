@@ -91,6 +91,8 @@ struct RawDataTransposeTask {
 
 /**
 Task for data copy.
+
+@note The constructor will **not** initialize the dest_data_offset member!
 */
 struct RawDataCopyTask {
   CoorsT src_blk_coors;

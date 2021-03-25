@@ -381,6 +381,107 @@ void BlockSparseDataTensor<ElemT, QNT>::CtrctTwoBSDTAndAssignIn(
 }
 
 
+// Helpers for tensor expansion
+using BlkCoorsShapePair = std::pair<CoorsT, ShapeT>;
+// (hash value of qn info) -> (blk coors, shape)
+using QnInfoHashBlkCoorsShapeMap = std::unordered_map<
+                                       size_t,
+                                       BlkCoorsShapePair
+                                   >;
+
+
+// Warning: the input must be an empty BSDT without any DataBlk
+// TODO: Provide similar feature in the BSDT class
+template <typename ElemT, typename QNT>
+QnInfoHashBlkCoorsShapeMap GenQnInfoHashBlkCoorsShapeMap(
+    const BlockSparseDataTensor<ElemT, QNT> &bsdt
+) {
+  BlockSparseDataTensor<ElemT, QNT> bsdt_copy(bsdt);
+  for (auto &blk_coors : GenAllCoors(bsdt_copy.blk_shape)) {
+    bsdt_copy.DataBlkInsert(blk_coors, false);
+  }
+
+  QnInfoHashBlkCoorsShapeMap qninfohash_blkcoors_shape_map;
+  for (auto &blk_idx_data_blk : bsdt_copy.GetBlkIdxDataBlkMap()) {
+    auto data_blk = blk_idx_data_blk.second;
+    qninfohash_blkcoors_shape_map[
+        data_blk.GetQNBlkInfo().QnHash()
+    ] = std::make_pair(data_blk.blk_coors, data_blk.shape);
+  }
+
+  return qninfohash_blkcoors_shape_map;
+}
+
+
+/**
+Construct tensor expansion data from corresponding BSDTs.
+*/
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::ConstructExpandedDataFrom(
+    const BlockSparseDataTensor &bsdt_a,
+    const BlockSparseDataTensor &bsdt_b
+) {
+  auto qninfohash_blkcoors_shape_map = GenQnInfoHashBlkCoorsShapeMap(*this);
+  auto blk_idx_data_blk_map_a = bsdt_a.GetBlkIdxDataBlkMap();
+  std::vector<size_t> tensor_embed_offsets_a(ten_rank, 0);
+  for (auto &blk_idx_data_blk : blk_idx_data_blk_map_a) {
+    auto data_blk_a = blk_idx_data_blk.second;
+    auto qnhash = data_blk_a.GetQNBlkInfo().QnHash();
+    assert(
+        qninfohash_blkcoors_shape_map.find(qnhash) !=
+        qninfohash_blkcoors_shape_map.end()
+    );
+    auto blk_coors_shape_pair = qninfohash_blkcoors_shape_map[qnhash];
+    auto blk_idx_data_blk_it = DataBlkInsert(blk_coors_shape_pair.first);
+    auto data_blk_expanded = blk_idx_data_blk_it->second;
+    RawDataEmbed_(
+        bsdt_a.GetActualRawDataPtr(),
+        data_blk_a,
+        data_blk_expanded,
+        tensor_embed_offsets_a
+    );
+  }
+  auto blk_idx_data_blk_map_b = bsdt_b.GetBlkIdxDataBlkMap();
+  for (auto &blk_idx_data_blk : blk_idx_data_blk_map_b) {
+    auto data_blk_b = blk_idx_data_blk.second;
+    auto qnhash = data_blk_b.GetQNBlkInfo().QnHash();
+    assert(
+        qninfohash_blkcoors_shape_map.find(qnhash) !=
+        qninfohash_blkcoors_shape_map.end()
+    );
+    auto blk_coors_shape_pair = qninfohash_blkcoors_shape_map[qnhash];
+    if (data_blk_b.shape != blk_coors_shape_pair.second) {
+      std::vector<size_t> tensor_embed_offsets_b;
+      tensor_embed_offsets_b.reserve(ten_rank);
+      for (size_t i = 0; i < ten_rank; ++i) {
+        tensor_embed_offsets_b.push_back(
+            blk_coors_shape_pair.second[i] - data_blk_b.shape[i]
+        );
+      }
+      auto data_blk_expanded = GetBlkIdxDataBlkMap().at(
+                                   BlkCoorsToBlkIdx(blk_coors_shape_pair.first)
+                               );
+      RawDataEmbed_(
+          bsdt_b.GetActualRawDataPtr(),
+          data_blk_b,
+          data_blk_expanded,
+          tensor_embed_offsets_b
+      );
+    } else {
+      auto blk_idx_data_blk_it = DataBlkInsert(blk_coors_shape_pair.first);
+      auto data_blk_expanded = blk_idx_data_blk_it->second;
+      std::vector<size_t> &tensor_embed_offsets_b = tensor_embed_offsets_a;
+      RawDataEmbed_(
+          bsdt_b.GetActualRawDataPtr(),
+          data_blk_b,
+          data_blk_expanded,
+          tensor_embed_offsets_b
+      );
+    }
+  }
+}
+
+
 /**
 Copy contents from a real block sparse data tensor.
 

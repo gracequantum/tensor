@@ -128,6 +128,18 @@ inline T VecMultiSelectElemts(
 }
 
 
+// Add two coordinates together
+inline CoorsT CoorsAdd(const CoorsT &coors1, const CoorsT &coors2) {
+  assert(coors1.size() == coors2.size());
+  CoorsT res;
+  res.reserve(coors1.size());
+  for (size_t i = 0; i < coors1.size(); ++i) {
+    res.push_back(coors1[i] + coors2[i]);
+  }
+  return res;
+}
+
+
 //// Equivalence check
 inline bool DoubleEq(const GQTEN_Double a, const GQTEN_Double b) {
   if (std::abs(a-b) < kDoubleEpsilon) {

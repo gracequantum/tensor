@@ -76,7 +76,7 @@ public:
 
   std::map<size_t, DataBlkMatSvdRes<ElemT>> DataBlkDecompSVD(
       const IdxDataBlkMatMap<QNT> &
-  ) const ;
+  ) const;
 
   void DataBlkCopySVDUdata(
       const CoorsT &, const size_t, const size_t,
@@ -111,6 +111,10 @@ public:
       const BlockSparseDataTensor &,
       const BlockSparseDataTensor &,
       std::vector<RawDataCtrctTask> &
+  );
+  void ConstructExpandedDataFrom(
+      const BlockSparseDataTensor &,
+      const BlockSparseDataTensor &
   );
 
   void CopyFromReal(const BlockSparseDataTensor<GQTEN_Double, QNT> &);
@@ -210,6 +214,12 @@ private:
   void RawDataCopyAndScale_(
       const RawDataCopyAndScaleTask<ElemT> &,
       const ElemT *
+  );
+  void RawDataEmbed_(
+      const ElemT *,
+      const DataBlk<QNT> &,
+      const DataBlk<QNT> &,
+      const CoorsT &
   );
   void RawDataDuplicateFromReal_(const GQTEN_Double *, const size_t);
 
