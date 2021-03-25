@@ -19,6 +19,7 @@
 #include "gqten/tensor_manipulation/ten_linear_combine.h"     // LinearCombine
 #include "gqten/tensor_manipulation/ten_ctrct.h"              // Contract, TensorContractionExecutor
 #include "gqten/tensor_manipulation/ten_decomp/ten_svd.h"     // SVD, TensorSVDExecutor
+#include "gqten/tensor_manipulation/ten_expand.h"             // Expand
 
 
 #endif /* ifndef GQTEN_TENSOR_MANIPULATION_ALL */
