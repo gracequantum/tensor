@@ -201,7 +201,8 @@ inline Index<QNT> ExpandIndex(
     bool has_matched_qnsct_in_qnscts_from_b = false;
     for (size_t sct_coor_b = 0; sct_coor_b < qnscts_from_b_size; ++sct_coor_b) {
       auto qnsct_from_b = qnscts_from_b[sct_coor_b];
-      if (qnsct_from_b == qnsct_from_a) {
+      // Expand the dimension when two QNSectors have the same QN
+      if (qnsct_from_b.GetQn() == qnsct_from_a.GetQn()) {
         auto expanded_qnsct = QNSector<QNT>(
                                   qnsct_from_a.GetQn(),
                                   qnsct_from_a.dim() + qnsct_from_b.dim()
