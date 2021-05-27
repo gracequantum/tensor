@@ -287,6 +287,17 @@ void BlockSparseDataTensor<ElemT, QNT>::RawDataEmbed_(
   }
 }
 
+/**
+ * Set a piece of data to zeros.
+ * @param offset  starting point of the piece of data
+ * @param size    the size the piece of data
+ */
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::RawDataSetZeros_(
+    const size_t offset,
+    const size_t size){
+  memset(pactual_raw_data_ + offset, 0, size*sizeof(ElemT) );
+}
 
 /**
 Duplicate a whole same size real raw data array from another place.

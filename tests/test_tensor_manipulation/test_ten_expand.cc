@@ -48,6 +48,19 @@ void RunTestTenExpansionCase(
   EXPECT_TRUE(res == c);
 }
 
+template <typename TenT>
+void RunTestTenExpansionOneIndexCase(
+    TenT &a,
+    TenT &b,
+    const size_t &expand_idx_num,
+    const TenT &c
+) {
+  TenT res;
+  Expand(&a, &b, expand_idx_num, &res);
+  EXPECT_TRUE(res == c);
+}
+
+
 
 TEST(TestExpand, TestCase) {
   DGQTensor ten0 = DGQTensor({idx_inm1, idx_outm1});
@@ -71,4 +84,7 @@ TEST(TestExpand, TestCase) {
   RunTestTenExpansionCase(ten0, ten1, {0, 1}, ten2);
   RunTestTenExpansionCase(ten3, ten3, {1}, ten4);
   RunTestTenExpansionCase(ten2, ten2, {0}, ten5);
+
+  RunTestTenExpansionOneIndexCase(ten3, ten3, 1, ten4);
+  RunTestTenExpansionOneIndexCase(ten2, ten2, 0, ten5);
 }

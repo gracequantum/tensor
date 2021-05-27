@@ -117,6 +117,13 @@ public:
       const BlockSparseDataTensor &
   );
 
+  void ConstructExpandedDataOnFirstIndex(
+      const BlockSparseDataTensor &,
+      const BlockSparseDataTensor &,
+      std::vector<bool> ,
+      std::map<size_t, size_t>
+  );
+
   void CopyFromReal(const BlockSparseDataTensor<GQTEN_Double, QNT> &);
 
   // Operators overload
@@ -221,6 +228,7 @@ private:
       const DataBlk<QNT> &,
       const CoorsT &
   );
+  void RawDataSetZeros_(const size_t, const size_t);
   void RawDataDuplicateFromReal_(const GQTEN_Double *, const size_t);
 
   void RawDataRand_(void);
