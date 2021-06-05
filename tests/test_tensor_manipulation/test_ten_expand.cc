@@ -46,6 +46,10 @@ void RunTestTenExpansionCase(
   TenT res;
   Expand(&a, &b, expand_idx_nums, &res);
   EXPECT_TRUE(res == c);
+  auto a_copy = a;
+  auto b_copy =b;
+  Extend(&a_copy, &b_copy, expand_idx_nums, &res);
+  EXPECT_TRUE(res == c);
 }
 
 template <typename TenT>
@@ -60,6 +64,17 @@ void RunTestTenExpansionOneIndexCase(
   EXPECT_TRUE(res == c);
 }
 
+template <typename TenT>
+void RunTestTenExtensionCase( // We suppose the old version Tensor Expand is right
+    TenT a,
+    TenT b,
+    const std::vector<size_t> &expand_idx_nums){
+  TenT res1;
+  TenT res2;
+  Expand(&a, &b, expand_idx_nums, &res1);
+  Extend(&a, &b, expand_idx_nums, &res2);
+  EXPECT_TRUE(res1 == res2);
+}
 
 
 TEST(TestExpand, TestCase) {
@@ -80,6 +95,11 @@ TEST(TestExpand, TestCase) {
   ten5({1, 0}) = 1.0;
   ten5({2, 1}) = 1.0;
   ten5({3, 1}) = 1.0;
+  DGQTensor ten6 = DGQTensor({idx_in4,  idx_out2, idx_out2});
+  ten6({0, 0, 0}) = 1.0;
+  ten6({1, 0, 0}) = 2.0;
+  ten6({2, 1, 0}) = 0.5;
+  ten6({3, 1, 0}) = -1.0;
 
   RunTestTenExpansionCase(ten0, ten1, {0, 1}, ten2);
   RunTestTenExpansionCase(ten3, ten3, {1}, ten4);
@@ -87,4 +107,8 @@ TEST(TestExpand, TestCase) {
 
   RunTestTenExpansionOneIndexCase(ten3, ten3, 1, ten4);
   RunTestTenExpansionOneIndexCase(ten2, ten2, 0, ten5);
+  RunTestTenExtensionCase( ten6, ten6, {1,2});
+  RunTestTenExtensionCase( ten6, ten6, {0,1});
+  RunTestTenExtensionCase( ten6, ten6, {0,2});
+  RunTestTenExtensionCase( ten6, ten6, {0,1,2});
 }

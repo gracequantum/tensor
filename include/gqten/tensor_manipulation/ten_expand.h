@@ -86,6 +86,13 @@ inline void ExpandedTenDivChecker(
   }
 }
 
+template <typename TenElemT, typename QNT>
+void Expand(
+    GQTensor<TenElemT, QNT> *pa,
+    GQTensor<TenElemT, QNT> *pb,
+    const size_t expand_idx_num,
+    GQTensor<TenElemT, QNT> *pc
+);
 
 /**
 Function version for tensor expansion.
@@ -137,6 +144,70 @@ void Expand(
 #endif /* ifndef NDEBUG */
 }
 
+
+/**
+Function version for tensor expansion.
+
+@tparam TenElemT The type of tensor elements.
+@tparam QNT The quantum number type of the tensors.
+
+@param pa Pointer to input tensor \f$ A \f$.
+@param pb Pointer to input tensor \f$ B \f$.
+@param expand_idx_nums Index numbers which index to be expanded.
+@param pc Pointer to result tensor \f$ C \f$.
+*/
+template <typename TenElemT, typename QNT>
+void Extend(
+    GQTensor<TenElemT, QNT> *pa,
+    GQTensor<TenElemT, QNT> *pb,
+    const std::vector<size_t> &expand_idx_nums,
+    GQTensor<TenElemT, QNT> *pc
+) {
+#ifndef NDEBUG
+  assert(pa->Rank() == pb->Rank());     // To be expanded tensors should have the same rank
+  for (size_t i = 0; i < pa->Rank(); ++i) {
+    if(find(expand_idx_nums.begin(), expand_idx_nums.end(), i ) != expand_idx_nums.cend()){
+      // Indexes of the to be expanded tensors should have the same directions
+      assert(pa->GetIndexes()[i].GetDir() == pb->GetIndexes()[i].GetDir());
+    }else{
+      assert(pa->GetIndexes()[i] == pb->GetIndexes()[i]);
+    }
+  }
+  // To be expanded tensors should have the same quantum number divergence or a null quantum number divergence QNT()
+  assert(pa->Div() ==  pb->Div() || pa->Div() == QNT() || pb->Div() == QNT());
+#endif /* ifndef NDEBUG */
+  if(expand_idx_nums.size() == 1 ){
+    Expand(pa,pb,expand_idx_nums[0],pc);
+    return;
+  }else{
+    std::vector<size_t> expand_idx_nums2(expand_idx_nums.begin(), expand_idx_nums.end()-1);
+    GQTensor<TenElemT, QNT> *off_diag_tensor_a, *off_diag_tensor_b,*left_half_tensor, *right_half_tensor;
+    auto indexes_a=pa->GetIndexes();
+    auto indexes_b=pb->GetIndexes();
+    auto off_diag_tensor_a_indexes = pa->GetIndexes();
+    auto off_diag_tensor_b_indexes = pb->GetIndexes();
+    for(auto idx_num : expand_idx_nums2){
+      off_diag_tensor_a_indexes[idx_num] = indexes_b[idx_num];
+      off_diag_tensor_b_indexes[idx_num] = indexes_a[idx_num];
+    }
+    off_diag_tensor_a = new GQTensor<TenElemT, QNT>(off_diag_tensor_a_indexes);
+    left_half_tensor = new GQTensor<TenElemT, QNT>();
+    Extend(pa, off_diag_tensor_a, expand_idx_nums2, left_half_tensor);
+    delete off_diag_tensor_a;
+
+    off_diag_tensor_b = new GQTensor<TenElemT, QNT>(off_diag_tensor_b_indexes);
+    right_half_tensor = new GQTensor<TenElemT, QNT>();
+    Extend(off_diag_tensor_b, pb, expand_idx_nums2, right_half_tensor);
+    delete off_diag_tensor_b;
+
+    Expand(left_half_tensor, right_half_tensor, expand_idx_nums.back(), pc);
+    delete left_half_tensor, right_half_tensor;
+  }
+
+#ifndef NDEBUG
+  ExpandedTenDivChecker(*pa, *pb, *pc);
+#endif /* ifndef NDEBUG */
+}
 
 /**
 Expand Index of tensor \f$ A \f$ and \f$ B \f$.
