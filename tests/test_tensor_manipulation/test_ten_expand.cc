@@ -9,7 +9,7 @@
 #include "gqten/tensor_manipulation/ten_expand.h"
 
 #include "gtest/gtest.h"
-
+#include "gqten/utility/timer.h"
 
 using namespace gqten;
 using U1QN = QN<U1QNVal>;
@@ -24,13 +24,18 @@ U1QN qnp2 = U1QN({QNCard(qn_nm, U1QNVal( 2))});
 U1QN qnm1 = U1QN({QNCard(qn_nm, U1QNVal(-1))});
 QNSctT qnsctp1 = QNSctT(qnp1, 1);
 QNSctT qnsctp2 = QNSctT(qnp1, 2);
+QNSctT qnsctp3 = QNSctT(qnp1, 200);
 QNSctT qnsctm1 = QNSctT(qnm1, 1);
 QNSctT qnsctm2 = QNSctT(qnm1, 2);
+QNSctT qnsctm3 = QNSctT(qnm1, 100);
+QNSctT qnsct0 = QNSctT(qn0, 220);
 IndexT idx_inm1 = IndexT({qnsctm1}, IN);
 IndexT idx_inp1 = IndexT({qnsctp1}, IN);
 IndexT idx_outm1 = IndexT({qnsctm1}, OUT);
 IndexT idx_outm2 = IndexT({qnsctm2}, OUT);
 IndexT idx_outp1 = IndexT({qnsctp1}, OUT);
+IndexT idx_out1 = IndexT({qnsctp3, qnsct0,qnsctm3}, OUT);
+IndexT idx_in1 = IndexT({qnsctp3, qnsct0,qnsctm3}, IN);
 IndexT idx_in2 = IndexT({qnsctm1, qnsctp1}, IN);
 IndexT idx_in4 = IndexT({qnsctm2, qnsctp2}, IN);
 IndexT idx_out2 = IndexT({qnsctm1, qnsctp1}, OUT);
@@ -44,6 +49,7 @@ void RunTestTenExpansionCase(
     const TenT &c
 ) {
   TenT res;
+
   Expand(&a, &b, expand_idx_nums, &res);
   EXPECT_TRUE(res == c);
   auto a_copy = a;
@@ -71,8 +77,13 @@ void RunTestTenExtensionCase( // We suppose the old version Tensor Expand is rig
     const std::vector<size_t> &expand_idx_nums){
   TenT res1;
   TenT res2;
+  Timer expand_timer("expand");
+  expand_timer.Restart();
   Expand(&a, &b, expand_idx_nums, &res1);
+  expand_timer.PrintElapsed();
+  expand_timer.Restart();
   Extend(&a, &b, expand_idx_nums, &res2);
+  expand_timer.PrintElapsed();
   EXPECT_TRUE(res1 == res2);
 }
 
@@ -101,6 +112,12 @@ TEST(TestExpand, TestCase) {
   ten6({2, 1, 0}) = 0.5;
   ten6({3, 1, 0}) = -1.0;
 
+  DGQTensor ten7 = DGQTensor({idx_in1, idx_out1});
+  ten7.Random( qn0 );
+
+  DGQTensor ten8 = DGQTensor({idx_in1, idx_out1,idx_in4});
+  ten8.Random( qn0 );
+
   RunTestTenExpansionCase(ten0, ten1, {0, 1}, ten2);
   RunTestTenExpansionCase(ten3, ten3, {1}, ten4);
   RunTestTenExpansionCase(ten2, ten2, {0}, ten5);
@@ -111,4 +128,11 @@ TEST(TestExpand, TestCase) {
   RunTestTenExtensionCase( ten6, ten6, {0,1});
   RunTestTenExtensionCase( ten6, ten6, {0,2});
   RunTestTenExtensionCase( ten6, ten6, {0,1,2});
+
+  RunTestTenExtensionCase( ten7, ten7, {0});
+
+  RunTestTenExtensionCase( ten8, ten8, {1});
+  RunTestTenExtensionCase( ten8, ten8, {0,1});
+  RunTestTenExtensionCase( ten8, ten8, {0,1,2});
+
 }

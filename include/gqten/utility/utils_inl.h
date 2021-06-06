@@ -79,14 +79,8 @@ inline std::vector<size_t> CalcMultiDimDataOffsets(const ShapeT &shape) {
   if (ndim == 0) { return {}; }
   std::vector<size_t> offsets(ndim);
   offsets[ndim - 1] = 1;
-  if (ndim >= 2) {
-    size_t offset = 1;
-    // TODO: Ugly for loop.
-    for (size_t i = ndim - 2; true; --i) {
-      offset *= shape[i+1];
-      offsets[i] = offset;
-      if (i == 0) { break; }
-    }
+  for(int i = ndim-2; i>=0;--i){
+    offsets[i]=offsets[i+1]*shape[i+1];
   }
   return offsets;
 }
