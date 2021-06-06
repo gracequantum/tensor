@@ -60,6 +60,48 @@ struct TestContraction : public testing::Test {
 };
 
 
+inline void CblasGemm(
+    const CBLAS_LAYOUT Layout,
+    const CBLAS_TRANSPOSE transa, const CBLAS_TRANSPOSE transb,
+    const MKL_INT m, const MKL_INT n, const MKL_INT k,
+    const gqten::GQTEN_Double alpha,
+    const gqten::GQTEN_Double *a, const MKL_INT lda,
+    const gqten::GQTEN_Double *b, const MKL_INT ldb,
+    const gqten::GQTEN_Double beta,
+    gqten::GQTEN_Double *c, const MKL_INT ldc) {
+  cblas_dgemm(
+      Layout,
+      transa, transb,
+      m, n, k,
+      alpha,
+      a, lda,
+      b, ldb,
+      beta,
+      c, ldc);
+}
+
+
+inline void CblasGemm(
+    const CBLAS_LAYOUT Layout,
+    const CBLAS_TRANSPOSE transa, const CBLAS_TRANSPOSE transb,
+    const MKL_INT m, const MKL_INT n, const MKL_INT k,
+    const gqten::GQTEN_Complex alpha,
+    const gqten::GQTEN_Complex *a, const MKL_INT lda,
+    const gqten::GQTEN_Complex *b, const MKL_INT ldb,
+    const gqten::GQTEN_Complex beta,
+    gqten::GQTEN_Complex *c, const MKL_INT ldc) {
+  cblas_zgemm(
+      Layout,
+      transa, transb,
+      m, n, k,
+      &alpha,
+      a, lda,
+      b, ldb,
+      &beta,
+      c, ldc);
+}
+
+
 template <typename TenElemT, typename QNT>
 void RunTestTenCtrct1DCase(GQTensor<TenElemT, QNT> &t, const QNT &div) {
   t.Random(div);

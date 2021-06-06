@@ -15,7 +15,6 @@
 #include <random>
 
 #include "gtest/gtest.h"
-#include "mkl.h"    // Included after other header file. Because GraceQ needs redefine MKL_Complex16 to gqten::GQTEN_Complex .
 
 
 const double kEpsilon = 1.0E-13;
@@ -101,47 +100,5 @@ inline void GtestArrayEq(
   for (long i = 0; i < len; ++i) {
     EXPECT_COMPLEX_EQ(lhs[i], rhs[i]);
   }
-}
-
-
-inline void CblasGemm(
-    const CBLAS_LAYOUT Layout,
-    const CBLAS_TRANSPOSE transa, const CBLAS_TRANSPOSE transb,
-    const MKL_INT m, const MKL_INT n, const MKL_INT k,
-    const gqten::GQTEN_Double alpha,
-    const gqten::GQTEN_Double *a, const MKL_INT lda,
-    const gqten::GQTEN_Double *b, const MKL_INT ldb,
-    const gqten::GQTEN_Double beta,
-    gqten::GQTEN_Double *c, const MKL_INT ldc) {
-  cblas_dgemm(
-      Layout,
-      transa, transb,
-      m, n, k,
-      alpha,
-      a, lda,
-      b, ldb,
-      beta,
-      c, ldc);
-}
-
-
-inline void CblasGemm(
-    const CBLAS_LAYOUT Layout,
-    const CBLAS_TRANSPOSE transa, const CBLAS_TRANSPOSE transb,
-    const MKL_INT m, const MKL_INT n, const MKL_INT k,
-    const gqten::GQTEN_Complex alpha,
-    const gqten::GQTEN_Complex *a, const MKL_INT lda,
-    const gqten::GQTEN_Complex *b, const MKL_INT ldb,
-    const gqten::GQTEN_Complex beta,
-    gqten::GQTEN_Complex *c, const MKL_INT ldc) {
-  cblas_zgemm(
-      Layout,
-      transa, transb,
-      m, n, k,
-      &alpha,
-      a, lda,
-      b, ldb,
-      &beta,
-      c, ldc);
 }
 #endif /* ifndef TESTS_TESTING_UTILITY_H */
