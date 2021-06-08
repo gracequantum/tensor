@@ -253,51 +253,28 @@ void BlockSparseDataTensor<ElemT, QNT>::RawDataCopyAndScale_(
 
 
 /**
-Embed a data block from otherwhere to a data block in this BSDT. A series of
-offsets at each dimension can be set.
+Set a piece of data to zeros.
+@param offset  starting point of the piece of data
+@param size    the size the piece of data
 */
-template <typename ElemT, typename QNT>
-void BlockSparseDataTensor<ElemT, QNT>::RawDataEmbed_(
-    const ElemT *psrc_raw_data,
-    const DataBlk<QNT> &src_data_blk,
-    const DataBlk<QNT> &dest_data_blk,
-    const CoorsT &tensor_embed_offsets
-) {
-  if (src_data_blk.shape == dest_data_blk.shape) {
-    assert(tensor_embed_offsets == std::vector<size_t>(ten_rank, 0));
-    RawDataCopyTask ten_emb_as_copy_datacopytask(
-        src_data_blk.blk_coors,
-        src_data_blk.data_offset,
-        src_data_blk.size
-    );
-    ten_emb_as_copy_datacopytask.dest_data_offset = dest_data_blk.data_offset;
-    RawDataCopy_({ten_emb_as_copy_datacopytask}, psrc_raw_data);
-  } else {
-    for (auto src_data_coors : GenAllCoors(src_data_blk.shape)) {
-      auto src_inblk_data_idx = src_data_blk.DataCoorsToInBlkDataIdx(
-                                    src_data_coors
-                                );
-      auto dest_data_coors = CoorsAdd(src_data_coors, tensor_embed_offsets);
-      auto dest_inblk_data_idx = dest_data_blk.DataCoorsToInBlkDataIdx(
-                                     dest_data_coors
-                                 );
-      pactual_raw_data_[dest_data_blk.data_offset + dest_inblk_data_idx] =
-      psrc_raw_data[src_data_blk.data_offset + src_inblk_data_idx];
-    }
-  }
-}
-
-/**
- * Set a piece of data to zeros.
- * @param offset  starting point of the piece of data
- * @param size    the size the piece of data
- */
 template <typename ElemT, typename QNT>
 void BlockSparseDataTensor<ElemT, QNT>::RawDataSetZeros_(
     const size_t offset,
-    const size_t size){
-  memset(pactual_raw_data_ + offset, 0, size*sizeof(ElemT) );
+    const size_t size
+) {
+  memset(pactual_raw_data_ + offset, 0, size * sizeof(ElemT));
 }
+
+
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::RawDataSetZeros_(
+    const std::vector<RawDataSetZerosTask> &set_zeros_tasks
+) {
+  for (auto &task : set_zeros_tasks) {
+    RawDataSetZeros_(task.data_offset, task.data_size);
+  }
+}
+
 
 /**
 Duplicate a whole same size real raw data array from another place.

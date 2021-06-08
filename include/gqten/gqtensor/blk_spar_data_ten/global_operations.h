@@ -22,6 +22,9 @@
 #include "gqten/framework/hp_numeric/ten_trans.h"                         // TensorTranspose
 #include "gqten/utility/utils_inl.h"                                      // CalcMultiDimDataOffsets, Reorder
 
+#include <map>              // map
+#include <unordered_set>    // unordered_set
+
 #ifdef Release
   #define NDEBUG
 #endif
@@ -390,244 +393,135 @@ using QnInfoHashBlkCoorsShapeMap = std::unordered_map<
                                    >;
 
 
-// Warning: the input must be an empty BSDT without any DataBlk
-// TODO: Provide similar feature in the BSDT class
-template <typename ElemT, typename QNT>
-QnInfoHashBlkCoorsShapeMap GenQnInfoHashBlkCoorsShapeMap(
-    const BlockSparseDataTensor<ElemT, QNT> &bsdt
-) {
-  BlockSparseDataTensor<ElemT, QNT> bsdt_copy(bsdt);
-  for (auto &blk_coors : GenAllCoors(bsdt_copy.blk_shape)) {
-    bsdt_copy.DataBlkInsert(blk_coors, false);
-  }
-
-  QnInfoHashBlkCoorsShapeMap qninfohash_blkcoors_shape_map;
-  for (auto &blk_idx_data_blk : bsdt_copy.GetBlkIdxDataBlkMap()) {
-    auto data_blk = blk_idx_data_blk.second;
-    qninfohash_blkcoors_shape_map[
-        data_blk.GetQNBlkInfo().QnHash()
-    ] = std::make_pair(data_blk.blk_coors, data_blk.shape);
-  }
-
-  return qninfohash_blkcoors_shape_map;
+template <typename QNT>
+inline size_t CalcDataBlkResidueDimSize(const DataBlk<QNT> &data_blk) {
+  return data_blk.size / data_blk.shape[0];
 }
 
 
 /**
-Construct tensor expansion data from corresponding BSDTs.
-*/
-template <typename ElemT, typename QNT>
-void BlockSparseDataTensor<ElemT, QNT>::ConstructExpandedDataFrom(
-    const BlockSparseDataTensor &bsdt_a,
-    const BlockSparseDataTensor &bsdt_b
-) {
-  auto qninfohash_blkcoors_shape_map = GenQnInfoHashBlkCoorsShapeMap(*this);
-  auto blk_idx_data_blk_map_a = bsdt_a.GetBlkIdxDataBlkMap();
-  std::vector<size_t> tensor_embed_offsets_a(ten_rank, 0);
-  std::vector<size_t> bsdt_a_existed_blk_qnhashs;
-  for (auto &blk_idx_data_blk : blk_idx_data_blk_map_a) {
-    auto data_blk_a = blk_idx_data_blk.second;
-    auto qnhash = data_blk_a.GetQNBlkInfo().QnHash();
-    bsdt_a_existed_blk_qnhashs.push_back(qnhash);
-    assert(
-        qninfohash_blkcoors_shape_map.find(qnhash) !=
-        qninfohash_blkcoors_shape_map.end()
-    );
-    auto blk_coors_shape_pair = qninfohash_blkcoors_shape_map[qnhash];
-    auto blk_idx_data_blk_it = DataBlkInsert(blk_coors_shape_pair.first);
-    auto data_blk_expanded = blk_idx_data_blk_it->second;
-    RawDataEmbed_(
-        bsdt_a.GetActualRawDataPtr(),
-        data_blk_a,
-        data_blk_expanded,
-        tensor_embed_offsets_a
-    );
-  }
-  auto blk_idx_data_blk_map_b = bsdt_b.GetBlkIdxDataBlkMap();
-  for (auto &blk_idx_data_blk : blk_idx_data_blk_map_b) {
-    auto data_blk_b = blk_idx_data_blk.second;
-    auto qnhash = data_blk_b.GetQNBlkInfo().QnHash();
-    assert(
-        qninfohash_blkcoors_shape_map.find(qnhash) !=
-        qninfohash_blkcoors_shape_map.end()
-    );
-    auto blk_coors_shape_pair = qninfohash_blkcoors_shape_map[qnhash];
-    // Calculate embed offsets
-    std::vector<size_t> tensor_embed_offsets_b;
-    tensor_embed_offsets_b.reserve(ten_rank);
-    for (size_t i = 0; i < ten_rank; ++i) {
-      tensor_embed_offsets_b.push_back(
-          blk_coors_shape_pair.second[i] - data_blk_b.shape[i]
-      );
-    }
-    auto bsdt_a_blk_qnhash_it = std::find(
-                                    bsdt_a_existed_blk_qnhashs.begin(),
-                                    bsdt_a_existed_blk_qnhashs.end(),
-                                    qnhash
-                                );
-    // If the data block is existed
-    if (bsdt_a_blk_qnhash_it != bsdt_a_existed_blk_qnhashs.end()) {
-      auto data_blk_expanded = GetBlkIdxDataBlkMap().at(
-                                   BlkCoorsToBlkIdx(blk_coors_shape_pair.first)
-                               );
-      RawDataEmbed_(
-          bsdt_b.GetActualRawDataPtr(),
-          data_blk_b,
-          data_blk_expanded,
-          tensor_embed_offsets_b
-      );
-    } else {
-      auto blk_idx_data_blk_it = DataBlkInsert(blk_coors_shape_pair.first);
-      auto data_blk_expanded = blk_idx_data_blk_it->second;
-      RawDataEmbed_(
-          bsdt_b.GetActualRawDataPtr(),
-          data_blk_b,
-          data_blk_expanded,
-          tensor_embed_offsets_b
-      );
-    }
-  }
-}
-
-
-/**
-Construct tensor expansion data over the last index,  from corresponding BSDTs.
+Construct tensor expansion data over the first index, from corresponding BSDTs.
 */
 template <typename ElemT, typename QNT>
 void BlockSparseDataTensor<ElemT, QNT>::ConstructExpandedDataOnFirstIndex(
     const BlockSparseDataTensor &bsdt_a,
     const BlockSparseDataTensor &bsdt_b,
-    std::vector<bool>  is_a_idx_qnsct_expanded,
-    std::map<size_t, size_t> expanded_idx_qnsct_coor_mapto_b_idx_qnsct_coor
+    const std::vector<bool> &is_a_first_idx_qnsct_expanded,
+    const std::vector<bool> &is_b_first_idx_qnsct_expanded,
+    const std::map<size_t, size_t> &b_idx_qnsct_coor_expanded_idx_qnsct_coor_map
 ) {
-
-  const auto &blk_idx_data_blk_map_a=bsdt_a.GetBlkIdxDataBlkMap();
-  auto blk_idx_data_blk_map_b=bsdt_b.GetBlkIdxDataBlkMap(); //We hope here is not a reference&
-
-  std::map<size_t, int> blk_idx_expand_mapto_blk_map_a, blk_idx_expand_mapto_blk_map_b;
-  // The new generated blk_data's index map to original blk_data index,
-  // if no corresponding original blk_data but need filled with zero, label {blk_data_idx, -1};
-  // if neither corresponding original blk_data nor filled with zero, no the pair.
-
-
-  // First we construct the new blk_idx_data_blk_map
-  for(auto &blk_idx_data_blk_pair_a : blk_idx_data_blk_map_a){
-    size_t blk_coor_in_first_idx = blk_idx_data_blk_pair_a.second.blk_coors[0];
-    size_t blk_idx_a = blk_idx_data_blk_pair_a.first;
-    size_t blk_idx = blk_idx_a;
-    if(!is_a_idx_qnsct_expanded[blk_coor_in_first_idx]) {
-      blk_idx_data_blk_map_.insert(blk_idx_data_blk_pair_a);
-      blk_idx_expand_mapto_blk_map_a[ blk_idx ] = blk_idx_a;
-    }else{
-      blk_idx_data_blk_map_[blk_idx_data_blk_pair_a.first]=DataBlk<QNT>(blk_idx_data_blk_pair_a.second.blk_coors, *pgqten_indexes);
-      blk_idx_expand_mapto_blk_map_a[ blk_idx ] = blk_idx_a;
-
-      std::vector<size_t> blk_coors_b = blk_idx_data_blk_pair_a.second.blk_coors;
-      blk_coors_b[0]=expanded_idx_qnsct_coor_mapto_b_idx_qnsct_coor[blk_coor_in_first_idx];
-      size_t blk_idx_b=bsdt_b.BlkCoorsToBlkIdx(blk_coors_b);
-      auto pdata_blk_b=blk_idx_data_blk_map_b.find(blk_idx_b);
-      if(pdata_blk_b!=blk_idx_data_blk_map_b.end()){
-        blk_idx_expand_mapto_blk_map_b[blk_idx ] = pdata_blk_b->first;
-        blk_idx_data_blk_map_b.erase( pdata_blk_b );
-      }else{
-        blk_idx_expand_mapto_blk_map_b[blk_idx ] = -1;
+  // Create data blocks and copy data/fill zeros tasks
+  auto blk_idx_data_blk_map_a = bsdt_a.GetBlkIdxDataBlkMap();
+  std::unordered_set<size_t> created_leading_dims_by_bsdt_a;
+  std::vector<RawDataCopyTask> raw_data_copy_tasks_a;
+  std::vector<RawDataSetZerosTask> raw_data_set_zeros_tasks_a;
+  for (auto &blk_idx_data_blk : blk_idx_data_blk_map_a) {
+    auto data_blk = blk_idx_data_blk.second;
+    auto blk_coors = data_blk.blk_coors;
+    auto pblk_idx_data_blk = DataBlkInsert(blk_coors, false);
+    created_leading_dims_by_bsdt_a.insert(blk_coors[0]);
+    // Create copy task
+    raw_data_copy_tasks_a.push_back(
+        // Block coordinates in the extended tensor always equals to block coordinates in the A tensor
+        RawDataCopyTask(blk_coors, data_blk.data_offset, data_blk.size)
+    );
+    if (is_a_first_idx_qnsct_expanded[blk_coors[0]]) {
+      auto set_zeros_data_size =
+           CalcDataBlkResidueDimSize(data_blk) *
+           (pblk_idx_data_blk->second.shape[0] - data_blk.shape[0]);
+      raw_data_set_zeros_tasks_a.push_back(
+          RawDataSetZerosTask(blk_coors, set_zeros_data_size, data_blk.size)
+      );
+    }
+  }
+  auto blk_idx_data_blk_map_b = bsdt_b.GetBlkIdxDataBlkMap();
+  std::vector<RawDataCopyTask> raw_data_copy_tasks_b;
+  std::vector<RawDataSetZerosTask> raw_data_set_zeros_tasks_b;
+  for (auto &blk_idx_data_blk : blk_idx_data_blk_map_b) {
+    auto data_blk = blk_idx_data_blk.second;
+    auto blk_coors = data_blk.blk_coors;
+    auto expanded_leading_dim_blk_coor =
+         b_idx_qnsct_coor_expanded_idx_qnsct_coor_map.at(blk_coors[0]);
+    auto expanded_blk_coors = blk_coors;
+    expanded_blk_coors[0] = expanded_leading_dim_blk_coor;
+    // Data block has not been created, insert the data block
+    // If the leading dimension expanded, fill zeros
+    if (
+        created_leading_dims_by_bsdt_a.find(expanded_leading_dim_blk_coor) ==
+        created_leading_dims_by_bsdt_a.end()
+    ) {
+      auto pblk_idx_data_blk = DataBlkInsert(expanded_blk_coors, false);
+      if (is_b_first_idx_qnsct_expanded[blk_coors[0]]) {
+        auto set_zeros_data_size =
+             CalcDataBlkResidueDimSize(data_blk) *
+             (pblk_idx_data_blk->second.shape[0] - data_blk.shape[0]);
+        raw_data_set_zeros_tasks_b.push_back(
+            RawDataSetZerosTask(expanded_blk_coors, set_zeros_data_size, 0)
+        );
+      }
+    } else {    // Remove fill zeros task created by walking through BSDTa
+      for (
+          auto it = raw_data_set_zeros_tasks_a.begin();
+          it != raw_data_set_zeros_tasks_a.end();
+          ++it
+      ) {
+        if (it->blk_coors == expanded_blk_coors) {
+          raw_data_set_zeros_tasks_a.erase(it);
+          break;
+        }
       }
     }
+    // Create copy task
+    RawDataCopyTask copy_task(blk_coors, data_blk.data_offset, data_blk.size);
+    copy_task.dest_blk_coors = expanded_blk_coors;
+    raw_data_copy_tasks_b.push_back(copy_task);
   }
 
-  std::map<size_t, size_t> b_idx_qnsct_coor_mapto_expanded_idx_qnsct_coor;
-  for(auto &elem: expanded_idx_qnsct_coor_mapto_b_idx_qnsct_coor ){
-    b_idx_qnsct_coor_mapto_expanded_idx_qnsct_coor[elem.second]=elem.first;
+  // Copy task: set data offset in destination
+  for (auto &copy_task : raw_data_copy_tasks_a) {
+    copy_task.dest_data_offset = blk_idx_data_blk_map_.at(
+                                     BlkCoorsToBlkIdx(copy_task.src_blk_coors)
+                                 ).data_offset;
   }
-  for(auto &blk_idx_data_blk_pair_b : blk_idx_data_blk_map_b){
-    size_t blk_coor_in_first_idx_b = blk_idx_data_blk_pair_b.second.blk_coors[0];
-    size_t blk_coor_in_first_idx_expand = b_idx_qnsct_coor_mapto_expanded_idx_qnsct_coor[blk_coor_in_first_idx_b];
-    std::vector <size_t> blk_coors = blk_idx_data_blk_pair_b.second.blk_coors;
-    blk_coors[0] = blk_coor_in_first_idx_expand;
-    //Generate the DataBlk
-    size_t blk_idx = BlkCoorsToBlkIdx(blk_coors);
-    blk_idx_data_blk_map_.insert(std::make_pair(blk_idx, DataBlk<QNT>(blk_coors, *pgqten_indexes)));
-    blk_idx_expand_mapto_blk_map_b[blk_idx] = blk_idx_data_blk_pair_b.first;
-    if (blk_coor_in_first_idx_expand < is_a_idx_qnsct_expanded.size()) {
-      blk_idx_expand_mapto_blk_map_a[blk_idx] = -1;
+  for (auto &copy_task : raw_data_copy_tasks_b) {
+    auto dest_data_blk = blk_idx_data_blk_map_.at(
+                                BlkCoorsToBlkIdx(copy_task.dest_blk_coors)
+                         );
+    auto dest_data_offset = dest_data_blk.data_offset;
+    // If block expanded, extra data offset needed
+    if (is_b_first_idx_qnsct_expanded[copy_task.src_blk_coors[0]]) {
+      auto src_data_blk = bsdt_b.blk_idx_data_blk_map_.at(
+                              BlkCoorsToBlkIdx(copy_task.src_blk_coors)
+                          );
+      size_t extra_data_offset =
+             CalcDataBlkResidueDimSize(dest_data_blk) *
+             (dest_data_blk.shape[0] - src_data_blk.shape[0]);
+      dest_data_offset += extra_data_offset;
     }
+    copy_task.dest_data_offset = dest_data_offset;
+  }
+  // Set zeros task: set data offset
+  for (auto &task : raw_data_set_zeros_tasks_a) {
+    task.data_offset = blk_idx_data_blk_map_.at(
+                           BlkCoorsToBlkIdx(task.blk_coors)
+                       ).data_offset + task.extra_data_offset;
+  }
+  for (auto &task : raw_data_set_zeros_tasks_b) {
+    task.data_offset = blk_idx_data_blk_map_.at(
+                           BlkCoorsToBlkIdx(task.blk_coors)
+                       ).data_offset + task.extra_data_offset;
   }
 
-
-  //allocate memory
-  raw_data_size_ = 0;
-  for(auto &blk_idx_data_blk_pair : blk_idx_data_blk_map_ ){
-    blk_idx_data_blk_pair.second.data_offset= raw_data_size_;
-    raw_data_size_ += blk_idx_data_blk_pair.second.size;
-  }
-  RawDataAlloc_(raw_data_size_, false);
-
-  //copy and write raw data
-  blk_idx_data_blk_map_b=bsdt_b.GetBlkIdxDataBlkMap(); // regenerate it
-  std::vector<RawDataCopyTask> raw_data_copy_tasks_fromA,raw_data_copy_tasks_fromB;
-
-  size_t raw_data_write_off_set=0;
-  for(auto &blk_idx_data_blk_pair : blk_idx_data_blk_map_ ){
-    size_t blk_idx = blk_idx_data_blk_pair.first;
-    DataBlk<QNT> data_blk = blk_idx_data_blk_pair.second;
-    if(blk_idx_expand_mapto_blk_map_a.find( blk_idx ) != blk_idx_expand_mapto_blk_map_a.end()){
-      int blk_idx_a = blk_idx_expand_mapto_blk_map_a[blk_idx];
-      if(blk_idx_a!=-1) {
-        assert(blk_idx_a==blk_idx);
-        auto pblk_idx_data_blk_pair_a = blk_idx_data_blk_map_a.find( static_cast<size_t>(blk_idx_a) );
-        size_t raw_data_offset_in_a = pblk_idx_data_blk_pair_a->second.data_offset;
-
-        RawDataCopyTask task=RawDataCopyTask(pblk_idx_data_blk_pair_a->second.blk_coors,
-                        pblk_idx_data_blk_pair_a->second.data_offset, //raw_data_offset_in_a
-                        pblk_idx_data_blk_pair_a->second.size);
-        task.dest_data_offset = raw_data_write_off_set;
-        assert(raw_data_write_off_set == data_blk.data_offset);
-        raw_data_copy_tasks_fromA.push_back(task);
-//
-//        memcpy(pactual_raw_data_ + raw_data_write_off_set,
-//               bsdt_a.GetActualRawDataPtr() + raw_data_offset_in_a,
-//               (pblk_idx_data_blk_pair_a->second.size)*sizeof(ElemT));
-        raw_data_write_off_set +=  pblk_idx_data_blk_pair_a->second.size;
-      }else{
-        size_t filled_zero_elem_number = data_blk.size-blk_idx_data_blk_map_b[blk_idx_expand_mapto_blk_map_b[blk_idx]].size;
-        assert(raw_data_write_off_set == data_blk.data_offset);
-        RawDataSetZeros_(raw_data_write_off_set, filled_zero_elem_number);
-        raw_data_write_off_set += filled_zero_elem_number;
-      }
-    }
-
-
-    if(blk_idx_expand_mapto_blk_map_b.find(blk_idx) !=  blk_idx_expand_mapto_blk_map_b.end()){
-      int blk_idx_b = blk_idx_expand_mapto_blk_map_b[blk_idx];
-      if(blk_idx_b!=-1) {
-        size_t raw_data_offset_in_b = blk_idx_data_blk_map_b[blk_idx_b].data_offset;
-
-        RawDataCopyTask task=RawDataCopyTask(blk_idx_data_blk_map_b[blk_idx_b].blk_coors,
-                                             blk_idx_data_blk_map_b[blk_idx_b].data_offset, //raw_data_offset_in_b
-                                             blk_idx_data_blk_map_b[blk_idx_b].size);
-        task.dest_data_offset = raw_data_write_off_set;
-        raw_data_copy_tasks_fromB.push_back(task);
-        assert(raw_data_write_off_set == data_blk.data_offset + data_blk.size - blk_idx_data_blk_map_b[blk_idx_b].size );
-//        memcpy(pactual_raw_data_ + raw_data_write_off_set,
-//               bsdt_b.GetActualRawDataPtr() + raw_data_offset_in_b,
-//               blk_idx_data_blk_map_b[blk_idx_b].size*sizeof(ElemT));
-        raw_data_write_off_set += blk_idx_data_blk_map_b[blk_idx_b].size;
-      }else{
-        int blk_idx_a=blk_idx_expand_mapto_blk_map_a[blk_idx];
-        assert(blk_idx_a == blk_idx);
-        auto pblk_idx_data_blk_pair_a = blk_idx_data_blk_map_a.find( static_cast<size_t>(blk_idx_a) );
-        size_t filled_zero_elem_number = data_blk.size-pblk_idx_data_blk_pair_a->second.size;
-        assert(raw_data_write_off_set == data_blk.data_offset + pblk_idx_data_blk_pair_a->second.size );
-        RawDataSetZeros_(raw_data_write_off_set, filled_zero_elem_number);
-        raw_data_write_off_set += filled_zero_elem_number;
-      }
-    }
-  }
-
-  assert(raw_data_write_off_set == actual_raw_data_size_);
-  RawDataCopy_(raw_data_copy_tasks_fromA , bsdt_a.GetActualRawDataPtr() );
-  RawDataCopy_(raw_data_copy_tasks_fromB , bsdt_b.GetActualRawDataPtr() );
+  // Allocate memory
+  Allocate();
+  // Do data copy
+  RawDataCopy_(raw_data_copy_tasks_a, bsdt_a.pactual_raw_data_);
+  RawDataCopy_(raw_data_copy_tasks_b, bsdt_b.pactual_raw_data_);
+  // Do zeros fill
+  RawDataSetZeros_(raw_data_set_zeros_tasks_a);
+  RawDataSetZeros_(raw_data_set_zeros_tasks_b);
 }
+
 
 /**
 Copy contents from a real block sparse data tensor.

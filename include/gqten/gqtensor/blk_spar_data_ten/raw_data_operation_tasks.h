@@ -103,6 +103,9 @@ struct RawDataCopyTask {
 
   bool copy_and_add;
 
+  // Optional members
+  CoorsT dest_blk_coors;
+
   RawDataCopyTask(
       const CoorsT &src_blk_coors,
       const size_t src_data_offset,
@@ -138,6 +141,27 @@ struct RawDataCopyAndScaleTask {
       dest_blk_coors(dest_blk_coors),
       coef(coef),
       copy_and_add(copy_and_add) {}
+};
+
+
+/**
+Task to set a piece of raw data zeros.
+*/
+struct RawDataSetZerosTask {
+  // Actual used members
+  size_t data_offset;
+  size_t data_size;
+  // Optional members
+  CoorsT blk_coors;
+  size_t extra_data_offset;
+
+  RawDataSetZerosTask(
+      const CoorsT &blk_coors,
+      const size_t data_size,
+      const size_t extra_data_offset
+  ) : blk_coors(blk_coors),
+      data_size(data_size),
+      extra_data_offset(extra_data_offset) {}
 };
 
 
