@@ -25,6 +25,9 @@ For more information, user guide, and documentation, please visit [project homep
 You can cite the GraceQ/tensor where you use it as a support to this project. Please cite GraceQ/tensor as
 > GraceQuantum.org . GraceQ/tensor: A high-performance tensor computation framework for the quantum physics community. Homepage: https://tensor.gracequantum.org . For a complete list of the contributors, see CONTRIBUTORS.txt .
 
+You can also choose to simply cite the whole GraceQ project as
+> GraceQ, www.gracequantum.org .
+
 
 ## Acknowledgments
 We highly acknowledge the following people, project(s) and organization(s) (sorted in alphabetical order):

@@ -12,3 +12,8 @@ Current developer and maintainer:
 Original (before version 0.1) developers:
   Rong-Yang Sun <sun-rongyang@outlook.com>
   Cheng Peng <cpeng18@stanford.edu>
+
+
+Feature contributors:
+  Hao-Xin Wang <wanghx18@mails.tsinghua.edu.cn>
+    * Fast tensor expansion algorithm and implementation.
