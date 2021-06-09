@@ -48,9 +48,12 @@ inline void TensorExpandPreChecker(
 ) {
   assert(a.Rank() == b.Rank());     // To be expanded tensors should have the same rank
   for (size_t i = 0; i < a.Rank(); ++i) {
-    if( find(expand_idx_nums.cbegin(), expand_idx_nums.cend(), i ) == expand_idx_nums.cend()){
+    if (
+        find(expand_idx_nums.cbegin(), expand_idx_nums.cend(), i) ==
+        expand_idx_nums.cend()
+    ) {
       assert(a.GetIndexes()[i] == b.GetIndexes()[i]);
-    }else{
+    } else {
       // Indexes of the to be expanded tensors should have the same directions
       assert(a.GetIndexes()[i].GetDir() == b.GetIndexes()[i].GetDir());
     }
@@ -233,7 +236,7 @@ void ExpandOneIdx_(
     GQTensor<TenElemT, QNT> *pc
 ) {
 #ifndef NDEBUG
-  TensorExpandPreChecker(*pa, *pb,{expand_idx_num});
+  TensorExpandPreChecker(*pa, *pb, {expand_idx_num});
 #endif /* ifndef NDEBUG */
 
   // Firstly we transpose the expand_idx_num-th index to the first index
