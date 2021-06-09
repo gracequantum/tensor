@@ -43,12 +43,17 @@ void ExpandOneIdx_(
 template <typename TenElemT, typename QNT>
 inline void TensorExpandPreChecker(
     const GQTensor<TenElemT, QNT> &a,
-    const GQTensor<TenElemT, QNT> &b
+    const GQTensor<TenElemT, QNT> &b,
+    const std::vector<size_t> &expand_idx_nums
 ) {
   assert(a.Rank() == b.Rank());     // To be expanded tensors should have the same rank
   for (size_t i = 0; i < a.Rank(); ++i) {
-    // Indexes of the to be expanded tensors should have the same directions
-    assert(a.GetIndexes()[i].GetDir() == b.GetIndexes()[i].GetDir());
+    if( find(expand_idx_nums.cbegin(), expand_idx_nums.cend(), i ) == expand_idx_nums.cend()){
+      assert(a.GetIndexes()[i] == b.GetIndexes()[i]);
+    }else{
+      // Indexes of the to be expanded tensors should have the same directions
+      assert(a.GetIndexes()[i].GetDir() == b.GetIndexes()[i].GetDir());
+    }
   }
   // To be expanded tensors should have the same quantum number divergence or a null quantum number divergence QNT()
   assert(a.Div() ==  b.Div() || a.Div() == QNT() || b.Div() == QNT());
@@ -93,7 +98,7 @@ void Expand(
     GQTensor<TenElemT, QNT> *pc
 ) {
 #ifndef NDEBUG
-  TensorExpandPreChecker(*cpa, *cpb);
+  TensorExpandPreChecker(*cpa, *cpb, expand_idx_nums);
 #endif /* ifndef NDEBUG */
 
   // TODO: Remove const_cast!!
@@ -228,7 +233,7 @@ void ExpandOneIdx_(
     GQTensor<TenElemT, QNT> *pc
 ) {
 #ifndef NDEBUG
-  TensorExpandPreChecker(*pa, *pb);
+  TensorExpandPreChecker(*pa, *pb,{expand_idx_num});
 #endif /* ifndef NDEBUG */
 
   // Firstly we transpose the expand_idx_num-th index to the first index
