@@ -117,6 +117,11 @@ public:
   }
 
   /**
+  Get all quantum number sectors.
+  */
+  const QNSectorVec<QNT> &GetQNScts(void) const { return qnscts_; }
+
+  /**
   Get a quantum number sector using actual coordinate.
 
   @param actual_coor The actual coordinate.

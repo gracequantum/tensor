@@ -16,9 +16,11 @@ macro(add_unittest
   add_executable(${TEST_NAME}
     ${TEST_SRC})
 
+    target_compile_options(${TEST_NAME}
+      PRIVATE ${CFLAGS}
+    )
     target_include_directories(${TEST_NAME}
       PRIVATE ${GQTEN_HEADER_PATH}
-      PRIVATE ${CFLAGS}
       PRIVATE ${hptt_INCLUDE_DIR})
     target_link_libraries(${TEST_NAME}
       GTest::GTest GTest::Main

@@ -112,9 +112,12 @@ public:
       const BlockSparseDataTensor &,
       std::vector<RawDataCtrctTask> &
   );
-  void ConstructExpandedDataFrom(
+  void ConstructExpandedDataOnFirstIndex(
       const BlockSparseDataTensor &,
-      const BlockSparseDataTensor &
+      const BlockSparseDataTensor &,
+      const std::vector<bool> &,
+      const std::vector<bool> &,
+      const std::map<size_t, size_t> &
   );
 
   void CopyFromReal(const BlockSparseDataTensor<GQTEN_Double, QNT> &);
@@ -215,12 +218,8 @@ private:
       const RawDataCopyAndScaleTask<ElemT> &,
       const ElemT *
   );
-  void RawDataEmbed_(
-      const ElemT *,
-      const DataBlk<QNT> &,
-      const DataBlk<QNT> &,
-      const CoorsT &
-  );
+  void RawDataSetZeros_(const size_t, const size_t);
+  void RawDataSetZeros_(const std::vector<RawDataSetZerosTask> &);
   void RawDataDuplicateFromReal_(const GQTEN_Double *, const size_t);
 
   void RawDataRand_(void);
