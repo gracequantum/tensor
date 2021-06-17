@@ -38,6 +38,8 @@ public:
 
   size_t dim(void) const override { return kDimOfU1Repr; }
 
+  int GetVal(void) const override { return val_; }
+
   U1QNVal *Minus(void) const override { return new U1QNVal(-val_); }
 
   void AddAssign(const QNVal *prhs_b) override {

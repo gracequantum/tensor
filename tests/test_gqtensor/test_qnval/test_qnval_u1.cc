@@ -28,6 +28,13 @@ TEST_F(TestU1QNVal, dimension) {
 }
 
 
+TEST_F(TestU1QNVal, GetVal) {
+  EXPECT_EQ(u1_qnval_0.GetVal(), 0);
+  EXPECT_EQ(u1_qnval.GetVal(), rand_int);
+  EXPECT_EQ(minus_u1_qnval.GetVal(), -rand_int);
+}
+
+
 TEST_F(TestU1QNVal, Hashable) {
   std::hash<long> Hasher;
   EXPECT_EQ(Hash(u1_qnval_0), Hasher(0));

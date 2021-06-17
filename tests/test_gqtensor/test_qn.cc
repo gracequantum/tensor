@@ -107,6 +107,14 @@ TEST_F(TestQN, Summation) {
 }
 
 
+TEST_F(TestQN, GetQNVal) {
+  EXPECT_EQ(u1_qn_1.GetQNVal(0).GetVal(), rand_int_1);
+  EXPECT_EQ(u1_qn_2.GetQNVal(0).GetVal(), rand_int_2);
+  EXPECT_EQ(u1u1_qn.GetQNVal(0).GetVal(), rand_int_1);
+  EXPECT_EQ(u1u1_qn.GetQNVal(1).GetVal(), rand_int_2);
+}
+
+
 template<typename QNT>
 void RunTestQNFileIOCase(const QNT &qn) {
   std::string file = "test.qn";
