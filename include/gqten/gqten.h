@@ -11,7 +11,7 @@
 
 #define GQTEN_VERSION_MAJOR "0"
 #define GQTEN_VERSION_MINOR "2-alpha"
-#define GQTEN_VERSION_PATCH "2"
+#define GQTEN_VERSION_PATCH "3"
 // GQTEN_VERSION_DEVSTR to describe the development status, for example the git branch
 #define GQTEN_VERSION_DEVSTR "dev-v0.2"
 
