@@ -8,7 +8,7 @@ _If it isn't fast, it isn't graceful_
 [![Documentation Status](https://readthedocs.org/projects/gqten-doc/badge/?version=latest)](https://tensor.gracequantum.org/en/latest/?badge=latest)
 
 ### Last release
-- [v0.2-alpha.2](https://github.com/gracequantum/tensor/releases/latest)
+- [v0.2-alpha.3](https://github.com/gracequantum/tensor/releases/latest)
 
 
 ## Project homepage
