@@ -268,27 +268,37 @@ Calculate the quantum number divergence of the GQTensor.
 */
 template <typename ElemT, typename QNT>
 QNT GQTensor<ElemT, QNT>::Div(void) const {
+  assert(!IsDefault());
   if (IsScalar()) {
-    std::cout << "Tensor is rank 0 (a scalar). Return QN()." << std::endl;
+    std::cout << "Tensor is a scalar. Return empty quantum number."
+              << std::endl;
     return QNT();
-  }
-  auto blk_idx_data_blk_map = pblk_spar_data_ten_->GetBlkIdxDataBlkMap();
-  auto blk_num = blk_idx_data_blk_map.size();
-  if (blk_num == 0) {
-    std::cout << "Tensor does not have a block. Return QN()." << std::endl;
-    return QNT();
-  }
-  auto beg_it = blk_idx_data_blk_map.begin();
-  auto div = CalcDiv(indexes_, beg_it->second.blk_coors);
-  for (auto it = std::next(beg_it); it != blk_idx_data_blk_map.end(); ++it) {
-    auto blk_i_div = CalcDiv(indexes_, it->second.blk_coors);
-    if (blk_i_div != div) {
-      std::cout << "Tensor does not have a special divergence. Return QN()."
+  } else {
+    auto qnblk_num = GetQNBlkNum();
+    if (qnblk_num == 0) {
+      std::cout << "Tensor does not have a block. Return empty quantum number."
                 << std::endl;
       return QNT();
+    } else {
+      auto blk_idx_data_blk_map = GetBlkSparDataTen().GetBlkIdxDataBlkMap();
+      auto indexes = GetIndexes();
+      auto first_blk_idx_data_blk = blk_idx_data_blk_map.begin();
+      auto div = CalcDiv(indexes, first_blk_idx_data_blk->second.blk_coors);
+      for (
+          auto it = std::next(first_blk_idx_data_blk);
+          it != blk_idx_data_blk_map.end();
+          ++it
+      ) {
+        auto blki_div = CalcDiv(indexes, it->second.blk_coors);
+        if (blki_div != div) {
+          std::cout << "Tensor does not have a special divergence. Return empty quantum number."
+                    << std::endl;
+          return QNT();
+        }
+      }
+      return div;
     }
   }
-  return div;
 }
 
 
