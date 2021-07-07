@@ -158,6 +158,19 @@ GQTensor<TenElemT, QNT> IndexCombine(
   Index<QNT> new_idx(qnscts, new_idx_dir);
 
   GQTensor<TenElemT, QNT> index_combiner({idx1, idx2, new_idx});
+  std::vector< CoorsT > blk_coors_s;
+  blk_coors_s.reserve(qnscts_offset_info_list.size() );
+
+  for (auto &qnscts_offset_info : qnscts_offset_info_list) {
+    size_t qnsct_coor_from_idx1 = std::get<0>(qnscts_offset_info);
+    size_t qnsct_coor_from_idx2 = std::get<1>(qnscts_offset_info);
+    size_t qnsct_coor_from_new_idx = std::get<2>(qnscts_offset_info);
+    blk_coors_s.push_back({qnsct_coor_from_idx1, qnsct_coor_from_idx2, qnsct_coor_from_new_idx} );
+  }
+  auto& blk_spar_data_ten = index_combiner.GetBlkSparDataTen();
+  blk_spar_data_ten.DataBlksInsert(blk_coors_s,
+                                   true,
+                                   true);
   auto idx1_qnsct_dim_offsets = CalcQNSctDimOffsets(idx1);
   auto idx2_qnsct_dim_offsets = CalcQNSctDimOffsets(idx2);
   for (auto &qnscts_offset_info : qnscts_offset_info_list) {

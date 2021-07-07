@@ -401,125 +401,128 @@ inline size_t CalcDataBlkResidueDimSize(const DataBlk<QNT> &data_blk) {
 
 /**
 Construct tensor expansion data over the first index, from corresponding BSDTs.
+
+The DataBlk in new tensor come from `bsdt_a` and `bsdt_b`.
+The new generated DataBlk's index is the same with the index in `bsdt_a`.
 */
 template <typename ElemT, typename QNT>
 void BlockSparseDataTensor<ElemT, QNT>::ConstructExpandedDataOnFirstIndex(
     const BlockSparseDataTensor &bsdt_a,
     const BlockSparseDataTensor &bsdt_b,
     const std::vector<bool> &is_a_first_idx_qnsct_expanded,
-    const std::vector<bool> &is_b_first_idx_qnsct_expanded,
     const std::map<size_t, size_t> &b_idx_qnsct_coor_expanded_idx_qnsct_coor_map
 ) {
-  // Create data blocks and copy data/fill zeros tasks
-  auto blk_idx_data_blk_map_a = bsdt_a.GetBlkIdxDataBlkMap();
-  std::unordered_set<size_t> created_leading_dims_by_bsdt_a;
-  std::vector<RawDataCopyTask> raw_data_copy_tasks_a;
-  std::vector<RawDataSetZerosTask> raw_data_set_zeros_tasks_a;
-  for (auto &blk_idx_data_blk : blk_idx_data_blk_map_a) {
-    auto data_blk = blk_idx_data_blk.second;
-    auto blk_coors = data_blk.blk_coors;
-    auto pblk_idx_data_blk = DataBlkInsert(blk_coors, false);
-    created_leading_dims_by_bsdt_a.insert(blk_coors[0]);
-    // Create copy task
-    raw_data_copy_tasks_a.push_back(
-        // Block coordinates in the extended tensor always equals to block coordinates in the A tensor
-        RawDataCopyTask(blk_coors, data_blk.data_offset, data_blk.size)
-    );
-    if (is_a_first_idx_qnsct_expanded[blk_coors[0]]) {
-      auto set_zeros_data_size =
-           CalcDataBlkResidueDimSize(data_blk) *
-           (pblk_idx_data_blk->second.shape[0] - data_blk.shape[0]);
-      raw_data_set_zeros_tasks_a.push_back(
-          RawDataSetZerosTask(blk_coors, set_zeros_data_size, data_blk.size)
-      );
-    }
+  std::map<size_t, size_t> expanded_idx_qnsct_coor_b_idx_qnsct_coor_map;
+  for(auto &elem: b_idx_qnsct_coor_expanded_idx_qnsct_coor_map ){
+    expanded_idx_qnsct_coor_b_idx_qnsct_coor_map[elem.second]=elem.first;
   }
-  auto blk_idx_data_blk_map_b = bsdt_b.GetBlkIdxDataBlkMap();
-  std::vector<RawDataCopyTask> raw_data_copy_tasks_b;
-  std::vector<RawDataSetZerosTask> raw_data_set_zeros_tasks_b;
-  for (auto &blk_idx_data_blk : blk_idx_data_blk_map_b) {
-    auto data_blk = blk_idx_data_blk.second;
-    auto blk_coors = data_blk.blk_coors;
-    auto expanded_leading_dim_blk_coor =
-         b_idx_qnsct_coor_expanded_idx_qnsct_coor_map.at(blk_coors[0]);
-    auto expanded_blk_coors = blk_coors;
-    expanded_blk_coors[0] = expanded_leading_dim_blk_coor;
-    // Data block has not been created, insert the data block
-    // If the leading dimension expanded, fill zeros
-    if (
-        created_leading_dims_by_bsdt_a.find(expanded_leading_dim_blk_coor) ==
-        created_leading_dims_by_bsdt_a.end()
-    ) {
-      auto pblk_idx_data_blk = DataBlkInsert(expanded_blk_coors, false);
-      if (is_b_first_idx_qnsct_expanded[blk_coors[0]]) {
-        auto set_zeros_data_size =
-             CalcDataBlkResidueDimSize(data_blk) *
-             (pblk_idx_data_blk->second.shape[0] - data_blk.shape[0]);
-        raw_data_set_zeros_tasks_b.push_back(
-            RawDataSetZerosTask(expanded_blk_coors, set_zeros_data_size, 0)
-        );
-      }
-    } else {    // Remove fill zeros task created by walking through BSDTa
-      for (
-          auto it = raw_data_set_zeros_tasks_a.begin();
-          it != raw_data_set_zeros_tasks_a.end();
-          ++it
-      ) {
-        if (it->blk_coors == expanded_blk_coors) {
-          raw_data_set_zeros_tasks_a.erase(it);
-          break;
-        }
+  const auto &blk_idx_data_blk_map_a=bsdt_a.GetBlkIdxDataBlkMap();
+  auto blk_idx_data_blk_map_b=bsdt_b.GetBlkIdxDataBlkMap();
+
+  std::map<size_t, int> blk_idx_expand_mapto_blk_map_a, blk_idx_expand_mapto_blk_map_b;
+  // The new generated blk_data's index map to original blk_data index in a
+  // if no corresponding original blk_data but need filled with zero, label {blk_data_idx, -1};
+  // if neither corresponding original blk_data nor filled with zero, no the pair.
+
+
+  // First we construct the new blk_idx_data_blk_map
+  std::vector< CoorsT > blk_coors_s;
+  std::vector< size_t > blk_idxs;
+  blk_coors_s.reserve(blk_idx_data_blk_map_a.size() + blk_idx_data_blk_map_b.size() );// reserve more
+  blk_idxs.reserve( blk_idx_data_blk_map_a.size() + blk_idx_data_blk_map_b.size() );
+  for(const auto &[blk_idx_a, data_blk_a]  : blk_idx_data_blk_map_a){
+    size_t blk_coor_in_first_idx = data_blk_a.blk_coors[0];
+    size_t blk_idx = blk_idx_a;
+    blk_idx_expand_mapto_blk_map_a[ blk_idx ] = blk_idx_a;
+    blk_coors_s.push_back( data_blk_a.blk_coors );
+    blk_idxs.push_back( blk_idx );
+    if(is_a_first_idx_qnsct_expanded[blk_coor_in_first_idx]) {
+
+      std::vector<size_t> blk_coors_b = data_blk_a.blk_coors;
+      blk_coors_b[0]=expanded_idx_qnsct_coor_b_idx_qnsct_coor_map[blk_coor_in_first_idx];
+      size_t blk_idx_b=bsdt_b.BlkCoorsToBlkIdx(blk_coors_b);
+      auto pdata_blk_b=blk_idx_data_blk_map_b.find(blk_idx_b);
+      if(pdata_blk_b!=blk_idx_data_blk_map_b.end()){
+        blk_idx_expand_mapto_blk_map_b[blk_idx ] = pdata_blk_b->first;
+        blk_idx_data_blk_map_b.erase( pdata_blk_b );
+      }else{
+        blk_idx_expand_mapto_blk_map_b[blk_idx ] = -1;
       }
     }
-    // Create copy task
-    RawDataCopyTask copy_task(blk_coors, data_blk.data_offset, data_blk.size);
-    copy_task.dest_blk_coors = expanded_blk_coors;
-    raw_data_copy_tasks_b.push_back(copy_task);
   }
 
-  // Copy task: set data offset in destination
-  for (auto &copy_task : raw_data_copy_tasks_a) {
-    copy_task.dest_data_offset = blk_idx_data_blk_map_.at(
-                                     BlkCoorsToBlkIdx(copy_task.src_blk_coors)
-                                 ).data_offset;
-  }
-  for (auto &copy_task : raw_data_copy_tasks_b) {
-    auto dest_data_blk = blk_idx_data_blk_map_.at(
-                                BlkCoorsToBlkIdx(copy_task.dest_blk_coors)
-                         );
-    auto dest_data_offset = dest_data_blk.data_offset;
-    // If block expanded, extra data offset needed
-    if (is_b_first_idx_qnsct_expanded[copy_task.src_blk_coors[0]]) {
-      auto src_data_blk = bsdt_b.blk_idx_data_blk_map_.at(
-                              BlkCoorsToBlkIdx(copy_task.src_blk_coors)
-                          );
-      size_t extra_data_offset =
-             CalcDataBlkResidueDimSize(dest_data_blk) *
-             (dest_data_blk.shape[0] - src_data_blk.shape[0]);
-      dest_data_offset += extra_data_offset;
+
+  for(const auto &[blk_idx_b, data_blk_b] : blk_idx_data_blk_map_b){
+    const size_t blk_coor_in_first_idx_b = data_blk_b.blk_coors[0];
+    size_t blk_coor_in_first_idx_expand = b_idx_qnsct_coor_expanded_idx_qnsct_coor_map.at(blk_coor_in_first_idx_b);
+    std::vector <size_t> blk_coors = data_blk_b.blk_coors;
+    blk_coors[0] = blk_coor_in_first_idx_expand;
+    //Generate the DataBlk
+    size_t blk_idx = BlkCoorsToBlkIdx(blk_coors);
+    blk_idx_expand_mapto_blk_map_b[blk_idx] = blk_idx_b;
+    blk_coors_s.push_back( blk_coors );
+    blk_idxs.push_back( blk_idx );
+
+    if (blk_coor_in_first_idx_expand < is_a_first_idx_qnsct_expanded.size()) {
+      auto pdata_blk_a=blk_idx_data_blk_map_a.find(blk_idx);
+      blk_idx_expand_mapto_blk_map_a[blk_idx] = -1;
     }
-    copy_task.dest_data_offset = dest_data_offset;
-  }
-  // Set zeros task: set data offset
-  for (auto &task : raw_data_set_zeros_tasks_a) {
-    task.data_offset = blk_idx_data_blk_map_.at(
-                           BlkCoorsToBlkIdx(task.blk_coors)
-                       ).data_offset + task.extra_data_offset;
-  }
-  for (auto &task : raw_data_set_zeros_tasks_b) {
-    task.data_offset = blk_idx_data_blk_map_.at(
-                           BlkCoorsToBlkIdx(task.blk_coors)
-                       ).data_offset + task.extra_data_offset;
   }
 
-  // Allocate memory
-  Allocate();
+  DataBlksInsert(
+      blk_idxs,
+      blk_coors_s,
+      true);
+
+
+
+  //copy and write raw data
+  blk_idx_data_blk_map_b=bsdt_b.GetBlkIdxDataBlkMap(); // regenerate it
+  std::vector<RawDataCopyTask> raw_data_copy_tasks_from_a,raw_data_copy_tasks_from_b;
+  raw_data_copy_tasks_from_a.reserve(blk_idx_expand_mapto_blk_map_a.size() );// reserve more
+  raw_data_copy_tasks_from_b.reserve(blk_idx_expand_mapto_blk_map_b.size() );// reserve more
+  for(const auto &[blk_idx, data_blk] : blk_idx_data_blk_map_ ){
+    if(blk_idx_expand_mapto_blk_map_a.find( blk_idx ) != blk_idx_expand_mapto_blk_map_a.end()){
+      int blk_idx_a = blk_idx_expand_mapto_blk_map_a[blk_idx];
+      if(blk_idx_a!=-1) {
+        auto data_blk_a = blk_idx_data_blk_map_a.at( blk_idx );
+        size_t raw_data_offset_in_a = data_blk_a.data_offset;
+
+        RawDataCopyTask task=RawDataCopyTask(data_blk.blk_coors,
+                                             data_blk_a.data_offset, //raw_data_offset_in_a
+                                             data_blk_a.size);
+        task.dest_data_offset = data_blk.data_offset;
+        raw_data_copy_tasks_from_a.push_back(task);
+      }else{
+        size_t filled_zero_elem_number = data_blk.size-blk_idx_data_blk_map_b[blk_idx_expand_mapto_blk_map_b[blk_idx]].size;
+        RawDataSetZeros_(data_blk.data_offset,
+                         filled_zero_elem_number);
+      }
+    }
+
+    if(blk_idx_expand_mapto_blk_map_b.find(blk_idx) !=  blk_idx_expand_mapto_blk_map_b.end()){
+      int blk_idx_b = blk_idx_expand_mapto_blk_map_b[blk_idx];
+      if(blk_idx_b!=-1) {
+        size_t raw_data_offset_in_b = blk_idx_data_blk_map_b[blk_idx_b].data_offset;
+
+        RawDataCopyTask task=RawDataCopyTask(blk_idx_data_blk_map_b[blk_idx_b].blk_coors,
+                                             blk_idx_data_blk_map_b[blk_idx_b].data_offset, //raw_data_offset_in_b
+                                             blk_idx_data_blk_map_b[blk_idx_b].size);
+        task.dest_data_offset = data_blk.data_offset + data_blk.size - blk_idx_data_blk_map_b[blk_idx_b].size ;
+        raw_data_copy_tasks_from_b.push_back(task);
+      }else{
+        int blk_idx_a=blk_idx_expand_mapto_blk_map_a[blk_idx];
+        assert(blk_idx_a == blk_idx);
+        auto pblk_idx_data_blk_pair_a = blk_idx_data_blk_map_a.find( static_cast<size_t>(blk_idx_a) );
+        size_t filled_zero_elem_number = data_blk.size-pblk_idx_data_blk_pair_a->second.size;
+        RawDataSetZeros_(data_blk.data_offset + pblk_idx_data_blk_pair_a->second.size,
+                         filled_zero_elem_number);
+      }
+    }
+  }
   // Do data copy
-  RawDataCopy_(raw_data_copy_tasks_a, bsdt_a.pactual_raw_data_);
-  RawDataCopy_(raw_data_copy_tasks_b, bsdt_b.pactual_raw_data_);
-  // Do zeros fill
-  RawDataSetZeros_(raw_data_set_zeros_tasks_a);
-  RawDataSetZeros_(raw_data_set_zeros_tasks_b);
+  RawDataCopy_(raw_data_copy_tasks_from_a, bsdt_a.pactual_raw_data_);
+  RawDataCopy_(raw_data_copy_tasks_from_b, bsdt_b.pactual_raw_data_);
 }
 
 
