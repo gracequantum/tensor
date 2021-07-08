@@ -69,9 +69,13 @@ BlockSparseDataTensor<ElemT, QNT>::DataBlkInsert(
   return blk_idx_data_blk_map_.find(blk_idx);
 }
 
+
+/**
+Insert a list of data blocks. The BlockSparseDataTensor must be empty before
+performing this insertion.
+*/
 template <typename ElemT, typename QNT>
-void
-BlockSparseDataTensor<ElemT, QNT>::DataBlksInsert(
+void BlockSparseDataTensor<ElemT, QNT>::DataBlksInsert(
     const std::vector<size_t> &blk_idxs,
     const std::vector<CoorsT> &blk_coors_s,
     const bool alloc_mem,
@@ -80,13 +84,13 @@ BlockSparseDataTensor<ElemT, QNT>::DataBlksInsert(
   assert(blk_idx_data_blk_map_.empty());
   //it's better that every CoorsT is unique.
   auto iter = blk_idxs.begin();
-  for(const CoorsT& blk_coors: blk_coors_s){
+  for(auto &blk_coors: blk_coors_s){
     size_t blk_idx = *iter;
     blk_idx_data_blk_map_[blk_idx] = DataBlk<QNT>(blk_coors, *pgqten_indexes);
     iter++;
   }
   raw_data_size_ = 0;
-  for(auto &[idx, data_blk] : blk_idx_data_blk_map_ ){
+  for (auto &[idx, data_blk] : blk_idx_data_blk_map_) {
     data_blk.data_offset = raw_data_size_;
     raw_data_size_ += data_blk.size;
   }
@@ -97,9 +101,13 @@ BlockSparseDataTensor<ElemT, QNT>::DataBlksInsert(
   }
 }
 
+
+/**
+Insert a list of data blocks. The BlockSparseDataTensor must be empty before
+performing this insertion.
+*/
 template <typename ElemT, typename QNT>
-void
-BlockSparseDataTensor<ElemT, QNT>::DataBlksInsert(
+void BlockSparseDataTensor<ElemT, QNT>::DataBlksInsert(
     const std::vector<CoorsT> &blk_coors_s,
     const bool alloc_mem,
     const bool init
@@ -108,15 +116,12 @@ BlockSparseDataTensor<ElemT, QNT>::DataBlksInsert(
   //it's better that every CoorsT is unique.
   std::vector<size_t> blk_idxs;
   blk_idxs.reserve(blk_coors_s.size());
-  for(const CoorsT& blk_coors: blk_coors_s){
+  for (auto &blk_coors: blk_coors_s) {
     blk_idxs.push_back(std::move(BlkCoorsToBlkIdx(blk_coors)));
   }
-  DataBlksInsert(
-      blk_idxs,
-      blk_coors_s,
-      alloc_mem,
-      init);
+  DataBlksInsert(blk_idxs, blk_coors_s, alloc_mem, init);
 }
+
 
 /**
 Copy and rescale raw data from another tensor.

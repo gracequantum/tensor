@@ -58,8 +58,9 @@ inline void TensorExpandPreChecker(
       assert(a.GetIndexes()[i].GetDir() == b.GetIndexes()[i].GetDir());
     }
   }
-  // To be expanded tensors should have the same quantum number divergence or a null quantum number divergence QNT()
-  assert( a.GetQNBlkNum()==0 || b.GetQNBlkNum() == 0 || a.Div() ==  b.Div() );
+  // To be expanded tensors should have the same quantum number divergence or
+  // be an empty tensor
+  assert(a.GetQNBlkNum() == 0 || b.GetQNBlkNum() == 0 || a.Div() ==  b.Div());
 }
 
 
