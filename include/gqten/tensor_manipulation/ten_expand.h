@@ -58,8 +58,9 @@ inline void TensorExpandPreChecker(
       assert(a.GetIndexes()[i].GetDir() == b.GetIndexes()[i].GetDir());
     }
   }
-  // To be expanded tensors should have the same quantum number divergence or a null quantum number divergence QNT()
-  assert(a.Div() ==  b.Div() || a.Div() == QNT() || b.Div() == QNT());
+  // To be expanded tensors should have the same quantum number divergence or
+  // be an empty tensor
+  assert(a.GetQNBlkNum() == 0 || b.GetQNBlkNum() == 0 || a.Div() ==  b.Div());
 }
 
 
@@ -69,9 +70,9 @@ inline void ExpandedTenDivChecker(
     const GQTensor<TenElemT, QNT> &b,
     const GQTensor<TenElemT, QNT> &c
 ) {
-  if (a.Div() != QNT()) {
+  if (a.GetQNBlkNum() != 0) {
     assert(c.Div() == a.Div());
-  } else if (b.Div() != QNT()) {
+  } else if (b.GetQNBlkNum() != 0) {
     assert(c.Div() == b.Div());
   } else {
     assert(c.Div() == QNT());
@@ -156,7 +157,6 @@ inline Index<QNT> ExpandIndexAndRecordInfo(
     const Index<QNT> &idx_from_a,
     const Index<QNT> &idx_from_b,
     std::vector<bool> &is_a_idx_qnsct_expanded,
-    std::vector<bool> &is_b_idx_qnsct_expanded,
     std::map<size_t, size_t> &b_idx_qnsct_coor_expanded_idx_qnsct_coor_map
 ) {
   QNSectorVec<QNT> expanded_qnscts;
@@ -164,7 +164,6 @@ inline Index<QNT> ExpandIndexAndRecordInfo(
   auto qnscts_from_a_size = idx_from_a.GetQNSctNum();
   auto qnscts_from_b_size = idx_from_b.GetQNSctNum();
   is_a_idx_qnsct_expanded = std::vector<bool>(qnscts_from_a_size);
-  is_b_idx_qnsct_expanded = std::vector<bool>(qnscts_from_b_size);
   std::vector<size_t> idxs_of_erased_qnscts_from_b;     // record the indexes of erased qnscts from b,
                                                         // so that we do not actually erase the qnsct from qnscts_from_b
   for (size_t sct_coor_a = 0; sct_coor_a < qnscts_from_a_size; ++sct_coor_a) {
@@ -180,7 +179,6 @@ inline Index<QNT> ExpandIndexAndRecordInfo(
                               );
         expanded_qnscts.push_back(expanded_qnsct);
         is_a_idx_qnsct_expanded[sct_coor_a] = true;
-        is_b_idx_qnsct_expanded[sct_coor_b] = true;
         b_idx_qnsct_coor_expanded_idx_qnsct_coor_map[sct_coor_b] = sct_coor_a;
         idxs_of_erased_qnscts_from_b.push_back(sct_coor_b);
         has_matched_qnsct_in_qnscts_from_b = true;
@@ -206,7 +204,6 @@ inline Index<QNT> ExpandIndexAndRecordInfo(
       b_idx_qnsct_coor_expanded_idx_qnsct_coor_map[
           sct_coor_b
       ] = expanded_qnscts.size() - 1;
-      is_b_idx_qnsct_expanded[sct_coor_b] = false;
     }
   }
 
@@ -254,13 +251,12 @@ void ExpandOneIdx_(
 
   // Then we can expand the two tensor according the first indexes. For each block, the data are direct connected
   // Expand the first index
-  std::vector<bool> is_a_idx_qnsct_expanded, is_b_idx_qnsct_expanded;
+  std::vector<bool> is_a_idx_qnsct_expanded;
   std::map<size_t, size_t> b_idx_qnsct_coor_expanded_idx_qnsct_coor_map;
   auto expanded_index = ExpandIndexAndRecordInfo(
       pa->GetIndexes()[0],
       pb->GetIndexes()[0],
       is_a_idx_qnsct_expanded,
-      is_b_idx_qnsct_expanded,
       b_idx_qnsct_coor_expanded_idx_qnsct_coor_map
   );
 
@@ -272,7 +268,6 @@ void ExpandOneIdx_(
       pa->GetBlkSparDataTen(),
       pb->GetBlkSparDataTen(),
       is_a_idx_qnsct_expanded,
-      is_b_idx_qnsct_expanded,
       b_idx_qnsct_coor_expanded_idx_qnsct_coor_map
   );
 

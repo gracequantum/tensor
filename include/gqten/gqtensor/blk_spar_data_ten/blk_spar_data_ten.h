@@ -63,15 +63,29 @@ public:
   // Data block level operations
   typename BlkIdxDataBlkMap::iterator
   DataBlkInsert(const CoorsT &blk_coors, const bool alloc_mem = true);
-  std::vector<RawDataCtrctTask> DataBlkGenForTenCtrct(
-      const BlockSparseDataTensor &,
-      const BlockSparseDataTensor &,
-      const std::vector<std::vector<size_t>> &
+  
+  void DataBlksInsert(
+      const std::vector<size_t> &,
+      const std::vector<CoorsT> &,
+      const bool,
+      const bool = false
+  );
+
+  void DataBlksInsert(
+      const std::vector<CoorsT> &,
+      const bool,
+      const bool
   );
 
   void DataBlkCopyAndScale(
       const RawDataCopyAndScaleTask<ElemT> &,
       const ElemT *
+  );
+
+std::vector<RawDataCtrctTask> DataBlkGenForTenCtrct(
+      const BlockSparseDataTensor &,
+      const BlockSparseDataTensor &,
+      const std::vector<std::vector<size_t>> &
   );
 
   std::map<size_t, DataBlkMatSvdRes<ElemT>> DataBlkDecompSVD(
@@ -115,7 +129,6 @@ public:
   void ConstructExpandedDataOnFirstIndex(
       const BlockSparseDataTensor &,
       const BlockSparseDataTensor &,
-      const std::vector<bool> &,
       const std::vector<bool> &,
       const std::map<size_t, size_t> &
   );

@@ -30,6 +30,7 @@ QNSctT qnsctm1 = QNSctT(qnm1, 1);
 QNSctT qnsctm2 = QNSctT(qnm1, 2);
 QNSctT qnsctm3 = QNSctT(qnm1, 100);
 QNSctT qnsct0 = QNSctT(qn0, 220);
+QNSctT qnsct0_1 = QNSctT(qn0, 1);
 
 QNSctT qnsct0_2 = QNSctT(qn0, 2);
 QNSctT qnsctp1_2 = QNSctT(qnp1, 2);
@@ -40,6 +41,8 @@ QNSctT qnsctm1_2 = QNSctT(qnm1, 2);
 QNSctT qnsctm1_4 = QNSctT(qnm1, 4);
 QNSctT qnsctm2_2 = QNSctT(qnm2, 2);
 
+IndexT idx_in0 = IndexT({qnsct0_1}, IN);
+IndexT idx_in0_2 = IndexT({qnsct0_2}, IN);
 IndexT idx_inm1 = IndexT({qnsctm1}, IN);
 IndexT idx_inp1 = IndexT({qnsctp1}, IN);
 IndexT idx_outm1 = IndexT({qnsctm1}, OUT);
@@ -87,6 +90,14 @@ TEST(TestExpand, TestCase) {
   RunTestTenExpansionCase(ten3, ten3, {1}, ten4);
   RunTestTenExpansionCase(ten2, ten2, {0}, ten5);
 
+  DGQTensor ten6 = DGQTensor({idx_in0, idx_out2, idx_out2});
+  DGQTensor ten7 = ten6;
+  DGQTensor ten8 = DGQTensor({idx_in0_2, idx_out2, idx_out2});
+  ten6({0,0,1})=1;
+  ten7({0,1,0})=1;
+  ten8({0,0,1})=1;
+  ten8({1,1,0})=1;
+  RunTestTenExpansionCase(ten6,ten7,{0},ten8);
 
   IndexT idx_in4scts1({qnsct0_2, qnsctp1_2, qnsctp2_2, qnsctm1_2}, IN);
   IndexT idx_in4scts2({qnsctp1_2, qnsctp2_2, qnsctm2_2, qnsctm1_2}, IN);
