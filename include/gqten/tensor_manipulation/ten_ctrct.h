@@ -82,6 +82,14 @@ TensorContractionExecutor<TenElemT, QNT>::TensorContractionExecutor(
     GQTensor<TenElemT, QNT> *pc
 ) : pa_(pa), pb_(pb), axes_set_(axes_set), pc_(pc) {
   assert(pc_->IsDefault());    // Only empty tensor can take the result
+  // Check indexes matching
+#ifndef NDEBUG
+  auto indexesa = pa->GetIndexes();
+  auto indexesb = pb->GetIndexes();
+  for(size_t i = 0; i < axes_set[0].size(); ++i){
+    assert(indexesa[axes_set[0][i]] == InverseIndex(indexesb[axes_set[1][i]]));
+  }
+#endif
   TenCtrctInitResTen(pa_, pb_, axes_set_, pc_);
   raw_data_ctrct_tasks_ = pc_->GetBlkSparDataTen().DataBlkGenForTenCtrct(
                               pa_->GetBlkSparDataTen(),
