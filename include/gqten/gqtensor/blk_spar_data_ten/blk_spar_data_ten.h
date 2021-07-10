@@ -92,6 +92,22 @@ public:
       const std::vector<size_t> &
   );
 
+  std::map<size_t, DataBlkMatQrRes<ElemT>> DataBlkDecompQR(
+      const IdxDataBlkMatMap<QNT> &
+  ) const;
+
+  void DataBlkCopyQRQdata(
+      const CoorsT &, const size_t, const size_t,
+      const size_t,
+      const ElemT *, const size_t, const size_t
+  );
+
+  void DataBlkCopyQRRdata(
+      const CoorsT &, const size_t, const size_t,
+      const size_t,
+      const ElemT *, const size_t, const size_t
+  );
+
   // Global level operations
   void Clear(void);
   void Allocate(const bool init = false);

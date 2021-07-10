@@ -74,6 +74,11 @@ add_unittest(test_ten_svd
   "test_tensor_manipulation/test_ten_svd.cc"
   "${MATH_LIB_COMPILE_FLAGS}" "" "${MATH_LIB_LINK_FLAGS}"
 )
+# Test tensor QR.
+add_unittest(test_ten_qr
+  "test_tensor_manipulation/test_ten_qr.cc"
+  "${MATH_LIB_COMPILE_FLAGS}" "" "${MATH_LIB_LINK_FLAGS}"
+)
 # Test tensor index combination.
 add_unittest(test_index_combine
   "test_tensor_manipulation/test_index_combine.cc"
