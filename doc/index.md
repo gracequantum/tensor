@@ -16,7 +16,7 @@ _If it isn't fast, it isn't graceful_
 
 
 ## Newest version
-- version [0.2-alpha.2](https://github.com/gracequantum/tensor/releases/latest)
+- version [0.2-alpha.3](https://github.com/gracequantum/tensor/releases/latest)
 
 
 ## Current developers and maintainers
@@ -60,7 +60,7 @@ It is easy to use the GraceQ/tensor.
 ```
 When you compile your program, you can use following compile flags to gain the best performance.
 ```
--std=c++11 -g -O3 -DNDEBUG
+-std=c++17 -g -O3 -DNDEBUG
 ```
 GraceQ/tensor needs hptt and MKL during linking process. So you should use the following statements when you link the library.
 ```
@@ -69,7 +69,7 @@ GraceQ/tensor needs hptt and MKL during linking process. So you should use the f
 We highly recommend that you use [MKL Link Line Advisor](https://software.intel.com/en-us/articles/intel-mkl-link-line-advisor/) to set `<your_mkl_linking_flags>`. A possible complete compiling command may looks like
 ```
 g++ \
-	-std=c++11 -g -O3 -DNDEBUG \
+	-std=c++17 -g -O3 -DNDEBUG \
 	-I<your_gqten_installation_root>/include -L<your_gqten_installation_root>/lib \
 	-lhptt <your_mkl_linking_flags> \
 	-o <your_main_program_name> <your_main_program_file_name>
@@ -472,6 +472,8 @@ GraceQ/tensor is freely available under the [LGPL v3.0](https://www.gnu.org/lice
 You can cite the GraceQ/tensor where you use it as a support to this project. Please cite GraceQ/tensor as
 > GraceQuantum.org . GraceQ/tensor: A high-performance tensor computation framework for the quantum physics community. For a complete list of the contributors, see CONTRIBUTORS.txt .
 
+You can also choose to simply cite the whole GraceQ project as
+> GraceQ, www.gracequantum.org .
 
 ## Acknowledgments
 We highly acknowledge the following people, project(s) and organization(s) (sorted in alphabetical order):

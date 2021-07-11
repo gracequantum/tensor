@@ -81,6 +81,13 @@ public:
   }
   QN operator-(const QN &rhs) const { return (*this) + (-rhs); }
 
+  /**
+  Get target quantum number value using its index.
+  @param idx The index of the target quantum number value in the qnval list.
+  @return QNVal base class reference.
+  */
+  const QNVal &GetQNVal(const size_t idx) const { return *pqnvals_[idx]; }
+
   size_t Hash(void) const override { return hash_; }
 
   void StreamRead(std::istream &) override;

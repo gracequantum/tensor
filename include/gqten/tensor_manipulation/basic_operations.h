@@ -44,46 +44,14 @@ GQTensorT Dag(const GQTensorT &t) {
 
 
 /**
-Calculate the quantum number divergence of a GQTensor.
+Calculate the quantum number divergence of a GQTensor by call GQTensor::Div().
 
 @param t A GQTensor.
 
 @return The quantum number divergence.
 */
 template <typename ElemT, typename QNT>
-QNT Div(const GQTensor<ElemT, QNT> &t) {
-  assert(!t.IsDefault());
-  if (t.IsScalar()) {
-    std::cout << "Tensor is a scalar. Return empty quantum number."
-              << std::endl;
-    return QNT();
-  } else {
-    auto qnblk_num = t.GetQNBlkNum();
-    if (qnblk_num == 0) {
-      std::cout << "Tensor does not have a block. Return empty quantum number."
-                << std::endl;
-      return QNT();
-    } else {
-      auto blk_idx_data_blk_map = t.GetBlkSparDataTen().GetBlkIdxDataBlkMap();
-      auto indexes = t.GetIndexes();
-      auto first_blk_idx_data_blk = blk_idx_data_blk_map.begin();
-      auto div = CalcDiv(indexes, first_blk_idx_data_blk->second.blk_coors);
-      for (
-          auto it = std::next(first_blk_idx_data_blk);
-          it != blk_idx_data_blk_map.end();
-          ++it
-      ) {
-        auto blki_div = CalcDiv(indexes, it->second.blk_coors);
-        if (blki_div != div) {
-          std::cout << "Tensor does not have a special divergence. Return empty quantum number."
-                    << std::endl;
-          return QNT();
-        }
-      }
-      return div;
-    }
-  }
-}
+inline QNT Div(const GQTensor<ElemT, QNT> &t) { return t.Div(); }
 
 
 /**

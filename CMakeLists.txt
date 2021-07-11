@@ -39,7 +39,7 @@ option(GQTEN_USE_EXTERNAL_HPTT_LIB "Use external hptt library" OFF)
 
 
 # Compilation and linking control.
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 add_definitions(-Wall -g)
 
 

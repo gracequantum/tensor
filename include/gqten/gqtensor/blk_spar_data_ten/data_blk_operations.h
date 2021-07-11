@@ -18,8 +18,9 @@
 #include "gqten/gqtensor/blk_spar_data_ten/blk_spar_data_ten.h"
 #include "gqten/gqtensor/blk_spar_data_ten/raw_data_operations.h"
 #include "gqten/gqtensor/blk_spar_data_ten/raw_data_operation_tasks.h"
-#include "gqten/framework/hp_numeric/lapack.h"    // MatSVD
+#include "gqten/framework/hp_numeric/lapack.h"    // MatSVD, MatQR
 
+#include <cstring>      // memcpy
 #ifdef Release
   #define NDEBUG
 #endif
@@ -67,6 +68,59 @@ BlockSparseDataTensor<ElemT, QNT>::DataBlkInsert(
   }
 
   return blk_idx_data_blk_map_.find(blk_idx);
+}
+
+
+/**
+Insert a list of data blocks. The BlockSparseDataTensor must be empty before
+performing this insertion.
+*/
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::DataBlksInsert(
+    const std::vector<size_t> &blk_idxs,
+    const std::vector<CoorsT> &blk_coors_s,
+    const bool alloc_mem,
+    const bool init
+) {
+  assert(blk_idx_data_blk_map_.empty());
+  //it's better that every CoorsT is unique.
+  auto iter = blk_idxs.begin();
+  for(auto &blk_coors: blk_coors_s){
+    size_t blk_idx = *iter;
+    blk_idx_data_blk_map_[blk_idx] = DataBlk<QNT>(blk_coors, *pgqten_indexes);
+    iter++;
+  }
+  raw_data_size_ = 0;
+  for (auto &[idx, data_blk] : blk_idx_data_blk_map_) {
+    data_blk.data_offset = raw_data_size_;
+    raw_data_size_ += data_blk.size;
+  }
+  if (alloc_mem) {
+    Allocate(init);
+  } else {
+    assert(pactual_raw_data_ == nullptr);
+  }
+}
+
+
+/**
+Insert a list of data blocks. The BlockSparseDataTensor must be empty before
+performing this insertion.
+*/
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::DataBlksInsert(
+    const std::vector<CoorsT> &blk_coors_s,
+    const bool alloc_mem,
+    const bool init
+) {
+  assert(blk_idx_data_blk_map_.empty());
+  //it's better that every CoorsT is unique.
+  std::vector<size_t> blk_idxs;
+  blk_idxs.reserve(blk_coors_s.size());
+  for (auto &blk_coors: blk_coors_s) {
+    blk_idxs.push_back(std::move(BlkCoorsToBlkIdx(blk_coors)));
+  }
+  DataBlksInsert(blk_idxs, blk_coors_s, alloc_mem, init);
 }
 
 
@@ -391,6 +445,67 @@ void BlockSparseDataTensor<ElemT, QNT>::DataBlkCopySVDVtData(
     );
   }
 }
+
+
+/**
+QR decomposition.
+*/
+template <typename ElemT, typename QNT>
+std::map<size_t, DataBlkMatQrRes<ElemT>>
+BlockSparseDataTensor<ElemT, QNT>::DataBlkDecompQR(
+    const IdxDataBlkMatMap<QNT> &idx_data_blk_mat_map
+) const {
+  std::map<size_t, DataBlkMatQrRes<ElemT>> idx_qr_res_map;
+  for (auto &idx_data_blk_mat : idx_data_blk_mat_map) {
+    auto idx = idx_data_blk_mat.first;
+    auto data_blk_mat = idx_data_blk_mat.second;
+    ElemT *mat = RawDataGenDenseDataBlkMat_(data_blk_mat);
+    ElemT *q = nullptr;
+    ElemT *r = nullptr;
+    size_t m = data_blk_mat.rows;
+    size_t n = data_blk_mat.cols;
+    size_t k = m > n ? n : m;
+    hp_numeric::MatQR(mat, m, n, q, r);
+    free(mat);
+    idx_qr_res_map[idx] = DataBlkMatQrRes<ElemT>(m, n, k, q, r);
+  }
+  return idx_qr_res_map;
+}
+
+
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::DataBlkCopyQRQdata(
+    const CoorsT &blk_coors, const size_t mat_m, const size_t mat_n,
+    const size_t row_offset,
+    const ElemT *q, const size_t q_m, const size_t q_n
+) {
+  assert(mat_n == q_n);
+  auto blk_idx = BlkCoorsToBlkIdx(blk_coors);
+  auto &data_blk = blk_idx_data_blk_map_.at(blk_idx);
+  assert(data_blk.size == (mat_m * mat_n));
+  auto data = pactual_raw_data_ + data_blk.data_offset;
+  memcpy(data, q + (row_offset * q_n), data_blk.size * sizeof(ElemT));
+}
+
+
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::DataBlkCopyQRRdata(
+    const CoorsT &blk_coors, const size_t mat_m, const size_t mat_n,
+    const size_t col_offset,
+    const ElemT *r, const size_t r_m, const size_t r_n
+) {
+  assert(mat_m == r_m);
+  auto blk_idx = BlkCoorsToBlkIdx(blk_coors);
+  auto data = pactual_raw_data_ + blk_idx_data_blk_map_.at(blk_idx).data_offset;
+  for (size_t i = 0; i < mat_m; ++i) {
+    memcpy(
+        data + (i * mat_n),
+        r + (i * r_n + col_offset),
+        mat_n * sizeof(ElemT)
+    );
+  }
+}
+
 
 /**
 Clear data blocks and reset raw_data_size_.

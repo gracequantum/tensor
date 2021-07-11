@@ -49,6 +49,8 @@ struct TestContraction : public testing::Test {
   DGQTensor dten_2d_s = DGQTensor({idx_in_s, idx_out_s});
   DGQTensor dten_2d_l = DGQTensor({idx_in_l, idx_out_l});
   DGQTensor dten_3d_s = DGQTensor({idx_in_s, idx_out_s, idx_out_s});
+  DGQTensor dten_3d_s3 = DGQTensor({idx_in_s, idx_in_s, idx_out_s});
+  DGQTensor dten_3d_s4 = DGQTensor({idx_out_s, idx_in_s, idx_in_s});
   DGQTensor dten_3d_l = DGQTensor({idx_in_l, idx_out_l, idx_out_l});
 
   ZGQTensor zten_1d_s = ZGQTensor({idx_out_s});
@@ -56,6 +58,8 @@ struct TestContraction : public testing::Test {
   ZGQTensor zten_2d_s = ZGQTensor({idx_in_s, idx_out_s});
   ZGQTensor zten_2d_l = ZGQTensor({idx_in_l, idx_out_l});
   ZGQTensor zten_3d_s = ZGQTensor({idx_in_s, idx_out_s, idx_out_s});
+  ZGQTensor zten_3d_s3 = ZGQTensor({idx_in_s, idx_in_s, idx_out_s});
+  ZGQTensor zten_3d_s4 = ZGQTensor({idx_out_s, idx_in_s, idx_in_s});
   ZGQTensor zten_3d_l = ZGQTensor({idx_in_l, idx_out_l, idx_out_l});
 };
 
@@ -388,23 +392,23 @@ TEST_F(TestContraction, 3DCase) {
   dten_3d_s2.Random(qnm1);
   RunTestTenCtrct3DCase1(dten_3d_s, dten_3d_s2);
   dten_3d_s.Random(qn0);
-  dten_3d_s2.Random(qn0);
-  RunTestTenCtrct3DCase2(dten_3d_s, dten_3d_s2);
+  dten_3d_s3.Random(qn0);
+  RunTestTenCtrct3DCase2(dten_3d_s, dten_3d_s3);
   dten_3d_s.Random(qnp1);
-  dten_3d_s2.Random(qn0);
-  RunTestTenCtrct3DCase2(dten_3d_s, dten_3d_s2);
+  dten_3d_s3.Random(qn0);
+  RunTestTenCtrct3DCase2(dten_3d_s, dten_3d_s3);
   dten_3d_s.Random(qnp1);
-  dten_3d_s2.Random(qnm1);
-  RunTestTenCtrct3DCase2(dten_3d_s, dten_3d_s2);
+  dten_3d_s3.Random(qnm1);
+  RunTestTenCtrct3DCase2(dten_3d_s, dten_3d_s3);
   dten_3d_s.Random(qn0);
-  dten_3d_s2.Random(qn0);
-  RunTestTenCtrct3DCase3(dten_3d_s, dten_3d_s2);
+  dten_3d_s4.Random(qn0);
+  RunTestTenCtrct3DCase3(dten_3d_s, dten_3d_s4);
   dten_3d_s.Random(qnp1);
-  dten_3d_s2.Random(qn0);
-  RunTestTenCtrct3DCase3(dten_3d_s, dten_3d_s2);
+  dten_3d_s4.Random(qn0);
+  RunTestTenCtrct3DCase3(dten_3d_s, dten_3d_s4);
   dten_3d_s.Random(qnp1);
-  dten_3d_s2.Random(qnm1);
-  RunTestTenCtrct3DCase3(dten_3d_s, dten_3d_s2);
+  dten_3d_s4.Random(qnm1);
+  RunTestTenCtrct3DCase3(dten_3d_s, dten_3d_s4);
 
   auto zten_3d_s2 = zten_3d_s;
   zten_3d_s.Random(qn0);
@@ -417,21 +421,21 @@ TEST_F(TestContraction, 3DCase) {
   zten_3d_s2.Random(qnm1);
   RunTestTenCtrct3DCase1(zten_3d_s, zten_3d_s2);
   zten_3d_s.Random(qn0);
-  zten_3d_s2.Random(qn0);
-  RunTestTenCtrct3DCase2(zten_3d_s, zten_3d_s2);
+  zten_3d_s3.Random(qn0);
+  RunTestTenCtrct3DCase2(zten_3d_s, zten_3d_s3);
   zten_3d_s.Random(qnp1);
-  zten_3d_s2.Random(qn0);
-  RunTestTenCtrct3DCase2(zten_3d_s, zten_3d_s2);
+  zten_3d_s3.Random(qn0);
+  RunTestTenCtrct3DCase2(zten_3d_s, zten_3d_s3);
   zten_3d_s.Random(qnp1);
-  zten_3d_s2.Random(qnm1);
-  RunTestTenCtrct3DCase2(zten_3d_s, zten_3d_s2);
+  zten_3d_s3.Random(qnm1);
+  RunTestTenCtrct3DCase2(zten_3d_s, zten_3d_s3);
   zten_3d_s.Random(qn0);
-  zten_3d_s2.Random(qn0);
-  RunTestTenCtrct3DCase3(zten_3d_s, zten_3d_s2);
+  zten_3d_s4.Random(qn0);
+  RunTestTenCtrct3DCase3(zten_3d_s, zten_3d_s4);
   zten_3d_s.Random(qnp1);
-  zten_3d_s2.Random(qn0);
-  RunTestTenCtrct3DCase3(zten_3d_s, zten_3d_s2);
+  zten_3d_s4.Random(qn0);
+  RunTestTenCtrct3DCase3(zten_3d_s, zten_3d_s4);
   zten_3d_s.Random(qnp1);
-  zten_3d_s2.Random(qnm1);
-  RunTestTenCtrct3DCase3(zten_3d_s, zten_3d_s2);
+  zten_3d_s4.Random(qnm1);
+  RunTestTenCtrct3DCase3(zten_3d_s, zten_3d_s4);
 }

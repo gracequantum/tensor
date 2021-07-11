@@ -48,6 +48,12 @@ public:
   virtual size_t dim(void) const = 0;
 
   /**
+  Get the value of the quantum number value.
+  @return The value.
+  */
+  virtual int GetVal(void) const = 0;
+
+  /**
   Calculate the value of the minus of the quantum number value.
 
   @return The minus of the quantum number value.
