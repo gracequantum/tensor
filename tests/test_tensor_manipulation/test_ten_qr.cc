@@ -87,8 +87,8 @@ void RunTestQrCase(
   GQTensor<TenElemT, QNT> q, r;
   std::string qn_nm = "qn";
   U1QN qn0 =  U1QN({QNCard(qn_nm, U1QNVal( 0))});
-  TensorQRExecutor<TenElemT, QNT> qr_exe(&t, ldims, qn0, &q, &r);
-  qr_exe.Execute();
+
+  QR(&t, ldims, qn0, &q, &r);
 
   GQTensor<TenElemT, QNT> temp;
   auto q_dag = Dag(q);
@@ -114,6 +114,12 @@ TEST_F(TestQr, 2DCase) {
   RunTestQrCase(dten_2d_s, 1, &qnm1);
   RunTestQrCase(dten_2d_s, 1, &qnp2);
   RunTestQrCase(dten_2d_s, 1, &qnm2);
+
+  RunTestQrCase(zten_2d_s, 1, &qn0);
+  RunTestQrCase(zten_2d_s, 1, &qnp1);
+  RunTestQrCase(zten_2d_s, 1, &qnm1);
+  RunTestQrCase(zten_2d_s, 1, &qnp2);
+  RunTestQrCase(zten_2d_s, 1, &qnm2);
 }
 
 
@@ -128,6 +134,17 @@ TEST_F(TestQr, 3DCase) {
   RunTestQrCase(dten_3d_s, 2, &qnp2);
   RunTestQrCase(dten_3d_s, 2, &qnm1);
   RunTestQrCase(dten_3d_s, 2, &qnm2);
+
+  RunTestQrCase(zten_3d_s, 1, &qn0);
+  RunTestQrCase(zten_3d_s, 1, &qnp1);
+  RunTestQrCase(zten_3d_s, 1, &qnp2);
+  RunTestQrCase(zten_3d_s, 1, &qnm1);
+  RunTestQrCase(zten_3d_s, 1, &qnm2);
+  RunTestQrCase(zten_3d_s, 2, &qn0);
+  RunTestQrCase(zten_3d_s, 2, &qnp1);
+  RunTestQrCase(zten_3d_s, 2, &qnp2);
+  RunTestQrCase(zten_3d_s, 2, &qnm1);
+  RunTestQrCase(zten_3d_s, 2, &qnm2);
 }
 
 
@@ -147,4 +164,20 @@ TEST_F(TestQr, 4DCase) {
   RunTestQrCase(dten_4d_s, 3, &qnp2);
   RunTestQrCase(dten_4d_s, 3, &qnm1);
   RunTestQrCase(dten_4d_s, 3, &qnm2);
+
+  RunTestQrCase(zten_4d_s, 1, &qn0);
+  RunTestQrCase(zten_4d_s, 1, &qnp1);
+  RunTestQrCase(zten_4d_s, 1, &qnp2);
+  RunTestQrCase(zten_4d_s, 1, &qnm1);
+  RunTestQrCase(zten_4d_s, 1, &qnm2);
+  RunTestQrCase(zten_4d_s, 2, &qn0);
+  RunTestQrCase(zten_4d_s, 2, &qnp1);
+  RunTestQrCase(zten_4d_s, 2, &qnp2);
+  RunTestQrCase(zten_4d_s, 2, &qnm1);
+  RunTestQrCase(zten_4d_s, 2, &qnm2);
+  RunTestQrCase(zten_4d_s, 3, &qn0);
+  RunTestQrCase(zten_4d_s, 3, &qnp1);
+  RunTestQrCase(zten_4d_s, 3, &qnp2);
+  RunTestQrCase(zten_4d_s, 3, &qnm1);
+  RunTestQrCase(zten_4d_s, 3, &qnm2);
 }

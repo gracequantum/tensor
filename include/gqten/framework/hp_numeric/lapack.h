@@ -107,25 +107,58 @@ inline void MatQR(
     GQTEN_Double* &r
 ) {
   auto k = std::min(m, n);
-  auto tau = (GQTEN_Double *) malloc(k * sizeof(GQTEN_Double));
+  size_t elem_type_size = sizeof(GQTEN_Double);
+  auto tau = (GQTEN_Double *) malloc(k * elem_type_size);
   LAPACKE_dgeqrf(LAPACK_ROW_MAJOR, m, n, mat, n, tau);
 
   // Create R matrix
-  r = (GQTEN_Double *) malloc((k * n) * sizeof(GQTEN_Double));
+  r = (GQTEN_Double *) malloc((k * n) * elem_type_size);
   for (size_t i = 0; i < k; ++i) {
-    memset(r + i*n, 0, i * sizeof(GQTEN_Double));
-    memcpy(r + i*n + i, mat + i*n + i, (n - i) * sizeof(GQTEN_Double));
+    memset(r + i*n, 0, i * elem_type_size);
+    memcpy(r + i*n + i, mat + i*n + i, (n - i) * elem_type_size);
   }
 
   // Create Q matrix
-  LAPACKE_dorgqr(LAPACK_ROW_MAJOR, m, k, k, mat, n, tau);
+  LAPACKE_dorgqr(LAPACK_ROW_MAJOR, m, k, k, mat, n, tau);     // or: orthogonal
   free(tau);
-  q = (GQTEN_Double *) malloc((m * k) * sizeof(GQTEN_Double));
+  q = (GQTEN_Double *) malloc((m * k) * elem_type_size);
   if (m == n) {
-    memcpy(q, mat, (m*n) * sizeof(GQTEN_Double));
+    memcpy(q, mat, (m*n) * elem_type_size);
   } else {
     for (size_t i = 0; i < m; ++i) {
-      memcpy(q + i*k, mat + i*n, k * sizeof(GQTEN_Double));
+      memcpy(q + i*k, mat + i*n, k * elem_type_size);
+    }
+  }
+}
+
+
+inline void MatQR(
+    GQTEN_Complex *mat,
+    const size_t m, const size_t n,
+    GQTEN_Complex* &q,
+    GQTEN_Complex* &r
+) {
+  auto k = std::min(m, n);
+  size_t elem_type_size = sizeof(GQTEN_Complex);
+  auto tau = (GQTEN_Complex *) malloc(k * elem_type_size);
+  LAPACKE_zgeqrf(LAPACK_ROW_MAJOR, m, n, mat, n, tau);
+
+  // Create R matrix
+  r = (GQTEN_Complex *) malloc((k * n) * elem_type_size);
+  for (size_t i = 0; i < k; ++i) {
+    memset(r + i*n, 0, i * elem_type_size);
+    memcpy(r + i*n + i, mat + i*n + i, (n - i) * elem_type_size);
+  }
+
+  // Create Q matrix
+  LAPACKE_zungqr(LAPACK_ROW_MAJOR, m, k, k, mat, n, tau);     // un: unitary 
+  free(tau);
+  q = (GQTEN_Complex *) malloc((m * k) * elem_type_size);
+  if (m == n) {
+    memcpy(q, mat, (m*n) * elem_type_size);
+  } else {
+    for (size_t i = 0; i < m; ++i) {
+      memcpy(q + i*k, mat + i*n, k * elem_type_size);
     }
   }
 }

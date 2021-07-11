@@ -89,6 +89,9 @@ private:
 /**
 Initialize a tensor QR executor.
 
+@tparam TenElemT The element type of the tensors.
+@tparam QNT The quantum number type of the tensors.
+
 @param pt A pointer to to-be QR decomposed tensor \f$ T \f$. The rank of \f$ T
        \f$ should be larger than 1.
 @param ldims Number of indeses on the left hand side of the decomposition.
@@ -133,6 +136,32 @@ void TensorQRExecutor<TenElemT, QNT>::Execute(void) {
   DeleteDataBlkMatQrResMap(idx_raw_data_qr_res);
 
   SetStatus(ExecutorStatus::FINISH);
+}
+
+
+/**
+Function version for tensor QR.
+
+@tparam TenElemT The element type of the tensors.
+@tparam QNT The quantum number type of the tensors.
+
+@param pt A pointer to to-be QR decomposed tensor \f$ T \f$. The rank of \f$ T
+       \f$ should be larger than 1.
+@param ldims Number of indeses on the left hand side of the decomposition.
+@param lqndiv Quantum number divergence of the result \f$ Q \f$ tensor.
+@param pq A pointer to result \f$ Q \f$ tensor.
+@param pr A pointer to result \f$ R \f$ tensor.
+*/
+template <typename TenElemT, typename QNT>
+void QR(
+    const GQTensor<TenElemT, QNT> *pt,
+    const size_t ldims,
+    const QNT &lqndiv,
+    GQTensor<TenElemT, QNT> *pq,
+    GQTensor<TenElemT, QNT> *pr
+) {
+  TensorQRExecutor<TenElemT, QNT> ten_qr_executor(pt, ldims, lqndiv, pq, pr);
+  ten_qr_executor.Execute();
 }
 
 
