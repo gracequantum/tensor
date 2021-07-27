@@ -84,6 +84,44 @@ TEST_F(TestBasicTensorOperations, TestDag) {
 }
 
 
+template <typename GQTensorT>
+void RunTestTensorConjCase(const GQTensorT &t) {
+  if (t.IsDefault()) {
+    // Do nothing
+  } else if (t.IsScalar()) {
+    auto t_conj = Conj(t);
+    EXPECT_EQ(t_conj.GetElem({}), std::conj(t.GetElem({})));
+  } else {
+    auto t_conj = Conj(t);
+    for (size_t i = 0; i < t.Rank(); ++i) {
+      EXPECT_EQ(t_conj.GetIndexes()[i], t.GetIndexes()[i]);
+    }
+    for (auto &coor : GenAllCoors(t.GetShape())) {
+      EXPECT_EQ(t_conj.GetElem(coor), std::conj(t.GetElem(coor)));
+    }
+  }
+}
+
+
+TEST_F(TestBasicTensorOperations, TestConj) {
+  RunTestTensorConjCase(dten_default);
+  dten_1d_s.Random(qn0);
+  RunTestTensorConjCase(dten_1d_s);
+  dten_2d_s.Random(qn0);
+  RunTestTensorConjCase(dten_2d_s);
+  dten_3d_s.Random(qn0);
+  RunTestTensorConjCase(dten_3d_s);
+
+  RunTestTensorConjCase(zten_default);
+  zten_1d_s.Random(qn0);
+  RunTestTensorConjCase(zten_1d_s);
+  zten_2d_s.Random(qn0);
+  RunTestTensorConjCase(zten_2d_s);
+  zten_3d_s.Random(qn0);
+  RunTestTensorConjCase(zten_3d_s);
+}
+
+
 template <typename ElemT, typename QNT>
 void RunTestTensorDivCase(GQTensor<ElemT, QNT> &t, const QNT &div) {
   t.Random(div);

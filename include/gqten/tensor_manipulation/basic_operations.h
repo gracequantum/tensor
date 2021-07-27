@@ -44,6 +44,21 @@ GQTensorT Dag(const GQTensorT &t) {
 
 
 /**
+Calculate element-wise complex conjugate of a GQTensor.
+
+@param t A GQTensor \f$ T \f$.
+
+@return \f$ \bar{T} \f$
+*/
+template <typename GQTensorT>
+GQTensorT Conj(const GQTensorT &t) {
+  GQTensorT t_conj(t);
+  t_conj.Conj();
+  return t_conj;
+}
+
+
+/**
 Calculate the quantum number divergence of a GQTensor by call GQTensor::Div().
 
 @param t A GQTensor.

@@ -117,6 +117,7 @@ public:
   void Transpose(const std::vector<size_t> &);
   GQTEN_Double Normalize(void);
   void Dag(void);
+  void Conj(void);
 
   // Operators overload.
   bool operator==(const GQTensor &) const;

@@ -425,7 +425,17 @@ void GQTensor<ElemT, QNT>::Dag(void) {
   assert(!IsDefault());
   for (auto &index : indexes_) { index.Inverse(); }
   pblk_spar_data_ten_->Conj();
+}
 
+
+/**
+Complex conjugate of the elements.
+@note NOT switch the direction of indexes.
+*/
+template <typename ElemT, typename QNT>
+void GQTensor<ElemT, QNT>::Conj(void) {
+  assert(!IsDefault());
+  pblk_spar_data_ten_->Conj();
 }
 
 
