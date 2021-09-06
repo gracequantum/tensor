@@ -190,3 +190,33 @@ TEST_F(TestBasicTensorOperations, TestToComplex) {
   RunTestRealTensorToComplexCase(dten_3d_s, qnp1, 0);
   RunTestRealTensorToComplexCase(dten_3d_s, qnp1, 1);
 }
+
+template <typename QNT>
+void RunTestGetRealFromCplxCase(GQTensor<GQTEN_Double, QNT> &t, const QNT &div,
+                                unsigned int rand_seed) {
+  srand(rand_seed);
+  t.Random(div);
+  auto zten = ToComplex(t);
+  auto real_t = GetReal(zten);
+  EXPECT_EQ(real_t, t);
+}
+
+TEST_F(TestBasicTensorOperations, TestGetRealFromCplx) {
+  dten_scalar.Random(U1QN());
+  auto zten = ToComplex(dten_scalar);
+  auto real_t = GetReal(zten);
+  EXPECT_EQ(real_t, dten_scalar);
+
+  RunTestGetRealFromCplxCase(dten_1d_s, qn0, 0);
+  RunTestGetRealFromCplxCase(dten_1d_s, qn0, 1);
+  RunTestGetRealFromCplxCase(dten_1d_s, qnp1, 0);
+  RunTestGetRealFromCplxCase(dten_1d_s, qnp1, 1);
+  RunTestGetRealFromCplxCase(dten_2d_s, qn0, 0);
+  RunTestGetRealFromCplxCase(dten_2d_s, qn0, 1);
+  RunTestGetRealFromCplxCase(dten_2d_s, qnp1, 0);
+  RunTestGetRealFromCplxCase(dten_2d_s, qnp1, 1);
+  RunTestGetRealFromCplxCase(dten_3d_s, qn0, 0);
+  RunTestGetRealFromCplxCase(dten_3d_s, qn0, 1);
+  RunTestGetRealFromCplxCase(dten_3d_s, qnp1, 0);
+  RunTestGetRealFromCplxCase(dten_3d_s, qnp1, 1);
+}

@@ -568,5 +568,30 @@ void BlockSparseDataTensor<ElemT, QNT>::CopyFromReal(
     assert(false);    // TODO: To-be implemented!
   }
 }
+
+/**
+Copy the real part of a complex block sparse data tensor.
+
+@param cplx_bsdt A complex block sparse data tensor.
+*/
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::CopyRealFromCplx(
+    const BlockSparseDataTensor<GQTEN_Complex, QNT> &cplx_bsdt) {
+  Clear();
+  if (std::is_same<ElemT, GQTEN_Double>::value) {
+    for (auto &blk_idx_data_blk : cplx_bsdt.GetBlkIdxDataBlkMap()) {
+      DataBlkInsert(blk_idx_data_blk.second.blk_coors, false);
+    }
+    if (IsScalar() && (cplx_bsdt.GetActualRawDataSize() != 0)) {
+      raw_data_size_ = 1;
+    }
+
+    Allocate();
+    RawDataCopyRealFromCplx_(cplx_bsdt.GetActualRawDataPtr(),
+                             cplx_bsdt.GetActualRawDataSize());
+  } else {
+    assert(false); // TODO: To-be implemented!
+  }
+}
 } /* gqten */
 #endif /* ifndef GQTEN_GQTENSOR_BLK_SPAR_DATA_TEN_GLOBAL_OPERATIONS_H */

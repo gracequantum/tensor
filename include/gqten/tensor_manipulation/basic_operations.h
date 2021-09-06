@@ -85,5 +85,21 @@ GQTensor<GQTEN_Complex, QNT> ToComplex(
   }
   return cplx_t;
 }
+
+/**
+Get the real part of a complex GQTensor.
+*/
+template <typename QNT>
+GQTensor<GQTEN_Double, QNT>
+GetReal(const GQTensor<GQTEN_Complex, QNT> &cplx_t) {
+  assert(!cplx_t.IsDefault());
+  GQTensor<GQTEN_Double, QNT> real_t(cplx_t.GetIndexes());
+  if (cplx_t.IsScalar()) {
+    real_t.SetElem({}, cplx_t.GetElem({}).real());
+  } else {
+    real_t.GetBlkSparDataTen().CopyRealFromCplx(cplx_t.GetBlkSparDataTen());
+  }
+  return real_t;
+}
 } /* gqten */
 #endif /* ifndef GQTEN_TENSOR_MANIPULATION_BASIC_OPERATIONS_H */

@@ -100,6 +100,13 @@ inline void VectorRealToCplx(
 ) {
   for (size_t i = 0; i < size; ++i) { cplx[i]= real[i]; }
 }
+
+inline void VectorGetRealFromCplx(const GQTEN_Complex *cplx, const size_t size,
+                                  GQTEN_Double *real) {
+  for (size_t i = 0; i < size; ++i) {
+    real[i] = cplx[i].real();
+  }
+}
 } /* hp_numeric */
 } /* gqten */
 #endif /* ifndef GQTEN_FRAMEWORK_HP_NUMERIC_BLAS_LEVEL1_H */

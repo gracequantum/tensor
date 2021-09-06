@@ -150,6 +150,7 @@ std::vector<RawDataCtrctTask> DataBlkGenForTenCtrct(
   );
 
   void CopyFromReal(const BlockSparseDataTensor<GQTEN_Double, QNT> &);
+  void CopyRealFromCplx(const BlockSparseDataTensor<GQTEN_Complex, QNT> &);
 
   // Operators overload
   bool operator==(const BlockSparseDataTensor &) const;
@@ -250,6 +251,7 @@ private:
   void RawDataSetZeros_(const size_t, const size_t);
   void RawDataSetZeros_(const std::vector<RawDataSetZerosTask> &);
   void RawDataDuplicateFromReal_(const GQTEN_Double *, const size_t);
+  void RawDataCopyRealFromCplx_(const GQTEN_Complex *, const size_t);
 
   void RawDataRand_(void);
   void RawDataTranspose_(const std::vector<RawDataTransposeTask> &);

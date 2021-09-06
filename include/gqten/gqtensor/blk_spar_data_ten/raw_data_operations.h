@@ -289,6 +289,18 @@ void BlockSparseDataTensor<ElemT, QNT>::RawDataDuplicateFromReal_(
   }
 }
 
+/**
+Element-wice copy the real part of a complex number array.
+*/
+template <typename ElemT, typename QNT>
+void BlockSparseDataTensor<ElemT, QNT>::RawDataCopyRealFromCplx_(
+    const GQTEN_Complex *pcplx_raw_data_, const size_t size) {
+  if (std::is_same<ElemT, GQTEN_Double>::value) {
+    hp_numeric::VectorGetRealFromCplx(pcplx_raw_data_, size, pactual_raw_data_);
+  } else {
+    assert(false); // TODO: To-be implemented!
+  }
+}
 
 /**
 Multiply the raw data by a scalar.
